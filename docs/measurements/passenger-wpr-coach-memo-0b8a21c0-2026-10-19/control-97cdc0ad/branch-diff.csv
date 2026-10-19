@@ -1,0 +1,28 @@
+branch,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick,legacy_samples,hyperpath_samples
+[worker threads],1.038678027,2.714906348,1.676228320,2126,5556
+openttd.exe!RunTileLoop,9.998885498,10.610604395,0.611718896,20479,21732
+openttd.exe!PassengerServiceDatabase::Tick,0.244698682,0.764517041,0.519818359,501,1564
+openttd.exe!RunPassengerWaitingEvents,0.714377832,0.826653223,0.112275391,1462,1691
+openttd.exe!CallLandscapeTick,0.544910596,0.556480859,0.011570264,1116,1139
+openttd.exe!FlushDeferredAspectUpdates,0.014195654,0.018544434,0.004348779,29,38
+openttd.exe!IncreaseDate,0.022962598,0.026365967,0.003403369,47,54
+openttd.exe!AnimateAnimatedTiles,0.005874268,0.008778223,0.002903955,12,18
+openttd.exe!CheckCaches,0.000493945,0.001961230,0.001467285,1,4
+openttd.exe!LinkGraphSchedule::JoinNext,0.003428516,0.004884863,0.001456348,7,10
+openttd.exe!PerformanceMeasurer::~PerformanceMeasurer,0.000000000,0.001443359,0.001443359,0,3
+openttd.exe!Game::GameLoop,0.000000000,0.000972559,0.000972559,0,2
+openttd.exe!std::chrono::steady_clock::now,0.000000000,0.000495117,0.000495117,0,1
+openttd.exe!NewsLoop,0.001464258,0.001956104,0.000491846,3,4
+openttd.exe!RecordPassengerJourneySimulationTick,0.000000000,0.000483887,0.000483887,0,1
+openttd.exe!PerformanceMeasurer::PerformanceMeasurer,0.000000000,0.000482275,0.000482275,0,1
+openttd.exe!CallWindowGameTickEvent,0.002925391,0.002928711,0.000003320,6,6
+openttd.exe!UpdateLandscapingLimits,0.000488086,0.000486621,-0.000001465,1,1
+openttd.exe!TimerManager<TimerGameTick>::Elapsed,0.001470117,0.001465283,-0.000004834,3,3
+openttd.exe!PerformanceAccumulator::Reset,0.000480078,0.000000000,-0.000480078,1,0
+openttd.exe!BasePersistentStorageArray::SwitchMode,0.001455371,0.000968750,-0.000486621,3,2
+openttd.exe!StateGameLoop_LinkGraphPauseControl,0.000487207,0.000000000,-0.000487207,1,0
+openttd.exe!ShowNewspaper,0.000980273,0.000000000,-0.000980273,2,0
+openttd.exe!OnTick_Companies,0.001961914,0.000492627,-0.001469287,4,1
+openttd.exe!BeginPassengerJourneyTick,0.007847949,0.004433203,-0.003414746,16,9
+openttd.exe!CallVehicleTicks,13.729414697,13.643224512,-0.086190186,28124,27945
+[outside StateGameLoop],4.835512793,1.379595313,-3.455917480,9908,2824

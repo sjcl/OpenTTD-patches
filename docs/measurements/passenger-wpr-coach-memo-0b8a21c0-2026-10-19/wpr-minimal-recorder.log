@@ -1,0 +1,30 @@
+﻿2026-10-19T18:55:08.0336744+09:00 wpr -start C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-0b8a21c0\cpu-minimal.wprp!CPU -filemode -recordtempto C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-0b8a21c0\wpr-filemode-temp
+2026-10-19T18:55:10.2851457+09:00 wpr -marker pilot-begin -flush
+2026-10-19T18:55:13.5298815+09:00 wpr -marker pilot-end -flush
+2026-10-19T18:55:13.7789159+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-0b8a21c0\pilot-minimal\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T19:02:29.5763807+09:00 wpr -start C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-0b8a21c0\cpu-minimal.wprp!CPU -filemode -recordtempto C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-0b8a21c0\wpr-filemode-temp
+2026-10-19T19:02:31.7600632+09:00 wpr -marker legacy-begin -flush
+2026-10-19T19:03:39.5730711+09:00 wpr -marker legacy-end -flush
+2026-10-19T19:03:39.8127902+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-0b8a21c0\control-97cdc0ad\legacy\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T19:08:15.8383279+09:00 wpr -start C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-0b8a21c0\cpu-minimal.wprp!CPU -filemode -recordtempto C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-0b8a21c0\wpr-filemode-temp
+2026-10-19T19:08:18.0075043+09:00 wpr -marker hyperpath-begin -flush
+2026-10-19T19:09:24.6011054+09:00 wpr -marker hyperpath-end -flush
+2026-10-19T19:09:24.8598316+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-0b8a21c0\control-97cdc0ad\hyperpath\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T19:13:54.6899255+09:00 wpr -start C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-0b8a21c0\cpu-minimal.wprp!CPU -filemode -recordtempto C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-0b8a21c0\wpr-filemode-temp
+2026-10-19T19:13:56.8922684+09:00 wpr -marker legacy-begin -flush
+2026-10-19T19:15:12.5576882+09:00 wpr -marker legacy-end -flush
+2026-10-19T19:15:12.7844383+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-0b8a21c0\legacy\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T19:19:52.5901986+09:00 wpr -start C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-0b8a21c0\cpu-minimal.wprp!CPU -filemode -recordtempto C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-0b8a21c0\wpr-filemode-temp
+2026-10-19T19:19:54.8631845+09:00 wpr -marker hyperpath-begin -flush
+2026-10-19T19:21:07.4375254+09:00 wpr -marker hyperpath-end -flush
+2026-10-19T19:21:07.7373474+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-0b8a21c0\hyperpath\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.

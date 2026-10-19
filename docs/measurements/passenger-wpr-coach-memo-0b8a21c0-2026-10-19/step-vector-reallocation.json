@@ -1,0 +1,84 @@
+{
+  "legacy": {
+    "old": {
+      "inclusive_ms_per_tick": 0.0,
+      "samples": 0,
+      "frames": {}
+    },
+    "new": {
+      "inclusive_ms_per_tick": 0.0,
+      "samples": 0,
+      "frames": {}
+    },
+    "new_adjusted_ms_per_tick": 0.0,
+    "raw_percent": null,
+    "adjusted_percent": null,
+    "predicate": "StateGameLoop and StepHyperpath exact frames, then std::vector frame containing realloc. Each stack counted once."
+  },
+  "hyperpath": {
+    "old": {
+      "inclusive_ms_per_tick": 0.25505576171875,
+      "samples": 522,
+      "frames": {
+        "openttd.exe!std::vector<PassengerStrategy,std::allocator<PassengerStrategy> >::_Emplace_reallocate<>": {
+          "inclusive_ms_per_tick": 0.0009765625,
+          "samples": 2
+        },
+        "openttd.exe!std::vector<std::vector<unsigned int,std::allocator<unsigned int> >,std::allocator<std::vector<unsigned int,std::allocator<unsigned int> > > >::_Emplace_reallocate<>": {
+          "inclusive_ms_per_tick": 0.00048828125,
+          "samples": 1
+        },
+        "openttd.exe!std::vector<_POOLCUE,std::allocator<_POOLCUE> >::_Emplace_reallocate<_POOLCUE const &>": {
+          "inclusive_ms_per_tick": 0.02058603515625,
+          "samples": 42
+        },
+        "openttd.exe!std::vector<std::tuple<__int64,unsigned int,unsigned int>,std::allocator<std::tuple<__int64,unsigned int,unsigned int> > >::_Emplace_reallocate<std::tuple<__int64,unsigned int,unsigned int> const &>": {
+          "inclusive_ms_per_tick": 0.0009679687500000001,
+          "samples": 2
+        },
+        "openttd.exe!std::vector<LinkGraph::EdgeRoute,std::allocator<LinkGraph::EdgeRoute> >::_Emplace_reallocate<LinkGraph::EdgeRoute const &>": {
+          "inclusive_ms_per_tick": 0.22323920898437505,
+          "samples": 457
+        },
+        "openttd.exe!std::vector<PoolID<StationIDTag>,std::allocator<PoolID<StationIDTag> > >::_Emplace_reallocate<PoolID<StationIDTag> const &>": {
+          "inclusive_ms_per_tick": 0.008797705078125,
+          "samples": 18
+        }
+      }
+    },
+    "new": {
+      "inclusive_ms_per_tick": 0.020999218750000003,
+      "samples": 43,
+      "frames": {
+        "openttd.exe!std::vector<PassengerStrategy,std::allocator<PassengerStrategy> >::_Emplace_reallocate<>": {
+          "inclusive_ms_per_tick": 0.0009748535156250001,
+          "samples": 2
+        },
+        "openttd.exe!std::vector<std::vector<unsigned int,std::allocator<unsigned int> >,std::allocator<std::vector<unsigned int,std::allocator<unsigned int> > > >::_Emplace_reallocate<>": {
+          "inclusive_ms_per_tick": 0.00048828125,
+          "samples": 1
+        },
+        "openttd.exe!std::vector<_POOLCUE,std::allocator<_POOLCUE> >::_Emplace_reallocate<_POOLCUE const &>": {
+          "inclusive_ms_per_tick": 0.00048818359375,
+          "samples": 1
+        },
+        "openttd.exe!std::vector<std::tuple<__int64,unsigned int,unsigned int>,std::allocator<std::tuple<__int64,unsigned int,unsigned int> > >::_Emplace_reallocate<std::tuple<__int64,unsigned int,unsigned int> const &>": {
+          "inclusive_ms_per_tick": 0.001477197265625,
+          "samples": 3
+        },
+        "openttd.exe!std::vector<PoolID<StationIDTag>,std::allocator<PoolID<StationIDTag> > >::_Emplace_reallocate<PoolID<StationIDTag> const &>": {
+          "inclusive_ms_per_tick": 0.009747265625,
+          "samples": 20
+        },
+        "openttd.exe!std::vector<LinkGraph::EdgeRoute,std::allocator<LinkGraph::EdgeRoute> >::_Emplace_reallocate<LinkGraph::EdgeRoute const &>": {
+          "inclusive_ms_per_tick": 0.007823437499999999,
+          "samples": 16
+        }
+      }
+    },
+    "new_adjusted_ms_per_tick": 0.019132500787445026,
+    "raw_percent": -91.76681263403262,
+    "adjusted_percent": -92.49869884980586,
+    "predicate": "StateGameLoop and StepHyperpath exact frames, then std::vector frame containing realloc. Each stack counted once."
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "legacy": {
+    "MayUseHyperpathPolicy": {
+      "function": "openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy",
+      "inclusive_ms_per_tick": 1.51971709,
+      "inclusive_samples": 3113,
+      "recording_profile": "Historical full CPU profile; different from matched CPU-only controls"
+    },
+    "StepHyperpath": {
+      "function": "openttd.exe!PassengerPrecomputedTable::StepHyperpath",
+      "inclusive_ms_per_tick": 0.0,
+      "inclusive_samples": 0,
+      "recording_profile": "Historical full CPU profile; different from matched CPU-only controls"
+    },
+    "loading_walk": {
+      "function": "openttd.exe!StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoLoad>'::`2'::<lambda_1> >",
+      "inclusive_ms_per_tick": 2.889449072,
+      "inclusive_samples": 5918,
+      "recording_profile": "Historical full CPU profile; different from matched CPU-only controls"
+    },
+    "vector_reallocation": {
+      "inclusive_ms_per_tick": 0.0,
+      "samples": 0,
+      "frames": {}
+    }
+  },
+  "hyperpath": {
+    "MayUseHyperpathPolicy": {
+      "function": "openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy",
+      "inclusive_ms_per_tick": 0.68014375,
+      "inclusive_samples": 1393,
+      "recording_profile": "Historical full CPU profile; different from matched CPU-only controls"
+    },
+    "StepHyperpath": {
+      "function": "openttd.exe!PassengerPrecomputedTable::StepHyperpath",
+      "inclusive_ms_per_tick": 0.7210104,
+      "inclusive_samples": 1472,
+      "recording_profile": "Historical full CPU profile; different from matched CPU-only controls"
+    },
+    "loading_walk": {
+      "function": "openttd.exe!StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoLoad>'::`2'::<lambda_1> >",
+      "inclusive_ms_per_tick": 1.940269092,
+      "inclusive_samples": 3974,
+      "recording_profile": "Historical full CPU profile; different from matched CPU-only controls"
+    },
+    "vector_reallocation": {
+      "inclusive_ms_per_tick": 0.23946279296874992,
+      "samples": 489,
+      "frames": {
+        "openttd.exe!std::vector<_POOLCUE,std::allocator<_POOLCUE> >::_Emplace_reallocate<_POOLCUE const &>": {
+          "inclusive_ms_per_tick": 0.015160546874999998,
+          "samples": 31
+        },
+        "openttd.exe!std::vector<std::tuple<__int64,unsigned int,unsigned int>,std::allocator<std::tuple<__int64,unsigned int,unsigned int> > >::_Emplace_reallocate<std::tuple<__int64,unsigned int,unsigned int> const &>": {
+          "inclusive_ms_per_tick": 0.0009779785156250002,
+          "samples": 2
+        },
+        "openttd.exe!std::vector<LinkGraph::EdgeRoute,std::allocator<LinkGraph::EdgeRoute> >::_Emplace_reallocate<LinkGraph::EdgeRoute const &>": {
+          "inclusive_ms_per_tick": 0.2159765624999999,
+          "samples": 441
+        },
+        "openttd.exe!std::vector<PoolID<StationIDTag>,std::allocator<PoolID<StationIDTag> > >::_Emplace_reallocate<PoolID<StationIDTag> const &>": {
+          "inclusive_ms_per_tick": 0.007347705078124999,
+          "samples": 15
+        }
+      }
+    }
+  }
+}

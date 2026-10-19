@@ -1,0 +1,257 @@
+{
+  "product_commit": "0b8a21c0f3dc9a24ca0d9d3581c19fb9c207e684",
+  "baseline_commit": "97cdc0ad4c9493daea0db6079e90a03924d96b56",
+  "same_input": true,
+  "canonical_equality_checked": true,
+  "canonical": {
+    "legacy": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    },
+    "hyperpath": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    }
+  },
+  "native_tests": 777,
+  "native_assertions": 10745559,
+  "matched_kernel_cpu_profile": true,
+  "accepted_traces": 4,
+  "runs": {
+    "legacy": {
+      "exact_ticks": 2048,
+      "kernel_window_valid": true,
+      "canonical_equal": true,
+      "canonical_fields": 24,
+      "differences": {},
+      "payments_valid": true,
+      "raw_csv_hashes_match": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": {},
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 66242929800,
+          "stack_samples": 66243,
+          "exclusive_total_ns": 66242929800,
+          "exclusive_samples": 66243
+        },
+        "main": {
+          "stack_total_ns": 63900162100,
+          "stack_samples": 63902,
+          "exclusive_total_ns": 63900162100,
+          "exclusive_samples": 63902
+        },
+        "simulation_stack": {
+          "stack_total_ns": 54243735400,
+          "stack_samples": 54244,
+          "exclusive_total_ns": 54243735400,
+          "exclusive_samples": 54244
+        }
+      },
+      "unavailable_stack": {
+        "all": {
+          "ns": 9989500,
+          "samples": 10
+        },
+        "main": {
+          "ns": 9989500,
+          "samples": 10
+        }
+      },
+      "invalid_event_times_us": [
+        78238092
+      ],
+      "invalid_events_outside_markers": true
+    },
+    "hyperpath": {
+      "exact_ticks": 2048,
+      "kernel_window_valid": true,
+      "canonical_equal": true,
+      "canonical_fields": 24,
+      "differences": {},
+      "payments_valid": true,
+      "raw_csv_hashes_match": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": {},
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 67979960100,
+          "stack_samples": 67982,
+          "exclusive_total_ns": 67979960100,
+          "exclusive_samples": 67982
+        },
+        "main": {
+          "stack_total_ns": 61868257300,
+          "stack_samples": 61875,
+          "exclusive_total_ns": 61868257300,
+          "exclusive_samples": 61875
+        },
+        "simulation_stack": {
+          "stack_total_ns": 57726675200,
+          "stack_samples": 57733,
+          "exclusive_total_ns": 57726675200,
+          "exclusive_samples": 57733
+        }
+      },
+      "unavailable_stack": {
+        "all": {
+          "ns": 17104500,
+          "samples": 17
+        },
+        "main": {
+          "ns": 7035000,
+          "samples": 7
+        }
+      },
+      "invalid_event_times_us": [
+        75316081
+      ],
+      "invalid_events_outside_markers": true
+    }
+  },
+  "control_runs": {
+    "legacy": {
+      "exact_ticks": 2048,
+      "kernel_window_valid": true,
+      "canonical_equal": true,
+      "canonical_fields": 24,
+      "differences": {},
+      "payments_valid": true,
+      "raw_csv_hashes_match": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": {},
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 63842291200,
+          "stack_samples": 63852,
+          "exclusive_total_ns": 63842291200,
+          "exclusive_samples": 63852
+        },
+        "main": {
+          "stack_total_ns": 61715078600,
+          "stack_samples": 61726,
+          "exclusive_total_ns": 61715078600,
+          "exclusive_samples": 61726
+        },
+        "simulation_stack": {
+          "stack_total_ns": 51811948400,
+          "stack_samples": 51818,
+          "exclusive_total_ns": 51811948400,
+          "exclusive_samples": 51818
+        }
+      },
+      "unavailable_stack": {
+        "all": {
+          "ns": 18005700,
+          "samples": 18
+        },
+        "main": {
+          "ns": 12005700,
+          "samples": 12
+        }
+      },
+      "invalid_event_times_us": [
+        70371606
+      ],
+      "invalid_events_outside_markers": true
+    },
+    "hyperpath": {
+      "exact_ticks": 2048,
+      "kernel_window_valid": true,
+      "canonical_equal": true,
+      "canonical_fields": 24,
+      "differences": {},
+      "payments_valid": true,
+      "raw_csv_hashes_match": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": {},
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 62613759800,
+          "stack_samples": 62609,
+          "exclusive_total_ns": 62613759800,
+          "exclusive_samples": 62609
+        },
+        "main": {
+          "stack_total_ns": 57053631600,
+          "stack_samples": 57053,
+          "exclusive_total_ns": 57053631600,
+          "exclusive_samples": 57053
+        },
+        "simulation_stack": {
+          "stack_total_ns": 54228220400,
+          "stack_samples": 54229,
+          "exclusive_total_ns": 54228220400,
+          "exclusive_samples": 54229
+        }
+      },
+      "unavailable_stack": {
+        "all": {
+          "ns": 9038100,
+          "samples": 9
+        },
+        "main": {
+          "ns": 4038100,
+          "samples": 4
+        }
+      },
+      "invalid_event_times_us": [
+        69171985
+      ],
+      "invalid_events_outside_markers": true
+    }
+  },
+  "validate": {
+    "command": [
+      "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+      "-B",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+      "run",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\Release\\openttd.exe",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\input",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\validate",
+      "--ticks",
+      "2048",
+      "--timeout",
+      "2400",
+      "--measurement-wait",
+      "2400",
+      "--resume",
+      "--wait-saved-replay",
+      "--precomputed",
+      "--hyperpath",
+      "--warm-precomputed",
+      "--wait-background-ready",
+      "--hyperpath-filter-mode",
+      "validate",
+      "--main-thread-affinity-mask",
+      "1",
+      "--lang",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\lang"
+    ],
+    "exact_ticks": 2048,
+    "simulation_timing_valid": true,
+    "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+    "hyperpath_filter_mode": "validate",
+    "memo": {
+      "hits": 0,
+      "validated": 13769660,
+      "violations": 13655
+    },
+    "lookup_line": "rebuilds=2714; indexed_groups=203870; validated_groups=1007076; violations=0",
+    "reuse_observed": true,
+    "canonical": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    },
+    "excluded_from_performance_comparison": true
+  },
+  "memo_validation_passed": false
+}

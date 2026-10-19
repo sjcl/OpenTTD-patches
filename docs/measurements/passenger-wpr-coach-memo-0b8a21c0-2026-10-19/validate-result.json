@@ -1,0 +1,46 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+    "-B",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+    "run",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\Release\\openttd.exe",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\input",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\validate",
+    "--ticks",
+    "2048",
+    "--timeout",
+    "2400",
+    "--measurement-wait",
+    "2400",
+    "--resume",
+    "--wait-saved-replay",
+    "--precomputed",
+    "--hyperpath",
+    "--warm-precomputed",
+    "--wait-background-ready",
+    "--hyperpath-filter-mode",
+    "validate",
+    "--main-thread-affinity-mask",
+    "1",
+    "--lang",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\lang"
+  ],
+  "exact_ticks": 2048,
+  "simulation_timing_valid": true,
+  "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+  "hyperpath_filter_mode": "validate",
+  "memo": {
+    "hits": 0,
+    "validated": 13769660,
+    "violations": 13655
+  },
+  "lookup_line": "rebuilds=2714; indexed_groups=203870; validated_groups=1007076; violations=0",
+  "reuse_observed": true,
+  "canonical": {
+    "equal": true,
+    "fields": 24,
+    "differences": {}
+  },
+  "excluded_from_performance_comparison": true
+}

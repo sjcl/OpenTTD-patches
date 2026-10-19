@@ -1,0 +1,97 @@
+[
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\rejected-incomplete-save-replay\\cpu.etl",
+    "bytes": 5028970496,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\rejected-incomplete-save-replay\\input.sav",
+    "bytes": 46620248,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\rejected-incomplete-save-replay\\openttd.exe",
+    "bytes": 14253568,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\rejected-legacy-memory-markers\\cpu.etl",
+    "bytes": 5028970496,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\rejected-legacy-memory-markers\\input.sav",
+    "bytes": 46620248,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\rejected-legacy-memory-markers\\openttd.exe",
+    "bytes": 14253568,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\rejected-legacy-memory-markers\\result.sav",
+    "bytes": 46681052,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\rejected-hyperpath-dropped-events\\cpu.etl",
+    "bytes": 8675917824,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\rejected-hyperpath-dropped-events\\input.sav",
+    "bytes": 46620248,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\rejected-hyperpath-dropped-events\\openttd.exe",
+    "bytes": 14253568,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\rejected-hyperpath-dropped-events\\result.sav",
+    "bytes": 46700872,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\legacy\\cpu.etl",
+    "bytes": 9224323072,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\legacy\\input.sav",
+    "bytes": 46620248,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\legacy\\openttd.exe",
+    "bytes": 14253568,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\legacy\\result.sav",
+    "bytes": 46681052,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\hyperpath\\cpu.etl",
+    "bytes": 1107296256,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\hyperpath\\input.sav",
+    "bytes": 46620248,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\hyperpath\\openttd.exe",
+    "bytes": 14253568,
+    "reason": "Rejected capture; metadata and logs retained"
+  },
+  {
+    "path": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\hyperpath\\result.sav",
+    "bytes": 46700872,
+    "reason": "Rejected capture; metadata and logs retained"
+  }
+]
