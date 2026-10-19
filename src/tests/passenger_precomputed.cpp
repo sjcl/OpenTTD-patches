@@ -128,7 +128,39 @@ TEST_CASE("Parallel passenger searches preserve every publication boundary and s
 		}
 		CHECK(parallel.GetDiagnostic().board_events == serial.GetDiagnostic().board_events);
 		CHECK(parallel.GetDiagnostic().heap_pops == serial.GetDiagnostic().heap_pops);
+		/* A row finished by a worker merges its policy statistics at publication. */
+		CHECK(parallel.GetDiagnostic().policy_count == serial.GetDiagnostic().policy_count);
+		CHECK(parallel.GetDiagnostic().candidate_count == serial.GetDiagnostic().candidate_count);
+		CHECK(parallel.GetDiagnostic().candidate_histogram == serial.GetDiagnostic().candidate_histogram);
+		CHECK(parallel.GetDiagnostic().base_policy_bytes == serial.GetDiagnostic().base_policy_bytes);
 		CHECK(parallel.GetParallelDiagnostic().peak_pending <= workers * 2);
+	}
+}
+
+TEST_CASE("Worker-finished Hyperpath rows apply every table effect at the serial Work boundary", "[passenger][precomputed][parallel][hyperpath][network]")
+{
+	/* Every lookahead row is ready before each slice, so rows are finished by workers and
+	 * replayed; small slices stop inside the label and policy phases of those rows. */
+	std::array services{Service(0, {A, B, C}), Service(1, {B, D}), Service(2, {A, C, D}, 170), Service(3, {A, B, A, D}, 73)};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	for (bool flat : {false, true}) {
+		CAPTURE(flat);
+		PassengerPrecomputedTable serial, parallel;
+		for (auto *table : {&serial, &parallel}) table->Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true, true, true, flat);
+		std::vector<StationID> expected, actual;
+		size_t step = 0;
+		while (!serial.Finished()) {
+			if (PassengerPrecomputedTestAccess::Prime(parallel, 4)) WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Ready(parallel); });
+			const size_t chunk = std::array<size_t, 5>{1, 3, 7, 31, 97}[step++ % 5];
+			REQUIRE(parallel.StepParallel(chunk, 4, [&](StationID d) { actual.push_back(d); }) == serial.Step(chunk, false, [&](StationID d) { expected.push_back(d); }));
+			REQUIRE(actual == expected);
+			REQUIRE(PassengerPrecomputedTestAccess::Published(parallel) == PassengerPrecomputedTestAccess::Published(serial));
+		}
+		CHECK(parallel.Finished());
+		CHECK(parallel.GetParallelDiagnostic().finished_rows > 0);
+		CHECK(parallel.GetParallelDiagnostic().finish_effects > 0);
+		CHECK(parallel.GetDiagnostic().candidate_histogram == serial.GetDiagnostic().candidate_histogram);
+		CHECK(parallel.GetDiagnostic().policy_count == serial.GetDiagnostic().policy_count);
 	}
 }
 

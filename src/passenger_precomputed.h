@@ -60,6 +60,7 @@ struct PassengerParallelBuildDiagnostic {
 	uint64_t minimum_work = UINT64_MAX, maximum_work = 0, search_work = 0;
 	uint64_t cache_hits = 0, cache_work = 0, serial_rows = 0, main_search_nanoseconds = 0, serial_search_work = 0;
 	uint64_t cancelled_search_work = 0, thread_starts = 0, workspace_reuses = 0, throttles = 0;
+	uint64_t finished_rows = 0, finish_effects = 0; ///< Hyperpath rows finished by a worker, and the effects replayed for them.
 	size_t workers = 0, peak_pending = 0, estimated_workspace_bytes = 0;
 };
 
@@ -277,6 +278,15 @@ private:
 		uint32_t range_offset = 0, expanding = INVALID;
 		bool finishing_row = false, initializing_row = false, queues_configured = false;
 		size_t hyperpath_candidate_bytes = 0, prepared_candidate_bytes = 0;
+		/* A worker finishes its searched Hyperpath row ahead. The simulation thread then charges the
+		 * same Work and applies only the row's table-wide effects, each at its Work position. */
+		struct FinishEffect { size_t step; uint32_t value; uint8_t kind; };
+		std::vector<FinishEffect> finish_effects;
+		std::vector<uint8_t> finish_marked; ///< Per occurrence, while recording: mask planes already marked by this row.
+		std::vector<uint32_t> finish_touched;
+		PassengerPrecomputedDiagnostic finish_diagnostic; ///< Policy statistics of the prepared row, merged at publication.
+		size_t finish_steps = 0, finish_applied = 0, finish_effect = 0;
+		bool finish_prepared = false;
 		struct Counters {
 			uint64_t board_events = 0, board_accepts = 0, range_updates = 0, heap_pushes = 0, heap_pops = 0;
 		} counters;
@@ -333,6 +343,14 @@ private:
 		size_t RelaxIncoming(DestinationWorkspace &work, size_t allowance) const;
 		void PushHyperpath(DestinationWorkspace &work, int64_t key, uint32_t kind, uint32_t id) const;
 		uint32_t StateFor(uint32_t station, uint32_t pattern) const;
+		uint32_t PreviousPattern(uint32_t state) const;
+		static constexpr uint8_t FINISH_REACHABLE = 0, FINISH_MARK_ANY = 1, FINISH_MARK_BASE = 2;
+		/** Advances the finishing of a searched Hyperpath row by up to @p steps Work units, stopping
+		 * before its publication. Table-wide effects are reported in order as (kind, value, step). */
+		template <typename Effect> size_t FinishHyperpathRow(DestinationWorkspace &work, size_t steps, PassengerPrecomputedDiagnostic &diagnostic, Effect &&effect) const;
+		bool HyperpathRowFinished(const DestinationWorkspace &work) const { return work.prepared.labels.size() >= this->waiting_state_count && work.finishing >= this->waiting_state_count; }
+		void PrepareHyperpathFinish(DestinationWorkspace &work) const; ///< Worker side: the whole finishing, recorded.
+		static void ExactFlatPayloads(DestinationWorkspace &work); ///< Exact publication payloads; grown storage stays in the buffers.
 		bool DominatedRevisit(uint32_t board, int64_t cost, int64_t next_cost) const;
 		bool HasSameRunContinuationWitness(uint32_t board, uint32_t alight) const;
 		int64_t SearchCost(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.cost[state] : work.scratch.labels[state].cost; }
