@@ -26,6 +26,7 @@
 #include "../waypoint_base.h"
 #include "../core/backup_type.hpp"
 #include "../core/random_func.hpp"
+#include "../core/checksum_func.hpp"
 #include "../sl/saveload.h"
 #include "passenger_test_stations.h"
 #include "passenger_index_allocations.h"
@@ -44,6 +45,7 @@
 #include "../network/network_internal.h"
 #include "../widgets/network_widget.h"
 #include "mock_environment.h"
+#include "network_passenger_preparation.h"
 
 extern SaveLoadVersion _sl_version;
 extern NamedSaveLoadTable GetGoodsDesc();
@@ -4163,6 +4165,148 @@ TEST_CASE("Saving suspended initial fleet capture resumes the same publication",
 	}
 	CHECK(db.Save() == peer.Save());
 	CHECK(db.PlanPrecomputed(PAX, A, D, NOW).ride == peer.PlanPrecomputed(PAX, A, D, NOW).ride);
+}
+
+TEST_CASE("Joining during preparation restores every public frontier independently", "[passenger][precomputed][join-preparation][save]")
+{
+	for (bool hyperpath : {false, true}) {
+		Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true;
+		_settings_game.linkgraph.passenger_journey_hyperpath = hyperpath;
+		AutoRestoreBackup workers{_settings_client.gui.passenger_precomputed_workers, uint8_t{8}};
+		auto *first = f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+		for (uint i = 0; i < 2000; ++i) Vehicle::Create<PeriodicTrain>(first);
+		auto &host = GetPassengerServiceDatabase();
+		auto discover = [&]() {
+			for (uint i = 0; host.IsBuilding(); ++i) { REQUIRE(i < 10000); host.Tick(PassengerServiceDatabase::BUILD_WORK, false); }
+		};
+		auto join = [&](bool host_first) {
+			const auto wire = host.Save();
+			PassengerServiceDatabase client; REQUIRE(client.Load(wire)); client.FinishLoad(true, true);
+			/* Restoring graph scratch can put the client ahead of the saved host
+			 * graph, but cannot change the saved/public frontier. */
+			for (uint i = 0; client.GetLoadState() == PassengerServiceDatabase::LoadState::Replaying; ++i) {
+				REQUIRE(i < 100000); client.StepLoad(17); REQUIRE(client.Save() == wire);
+			}
+			CHECK(host.Save() == wire); // No cancellation or restart on the host.
+			auto finish = [&](PassengerServiceDatabase &db, uint8_t count) {
+				_settings_client.gui.passenger_precomputed_workers = count;
+				for (uint i = 0; !db.PreparePrecomputed(); ++i) REQUIRE(i < 10000);
+			};
+			if (host_first) { finish(host, 8); finish(client, 0); }
+			else { finish(client, 8); finish(host, 0); }
+			REQUIRE(host.Save() == client.Save()); CHECK(_state_ticks == NOW);
+			for (CargoType cargo : EnumRange(NUM_CARGO)) {
+				CHECK(PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Table(host, cargo)) ==
+						PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Table(client, cargo)));
+				CHECK(PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Retained(host, cargo)) ==
+						PassengerPrecomputedTestAccess::Published(PassengerServiceDatabaseTestAccess::Retained(client, cargo)));
+			}
+		};
+		SECTION("Before service discovery") { join(true); }
+		SECTION("Suspended service capture") { REQUIRE_FALSE(host.PreparePrecomputed()); join(false); }
+		SECTION("Partially built graph") {
+			discover(); host.Tick(PassengerServiceDatabase::BUILD_WORK, true, true);
+			REQUIRE(PassengerServiceDatabaseTestAccess::Table(host, PAX).IsPreparingGraph()); join(true);
+		}
+		SECTION("Destination search and speculative workers") {
+			discover(); host.TickPrecomputed(1);
+			REQUIRE_FALSE(host.PrecomputedFinished());
+			PassengerServiceDatabaseTestAccess::Table(host, PAX).StepParallel(0, 8); join(false);
+		}
+		SECTION("Replacement graph retains old generation") {
+			while (!host.PreparePrecomputed()) {}
+			_settings_game.linkgraph.passenger_transfer_penalty = 17;
+			host.Tick(PassengerServiceDatabase::BUILD_WORK, true, true);
+			REQUIRE(host.IsPreparingPrecomputed());
+			REQUIRE(host.GetPrecomputedDiagnostic(PAX).retained_destinations != 0); join(true);
+		}
+	}
+}
+
+TEST_CASE("Passenger barrier retains downloading and replaying joiners after host completion", "[network][passenger][join-preparation]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	AutoRestoreBackup server{_network_server, true};
+	AutoRestoreBackup deadline{_settings_client.network.max_join_time_total, uint16_t{900}};
+	_settings_game.linkgraph.passenger_journey_precomputed = true;
+	AutoRestoreBackup frame{_frame_counter, uint32_t{123}};
+	ServerNetworkGameSocketHandler::ResetPassengerPreparation();
+	auto first = std::unique_ptr<NetworkClientSocket>(NetworkClientSocket::Create(INVALID_SOCKET));
+	first->status = NetworkClientSocket::ClientStatus::Map;
+	REQUIRE_FALSE(ServerNetworkGameSocketHandler::PreparePassengerRouting());
+	CHECK(NetworkPassengerPreparationTestAccess::Frame(*first) == 123);
+	while (!GetPassengerServiceDatabase().PreparePrecomputed()) {}
+	REQUIRE_FALSE(ServerNetworkGameSocketHandler::PreparePassengerRouting());
+	first->status = NetworkClientSocket::ClientStatus::DoneMap;
+	REQUIRE_FALSE(ServerNetworkGameSocketHandler::PreparePassengerRouting());
+	auto second = std::unique_ptr<NetworkClientSocket>(NetworkClientSocket::Create(INVALID_SOCKET));
+	second->status = NetworkClientSocket::ClientStatus::Map;
+	first->status = NetworkClientSocket::ClientStatus::PreActive;
+	REQUIRE_FALSE(ServerNetworkGameSocketHandler::PreparePassengerRouting());
+	REQUIRE(NetworkPassengerPreparationTestAccess::Ready(*first, 123) == NetworkRecvStatus::Okay);
+	REQUIRE_FALSE(ServerNetworkGameSocketHandler::PreparePassengerRouting());
+	CHECK(NetworkPassengerPreparationTestAccess::Frame(*second) == 123);
+	SECTION("Second client completes replay and preparation") {
+		second->status = NetworkClientSocket::ClientStatus::PreActive;
+		REQUIRE(NetworkPassengerPreparationTestAccess::Ready(*second, 123) == NetworkRecvStatus::Okay);
+	}
+	SECTION("Second client disconnects during transfer") { second.reset(); }
+	SECTION("Second client disconnects during computation") { second->status = NetworkClientSocket::ClientStatus::ClosePending; }
+	CHECK(ServerNetworkGameSocketHandler::PreparePassengerRouting());
+	CHECK_FALSE(NetworkPassengerPreparationTestAccess::Frame(*first)); CHECK(_frame_counter == 123);
+	ServerNetworkGameSocketHandler::ResetPassengerPreparation();
+}
+
+TEST_CASE("Client preparation completion and server announcement can arrive in either order", "[network][passenger][join-preparation]")
+{
+	Fixture f; f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	_settings_game.linkgraph.passenger_journey_precomputed = true;
+	AutoRestoreBackup frame{_frame_counter, uint32_t{123}};
+	auto client = std::make_unique<ClientNetworkGameSocketHandler>(INVALID_SOCKET, "test");
+	NetworkPassengerPreparationTestAccess::Activate(*client);
+	SECTION("Client completes before server announcement") {
+		while (GetPassengerServiceDatabase().IsPreparingPrecomputed()) CHECK_FALSE(ClientNetworkGameSocketHandler::PreparePassengerRouting());
+		CHECK_FALSE(NetworkPassengerPreparationTestAccess::Prepared(*client));
+	}
+	SECTION("Server announces while client is still computing") {
+		CHECK_FALSE(ClientNetworkGameSocketHandler::PreparePassengerRouting());
+		REQUIRE(NetworkPassengerPreparationTestAccess::Announce(*client, true, 123) == NetworkRecvStatus::Okay);
+		CHECK(NetworkPassengerPreparationTestAccess::Announce(*client, false, 123) == NetworkRecvStatus::MalformedPacket);
+	}
+	REQUIRE(NetworkPassengerPreparationTestAccess::Announce(*client, true, 123) == NetworkRecvStatus::Okay);
+	for (uint i = 0; !NetworkPassengerPreparationTestAccess::Prepared(*client); ++i) {
+		REQUIRE(i < 10000); CHECK_FALSE(ClientNetworkGameSocketHandler::PreparePassengerRouting());
+	}
+	CHECK_FALSE(ClientNetworkGameSocketHandler::PreparePassengerRouting()); // Wait for all peers.
+	REQUIRE(NetworkPassengerPreparationTestAccess::Announce(*client, false, 123) == NetworkRecvStatus::Okay);
+	CHECK(ClientNetworkGameSocketHandler::PreparePassengerRouting()); CHECK(_frame_counter == 123);
+}
+
+TEST_CASE("A sync received at the completed frame finishes joining without an extra frame", "[network][join-preparation][sync]")
+{
+	AutoRestoreBackup frame{_frame_counter, uint32_t{123}};
+	AutoRestoreBackup first{_network_first_time, true};
+	AutoRestoreBackup sync{_sync_frame, uint32_t{0}};
+	AutoRestoreBackup seed{_sync_seed_1, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup checksum{_sync_state_checksum, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup last{_last_sync_frame_counter, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup date{_last_sync_date, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup fract{_last_sync_date_fract, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup skip{_last_sync_tick_skip_counter, AutoRestoreBackupNoNewValueTag{}};
+	auto client = std::make_unique<ClientNetworkGameSocketHandler>(INVALID_SOCKET, "test");
+	NetworkPassengerPreparationTestAccess::Activate(*client);
+	uint32_t target = 123;
+	SECTION("Notification arrives at an already completed frame") {}
+	SECTION("Notification arrives before its frame") { target = 124; }
+	REQUIRE(NetworkPassengerPreparationTestAccess::Sync(*client, target, _random.state[0], _state_checksum.state) == NetworkRecvStatus::Okay);
+	if (target != _frame_counter) {
+		CHECK(NetworkPassengerPreparationTestAccess::CheckSync());
+		CHECK(_network_first_time); CHECK(_sync_frame == target);
+		_frame_counter = target;
+	}
+	CHECK(NetworkPassengerPreparationTestAccess::CheckSync());
+	CHECK_FALSE(_network_first_time); CHECK(_sync_frame == 0);
+	CHECK(_last_sync_frame_counter == target); CHECK(_frame_counter == target);
 }
 
 TEST_CASE("Asymmetric passenger workers preserve initial saves joins and replacement tick rows", "[passenger][precomputed][parallel][save][network]")

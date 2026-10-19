@@ -1,0 +1,196 @@
+{
+  "base": "sjcl/jgrpp-ya @ 82a587e2c6fc68ceb1f585c324618c521e47516d",
+  "branch": "feat/passenger-join-during-preparation",
+  "build": "Windows x64, LLVM 23 clang-cl, Release, assertions enabled, LTO/PGO disabled",
+  "native_tests": {
+    "passed": true,
+    "cases": 778,
+    "assertions": 10749857,
+    "log": "native-tests.log"
+  },
+  "gui_tests": {
+    "passed": true,
+    "languages": [
+      "english",
+      "japanese"
+    ],
+    "cases_per_language": 1,
+    "assertions_per_language": 100,
+    "logs": [
+      "gui-tests.log",
+      "gui-tests-japanese.log"
+    ]
+  },
+  "loopback": [
+    {
+      "case": "client-first",
+      "phase": 1,
+      "port": 17620,
+      "passed": true,
+      "snapshots_during_preparation": 1,
+      "join_mismatches": [
+        []
+      ],
+      "simulation_mismatches": [
+        []
+      ],
+      "simulation_ticks": 134
+    },
+    {
+      "case": "disconnect",
+      "phase": 4,
+      "port": 17624,
+      "passed": true,
+      "snapshots_during_preparation": 2,
+      "join_mismatches": [
+        []
+      ],
+      "simulation_mismatches": [
+        []
+      ],
+      "simulation_ticks": 130
+    },
+    {
+      "case": "before-enable",
+      "phase": 1,
+      "port": 17626,
+      "passed": true,
+      "snapshots_during_preparation": 0,
+      "join_mismatches": [
+        []
+      ],
+      "preparation_mismatches": [
+        []
+      ],
+      "simulation_mismatches": [
+        []
+      ],
+      "simulation_ticks": 134
+    },
+    {
+      "case": "client-first",
+      "phase": 4,
+      "port": 17622,
+      "passed": true,
+      "snapshots_during_preparation": 1,
+      "join_mismatches": [
+        []
+      ],
+      "simulation_mismatches": [
+        []
+      ],
+      "simulation_ticks": 132
+    },
+    {
+      "case": "host-first",
+      "phase": 2,
+      "port": 17621,
+      "passed": true,
+      "snapshots_during_preparation": 1,
+      "join_mismatches": [
+        []
+      ],
+      "simulation_mismatches": [
+        []
+      ],
+      "simulation_ticks": 130
+    },
+    {
+      "case": "multiple",
+      "phase": 1,
+      "port": 17623,
+      "passed": true,
+      "snapshots_during_preparation": 2,
+      "join_mismatches": [
+        [],
+        []
+      ],
+      "simulation_mismatches": [
+        [],
+        []
+      ],
+      "simulation_ticks": 130
+    },
+    {
+      "case": "ordinary",
+      "phase": 1,
+      "port": 17625,
+      "passed": true,
+      "snapshots_during_preparation": 0,
+      "join_mismatches": [
+        []
+      ],
+      "simulation_mismatches": [
+        []
+      ],
+      "simulation_ticks": 132
+    },
+    {
+      "case": "stalled",
+      "phase": 4,
+      "port": 17627,
+      "passed": true,
+      "snapshots_during_preparation": 1,
+      "bounded_wait_seconds": 64.66733959969133
+    }
+  ],
+  "loopback_configuration": {
+    "input": "regression/stationlist/test.sav",
+    "input_sha256": "9f30d56635848d37aa2cfbfefac009f67bb582a005bdb7e8e151ba43a454361f",
+    "server_workers": 8,
+    "client_workers": [
+      0,
+      1
+    ],
+    "minimum_simulation_ticks": 128,
+    "join_window_closed_at_first_valid_sync": true,
+    "graph_quantum_in_copied_probe_only": 1,
+    "default_network_timeouts": true,
+    "stalled_case_max_join_time_total_seconds": 60,
+    "note": "File gates and inspector exist only in generated copied translation units. The stalled case intentionally uses the supported minimum absolute deadline; all other cases use default deadlines."
+  },
+  "binary_sha256": {
+    "openttd_test.exe": "81c7e6e913d3bd85e19693b533cc8059c45c02d01278d52941a64829652c3a6b",
+    "openttd.exe": "c6755857fc750dc904f64b2b48868c6ebc712403c857dd5a2f516dd98f69ced6",
+    "passenger_join_probe_sync.exe": "aeee34d4dcf6c4657298f7b1af55b96dfd0cc0c6c9c49f6a69267569cada90a8"
+  },
+  "save_format_changed": false,
+  "packet_types_or_payloads_changed": false,
+  "coverage_notes": [
+    "Native snapshots compare service drafts, partially prepared graphs, row Work, speculative workers and retained generations in Legacy and Hyperpath modes.",
+    "Native asymmetric worker tests cover 0/8, 8/0, 4/1, delayed and failing workers; publication fields, serialized state and transport are compared.",
+    "Real loopback tests cover preparation before enabling, services, graph, tables, client first, host first, multiple joins, disconnect, ordinary join, and a stalled client.",
+    "Native server tests simulate Map/DoneMap/PreActive and disconnect states while exercising the real preparation and READY handlers."
+  ],
+  "limits": [
+    "Loopback tests use a small vanilla fixture on Windows; WAN throughput and large real-map performance were not benchmarked.",
+    "The stopped-client deadline is exercised at 60 seconds; the default 900-second boundary is covered with a synthetic clock in native tests."
+  ],
+  "implementation": {
+    "server_files": [
+      "src/network/network_server.cpp",
+      "src/network/network_server.h"
+    ],
+    "client_files": [
+      "src/network/network_client.cpp",
+      "src/network/network_client.h"
+    ],
+    "progress_files": [
+      "src/network/network_join_progress.h",
+      "src/network/network_gui.cpp",
+      "src/lang/english.txt",
+      "src/lang/japanese.txt"
+    ],
+    "tests": [
+      "src/tests/passenger_service_database.cpp",
+      "src/tests/test_network_debug.cpp",
+      "src/tests/network_passenger_preparation.h",
+      "src/tests/CMakeLists.txt",
+      "utils/passenger_preparation_join.py"
+    ],
+    "snapshot_safety": "Existing Save/Load/FinishLoad/StepLoad reconstruct committed service inputs, retained generations and deterministic row Work. Suspended service drafts, graph coroutine scratch and speculative worker results are recomputed locally; saving never restarts or cancels the host builder.",
+    "barrier": "Snapshot recipients register frame F before saving. Map and DoneMap hold the barrier; preparation is announced before any frame permission after MAP_OK. Simulation resumes only after the host and all remaining participants report ready for F.",
+    "first_sync": "The existing random seed and state checksum checks also validate an already completed frame before advancing. Only a validated first sync emits the initial simulation ACK and closes the join window; new-company registration retains its completion hook.",
+    "deadlines": "Queue, download, replay and preparation count toward the authorization-to-join deadline without host-preparation exemptions. Download has a wall-clock deadline even while frames are paused; replay progress remains bounded, monotonic and rate limited. Existing barrier lag exemptions do not acknowledge unrun frames."
+  }
+}
