@@ -1,5 +1,5 @@
 {
-  "status": "measurement_blocked_by_automatic_approval_review",
+  "status": "recorded_and_exported",
   "attempts": [
     {
       "action": "Initial WPR helper launch",
@@ -28,8 +28,19 @@
         "The automatic permission approval review did not finish before its deadline"
       ],
       "retry": "Waited and retried; helper restart timed out twice"
+    },
+    {
+      "action": "User-approved WPR helper restart and sequential real-map measurement",
+      "status": "completed",
+      "process_id": 21148,
+      "runs": [
+        "wpr-baseline-1",
+        "wpr-pgo-1"
+      ],
+      "lost_buffers": 0,
+      "lost_events": 0
     }
   ],
-  "measurement": "No WPR data recorded; plain CPU counters available",
-  "cleanup": "recorder-stop.txt written for bounded helper shutdown"
+  "measurement": "WPR sampled CPU recorded for the same 1024 ticks in baseline and PGO; both traces lost buffers/events = 0",
+  "cleanup": "Stop marker requested after successful export"
 }

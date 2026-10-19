@@ -1,0 +1,12 @@
+2026-10-19T14:12:33.9328279+09:00 wpr -start C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-clang-thin-pgo\cpu-sampled.wprp!CPU -filemode
+2026-10-19T14:12:36.2435871+09:00 wpr -marker simulation-begin -flush
+2026-10-19T14:12:59.8943679+09:00 wpr -marker simulation-end -flush
+2026-10-19T14:13:00.1653158+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-clang-thin-pgo\runs\wpr-baseline-1\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-19T14:15:58.3238799+09:00 wpr -start C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-clang-thin-pgo\cpu-sampled.wprp!CPU -filemode
+2026-10-19T14:16:00.5092009+09:00 wpr -marker simulation-begin -flush
+2026-10-19T14:16:21.8384866+09:00 wpr -marker simulation-end -flush
+2026-10-19T14:16:22.0629222+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\6d2b\OpenTTD-patches\build-clang-thin-pgo\runs\wpr-pgo-1\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.

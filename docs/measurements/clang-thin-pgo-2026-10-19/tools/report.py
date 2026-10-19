@@ -40,7 +40,8 @@ if (BASE/'summary.json').exists():
             '対象関数一覧と生の集計を `summary.json` に保存した。PGO によるインライン化はスタックの帰属にも影響するため、個別項目の差は world 全体の差と合わせて読む。',
             '両トレースとも lost buffers / lost events は0。各1回・単一マップの比較であり、学習区間と比較区間は重なる。別マップや GUI 描画への効果、統計的な有意差は判断していない。CPU affinity・電源設定は変更していない。',
             '', f"WPR を使用しない参考測定では world の粗い GetThreadTimes カウンターは {a['world_cpu_ms_per_tick']:.4f} → {b['world_cpu_ms_per_tick']:.4f} ms/tick、表構築 CPU は {a['build_cpu_seconds']:.4f} → {b['build_cpu_seconds']:.4f} s。15.625 ms刻みになるカウンターであり、WPR の値とは測定方法が異なる。",
-            '両計測で、同じ tick の終了状態24項目（支払い情報を含む）が一致し、前回の MSVC LTO / Clang ThinLTO 比較の終了状態とも一致した。']
+            '両計測で、同じ tick の終了状態24項目（支払い情報を含む）が一致し、前回の MSVC LTO / Clang ThinLTO 比較の終了状態とも一致した。',
+            '元セーブの NewGRF 警告は両 WPR 実行とも14,163行。計測ドライバーが開始前の error pause を各1回解除した。1,024 tick の測定区間内の追加解除は0回で、警告・解除情報は証跡に保存した。']
 mp=['### マルチプレイ', '', '| サーバー | クライアント | 開始 tick | 終了 tick | 実行 tick 数 | 結果 |', '|---|---|---:|---:|---:|---|']
 for server,client in [('baseline','pgo'),('pgo','baseline')]:
     r=json.loads((BASE/f'mp-{server}-{client}/result.json').read_text())

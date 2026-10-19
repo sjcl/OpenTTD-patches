@@ -6,6 +6,7 @@ def read(p):return json.loads(p.read_text(encoding='utf-8'))
 def sha(p):
     with p.open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
 i=read(OUT/'build-identity.json')
+assert i['base_commit']=='246bbdbf8f0b59e524d40b7b0b104f5a965c7858'
 assert i['input_sha256']==sha(BASE/'input/input.sav')==sha(Path(i['original_input']))=='916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a'
 assert i['profile_sha256']==sha(BASE/'profiles/real-map.profdata')==read(BASE/'profiles/identity.json')['profile_sha256']
 assert hashlib.sha256(gzip.decompress((OUT/'profiles/real-map.profdata.gz').read_bytes())).hexdigest()==i['profile_sha256']
@@ -13,6 +14,7 @@ assert sha(BASE/'pgo/pgo'/(i['profile_sha256']+'.profdata'))==i['profile_sha256'
 assert len({b['revision'] for b in i['builds'].values()})==1
 for mode,value in i['builds'].items():
     assert sha(BASE/mode/'Release/openttd.exe')==value['exe_sha256']
+    assert sha(BASE/mode/'Release/openttd.pdb')==value['pdb_sha256']
     for project in ('openttd','openttd_lib'):
         root=ET.parse(BASE/mode/(project+'.vcxproj')).getroot()
         ns={'v':'http://schemas.microsoft.com/developer/msbuild/2003'}
@@ -65,8 +67,14 @@ assert read(BASE/'mp-baseline-pgo/result.json')['server_snapshot']==read(BASE/'m
 if i['sampled_cpu_available']:
     s=read(BASE/'summary.json');assert not any(s['mismatches'].values())
     for run in s['runs']:
-        text=(BASE/'runs'/run['name']/'trace-stats.txt').read_text(encoding='utf-8-sig')
+        directory=BASE/'runs'/run['name']
+        text=(directory/'trace-stats.txt').read_text(encoding='utf-8-sig')
         assert 'Total # Lost Buffers : 0' in text and 'Total # Lost Events  : 0' in text
+        export=read(directory/'export-command.json')
+        assert export['etl_sha256']==sha(directory/'cpu.etl')
+        assert export['pdb_sha256']==i['builds'][run['compiler']]['pdb_sha256']
+        assert run['error_resumes']==0 and run['initial_error_resumes']==1 and run['warning_lines']==14163
+        assert run['sampled_counts']['route_ms']>0 and run['sampled_counts']['boarding_ms']>0
 assert not any(read(BASE/'summary-plain.json')['mismatches'].values())
 for p in (OUT/'tools').glob('*.py'):ast.parse(p.read_text(encoding='utf-8'))
 report=(ROOT/'docs/clang-thin-pgo-2026-10-19.md').read_text(encoding='utf-8')

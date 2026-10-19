@@ -33,7 +33,8 @@ for file in (BASE/'profiles').iterdir():
 for folder in ('save-integrity','real-map-driver','cpu-measurement'):
     for file in (BASE/'measurement'/folder).iterdir():
         if file.is_file():zipped(file,OUT/'copied-tus'/folder/(file.name+'.gz'))
-identity=dict(base_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),compiler='clang-cl/LLD/llvm-profdata 19.1.5',
+# Freeze the compiled source base: documentation may be committed after builds.
+identity=dict(base_commit='246bbdbf8f0b59e524d40b7b0b104f5a965c7858',compiler='clang-cl/LLD/llvm-profdata 19.1.5',
     input_sha256=sha(BASE/'input/input.sav'),original_input=r'C:\Users\bebe\OneDrive\ドキュメント\OpenTTD\save\gc3833d807.sav',
     profile_sha256=sha(BASE/'profiles/real-map.profdata'),source_files={},builds={},sampled_cpu_available=sampled,
     test_binary_sha256=sha(BASE/'pgo/Release/openttd_test.exe'))
