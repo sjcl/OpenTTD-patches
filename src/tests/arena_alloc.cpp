@@ -51,3 +51,16 @@ TEST_CASE("Bump allocator containers reuse large blocks across short-lived insta
 	BumpAllocContainer<Node, 16> small;
 	for (uint64_t i = 0; i < 100; ++i) CHECK(small.New(i)->parent == i + 1);
 }
+
+TEST_CASE("Global bump allocator survives main thread cache teardown")
+{
+	/* This container outlives the main thread's TLS cache, like the global
+	 * YAPF segment cache. CTest also checks the process's exit status after
+	 * Catch has finished; destruction must not write into a dead block cache. */
+	static BumpAllocContainer<Node, 4096> global;
+	CHECK(global.New(17)->cost == 51);
+	{
+		BumpAllocContainer<Node, 4096> temporary;
+		CHECK(temporary.New(23)->cost == 69);
+	}
+}

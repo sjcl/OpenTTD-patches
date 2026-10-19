@@ -29,6 +29,42 @@ open most older savegames or use the content downloading system.
 
 ## Windows
 
+The default Windows release toolchain is **Clang/LLVM 23.1.3 + ThinLTO + PGO**.
+Both local builds and the Windows CI/release workflows consume the prepared
+profile in `cmake/pgo/windows.profdata`; CI does not build an instrumented
+executable or run training. See [the profile documentation](cmake/pgo/README.md).
+
+Install the matching LLVM toolchain from an elevated PowerShell:
+
+```powershell
+./os/windows/InstallLLVM.ps1
+```
+
+After installing Visual Studio C++ tools, the Windows SDK, Ninja and vcpkg
+as described below, the default build command is:
+
+```powershell
+$env:VCPKG_ROOT = 'C:/path/to/vcpkg'
+./os/windows/Build.ps1 -Test
+```
+
+This selects Release, clang-cl, LLD, the static CRT, ThinLTO for the game object
+library and executables, and the bundled PGO profile. The executable and PDB
+are written to `build/`. Use `-Architecture x86` for a 32-bit build or
+`-Architecture arm64` on an ARM64 developer machine. A configured developer
+prompt can also use `cmake --preset windows-release` and
+`cmake --build --preset windows-release`; put `C:/Program Files/LLVM/bin`
+first on PATH and set VCPKG_ROOT for this preset.
+
+Explicit alternative compilers remain supported. Use `-T v143` for a Visual
+Studio MSVC project; use `-DOPTION_PGO=OFF` to disable PGO, or provide
+`-DPGO_PROFILE_FILE=C:/path/to/custom.profdata` with its matching Clang version.
+For an older custom profile made without portable names, also set
+`-DPGO_PORTABLE_NAMES=OFF`; the bundled data requires portable names enabled.
+Existing CMake caches retain their compiler and options; use a new build
+directory when moving to the default toolchain.
+For debugging, select Debug and enable `OPTION_USE_ASSERTS=ON` explicitly.
+
 You need Microsoft Visual Studio 2022 or more recent.
 
 You can download the free Visual Studio Community Edition from Microsoft at

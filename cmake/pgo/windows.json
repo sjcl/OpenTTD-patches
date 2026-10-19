@@ -1,0 +1,83 @@
+{
+  "llvm": "LLVM (http://llvm.org/):\n  LLVM version 23.1.3\n  Optimized build.\n",
+  "training_architecture": "x86_64-pc-windows-msvc",
+  "ticks": {
+    "start_tick": 3197276448,
+    "end_tick": 3197280544
+  },
+  "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+  "profile_sha256": "1bcd4ad1bc15c07b26ae52cde1b9b2318675e1278d07204678eb252d476c4bf3",
+  "source_commit": "377bca5df659ddbf9438cbea3e2fea23dbe7e814",
+  "source_files_sha256": "ac70436d02ea958073f7c51ba3657295e56e311ea76adfa5360b8941bd9e5b9b",
+  "arena_allocator_sha256": "e1d1096711f66fffc6f0df64be86ac50537ea9ca1bcd47bb5cca8c4be2512c34",
+  "driver_sha256": "99b678f23ebd728363d00fdac28656b40556f96d508d763005cd2cf4caf4f401",
+  "static_function_prefix": "basename (PGO_PORTABLE_NAMES=ON)",
+  "note": "Shared IR profile from the recorded game simulation sources and allocator fix. Training hooks, pre-fix Kernel32 lookup/wrappers and startup initializer records are excluded. Source-root-dependent names were canonicalized for both function records and indirect-call targets. No savegame or assets are distributed.",
+  "filtering": {
+    "excluded_records": 307,
+    "excluded_patterns": [
+      "VideoDriver_Null::MainLoop",
+      "ConUnpauseGame",
+      "GetKernel32Function",
+      "OTTDStringCompare",
+      "GetFindNLSStringEx",
+      "PerThreadSetupInit",
+      "SetCurrentThreadName",
+      "_GLOBAL__sub_I_"
+    ]
+  },
+  "source_prefix_map": "/openttd (Windows separators in the Microsoft ABI hash)",
+  "namespace_hash_migration": {
+    "algorithm": "LLVM MicrosoftMangle: low 32 bits of xxh3_64",
+    "xxhash_python_version": "4.0.2",
+    "mappings": [
+      {
+        "source": "src/passenger_journey_active.cpp",
+        "old": "10BDF943",
+        "canonical": "5515DE12"
+      },
+      {
+        "source": "src/station_passenger_service_gui.cpp",
+        "old": "1778CEC8",
+        "canonical": "FA9DC255"
+      },
+      {
+        "source": "src/passenger_service_index.cpp",
+        "old": "2016E82F",
+        "canonical": "58A25837"
+      },
+      {
+        "source": "src/passenger_service_database.cpp",
+        "old": "50B3ECC5",
+        "canonical": "874196C4"
+      },
+      {
+        "source": "src/passenger_journey_planner.cpp",
+        "old": "5132BF28",
+        "canonical": "5603254F"
+      },
+      {
+        "source": "src/linkgraph/passenger_route_overlay.cpp",
+        "old": "86FF1AB",
+        "canonical": "9AB80112"
+      },
+      {
+        "source": "src/passenger_precomputed.cpp",
+        "old": "D6DC379",
+        "canonical": "310E4756"
+      },
+      {
+        "source": "src/framerate_gui.cpp",
+        "old": "E968CBD7",
+        "canonical": "60249966"
+      },
+      {
+        "source": "src/passenger_journey_schedule.cpp",
+        "old": "F70FE746",
+        "canonical": "E5F723B0"
+      }
+    ]
+  },
+  "training_exit_code": 0,
+  "training_binary_sha256": "ac4ebd816cd2729c3d1ce4bfaf11ad3152ef2fefc9ac147caee0af500212ec55"
+}

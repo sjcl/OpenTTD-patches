@@ -19,14 +19,20 @@ jobs:
         include:
         - arch: x86
           host: x86
+          runner: windows-latest
+          tools_host: x64
         - arch: x64
           host: x64
+          runner: windows-latest
+          tools_host: x64
         - arch: arm64
-          host: x64_arm64
+          host: arm64
+          runner: windows-11-arm
+          tools_host: arm64
 
     name: Windows (${{ matrix.arch }})
 
-    runs-on: windows-latest
+    runs-on: ${{ matrix.runner }}
 
     steps:
     - name: Download source
@@ -38,6 +44,10 @@ jobs:
       shell: bash
       run: |
         tar -xf source.tar.gz --strip-components=1
+
+    - name: Install pinned LLVM toolchain
+      shell: pwsh
+      run: ./os/windows/InstallLLVM.ps1
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -60,7 +70,7 @@ jobs:
     - name: Configure developer command prompt for tools
       uses: ilammy/msvc-dev-cmd@v1
       with:
-        arch: x64
+        arch: ${{ matrix.tools_host }}
 
     - name: Build tools
       shell: bash
@@ -87,27 +97,16 @@ jobs:
 
     - name: Build (with installer)
       if: inputs.is_tag == 'true'
-      shell: bash
+      shell: pwsh
       run: |
-        mkdir build
-        cd build
-
-        echo "::group::CMake"
-        cmake ${GITHUB_WORKSPACE} \
-          -GNinja \
-          -DVCPKG_TARGET_TRIPLET=${{ matrix.arch }}-windows-static \
-          -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.vcpkg-cmake }}" \
-          -DOPTION_USE_NSIS=OFF \
-          -DHOST_BINARY_DIR=${GITHUB_WORKSPACE}/build-host \
-          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-          -DOPTION_SURVEY_KEY=${{ inputs.survey_key }} \
-          # EOF
-        echo "::endgroup::"
-
-        echo "::group::Build"
-        cmake --build . --target openttd
-        echo "::endgroup::"
+        ./os/windows/Build.ps1 -Architecture '${{ matrix.arch }}' -CMakeArguments @(
+          '-DCMAKE_TOOLCHAIN_FILE=${{ steps.vcpkg.outputs.vcpkg-cmake }}',
+          '-DOPTION_USE_NSIS=OFF',
+          "-DHOST_BINARY_DIR=$env:GITHUB_WORKSPACE/build-host",
+          "-DOPTION_SURVEY_KEY=$env:OPENTTD_SURVEY_KEY"
+        )
       env:
+        OPENTTD_SURVEY_KEY: ${{ inputs.survey_key }}
         AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
         AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
         AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
@@ -117,26 +116,15 @@ jobs:
 
     - name: Build (without installer)
       if: inputs.is_tag != 'true'
-      shell: bash
+      shell: pwsh
       run: |
-        mkdir build
-        cd build
-
-        echo "::group::CMake"
-        cmake ${GITHUB_WORKSPACE} \
-          -GNinja \
-          -DVCPKG_TARGET_TRIPLET=${{ matrix.arch }}-windows-static \
-          -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.vcpkg-cmake }}" \
-          -DHOST_BINARY_DIR=${GITHUB_WORKSPACE}/build-host \
-          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-          -DOPTION_SURVEY_KEY=${{ inputs.survey_key }} \
-          # EOF
-        echo "::endgroup::"
-
-        echo "::group::Build"
-        cmake --build . --target openttd
-        echo "::endgroup::"
+        ./os/windows/Build.ps1 -Architecture '${{ matrix.arch }}' -CMakeArguments @(
+          '-DCMAKE_TOOLCHAIN_FILE=${{ steps.vcpkg.outputs.vcpkg-cmake }}',
+          "-DHOST_BINARY_DIR=$env:GITHUB_WORKSPACE/build-host",
+          "-DOPTION_SURVEY_KEY=$env:OPENTTD_SURVEY_KEY"
+        )
       env:
+        OPENTTD_SURVEY_KEY: ${{ inputs.survey_key }}
         AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
         AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
         AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
