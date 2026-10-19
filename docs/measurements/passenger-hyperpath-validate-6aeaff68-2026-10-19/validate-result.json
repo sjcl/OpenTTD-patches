@@ -1,0 +1,87 @@
+{
+  "product_commit": "6aeaff68fc016a83eeca44d4484c9fc8024cabef",
+  "command": [
+    "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+    "-B",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+    "run",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-validate-6aeaff68-2026-10-19\\Release\\openttd.exe",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-validate-6aeaff68-2026-10-19\\input",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-validate-6aeaff68-2026-10-19\\validate",
+    "--ticks",
+    "2048",
+    "--timeout",
+    "2400",
+    "--measurement-wait",
+    "2400",
+    "--resume",
+    "--wait-saved-replay",
+    "--precomputed",
+    "--hyperpath",
+    "--warm-precomputed",
+    "--wait-background-ready",
+    "--hyperpath-filter-mode",
+    "validate",
+    "--main-thread-affinity-mask",
+    "1",
+    "--lang",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-validate-6aeaff68-2026-10-19\\lang",
+    "--validation-only"
+  ],
+  "exact_ticks": 2048,
+  "start_tick": 3197276448,
+  "end_tick": 3197278496,
+  "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+  "correctness_only": true,
+  "simulation_timing_valid": false,
+  "excluded_from_performance_comparison": true,
+  "wpr": false,
+  "saved_replay": {
+    "ready": true,
+    "elapsed_us": 84785379
+  },
+  "warm_complete": true,
+  "background_ready": {
+    "completed": true,
+    "initial": 0,
+    "total": 13,
+    "elapsed_us": 1,
+    "tick_before": 3197276448,
+    "tick_after": 3197276448
+  },
+  "lookup": {
+    "rebuilds": 2714,
+    "indexed_groups": 203870,
+    "validated_groups": 1011997,
+    "violations": 0
+  },
+  "memo": {
+    "hits": 0,
+    "validated": 13801003,
+    "conservative": 17094,
+    "violations": 0,
+    "lookup_duplicates": 0
+  },
+  "lookup_line": "rebuilds=2714; indexed_groups=203870; validated_groups=1011997; violations=0",
+  "memo_line": "hits=0; validated=13801003; conservative=17094; violations=0; lookup_duplicates=0",
+  "validation_passed": true,
+  "canonical": {
+    "0b8a21c0_validate": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    },
+    "0b8a21c0_hyperpath": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    },
+    "97cdc0ad_hyperpath": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    }
+  },
+  "script_error_pause_resumes": 1,
+  "note": "Conservative recomputations are not violations at this revision; timings intentionally invalid for performance."
+}

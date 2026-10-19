@@ -191,6 +191,9 @@ canonicalはJSONをPython整数として読み、キー集合・24項目・値�
 
 WPRの性能測定には通常の `index` モードを使う。validate / alternateは同じ固定入力から新しい実行先へ起動し、性能測定の時間へ混ぜない。
 
+validateだけを依頼され、時間を性能比較に使わない場合は `--validation-only` を指定できる。WPRとそのpilotは不要で、他プロセスを記録しつつ正確なtick数・準備完了・診断値・canonicalを確認する。
+この指定では `simulation_timing_valid=false` が意図した値になるため、上の性能測定用採用条件とは区別する。既存のゲームやPGO処理を止めるための確認待ちを増やさず、性能の比較・要約には流用しない。
+
 - validate: 通常runnerから `--wpr-profile` を外し、`--hyperpath-filter-mode validate` にする。ログのlookup行とmemo行を別々に保存し、該当するvalidatedが正でviolations=0であることを確認する。
 - alternate: `--hyperpath-filter-mode alternate` または対応版の `--hyperpath-filter-alternate` を使う。ほかのfilter指定とは併用しない。
   現行の比較は索引対マスク。`indexed_us / indexed_walks` と `filtered_us / filtered_walks` を比べる。旧版のマスク対全走査と混同しない。
