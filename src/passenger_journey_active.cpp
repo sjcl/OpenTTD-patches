@@ -1411,8 +1411,10 @@ uint64_t PassengerJourneyLoadingContext::HyperpathMemoSerial()
 
 const PassengerPrecomputedPlan &PassengerJourneyLoadingContext::RetiredPlan(CargoType cargo, const PassengerJourneyExecution &intent, OrderListID previous)
 {
-	/* The plan is independent of the consist: every group and consist of this station pass that
-	 * asks for the same retired OD and arriving carrier shares it. */
+	/* Callers read only the replacement's identity. With Hyperpath tables only, the database
+	 * shares it across ticks; otherwise every group and consist of this station pass that asks
+	 * for the same retired OD and arriving carrier shares it. */
+	if (const auto *shared = GetPassengerServiceDatabase().SharedHyperpathPlan(cargo, intent.boarding, intent.alighting, previous)) return *shared;
 	this->RefreshBoardingRevision();
 	auto [found, inserted] = this->retired_plans.try_emplace(RetiredPlanKey{cargo, intent.boarding, intent.alighting, _state_ticks, previous});
 	if (inserted) found->second = GetPassengerServiceDatabase().PlanPrecomputed(cargo, intent.boarding, intent.alighting, _state_ticks, previous);

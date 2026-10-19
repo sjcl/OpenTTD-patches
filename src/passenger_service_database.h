@@ -178,6 +178,12 @@ public:
 	std::optional<int64_t> HyperpathServiceWait(const PassengerJourneyExecution &intent, CargoType cargo, OrderListID service) const;
 	std::array<uint32_t, 2> HyperpathBoardingOccurrences(CargoType cargo, StationID origin, OrderListID service, VehicleOrderID order) const;
 	bool MayBoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo, const std::array<uint32_t, 2> &occurrences, OrderListID previous, OrderListID failed, bool cached_only = true) const;
+	/** PlanPrecomputed(cargo, origin, destination, now, previous) for callers that read only the plan's
+	 * ride identity (presence, kind, generation, stations, signature), shared across ticks. With only
+	 * Hyperpath tables that identity depends on the destination's rows alone, so it is invalidated by
+	 * the lookup epoch and the destination's changes. Otherwise (a legacy ride's currency also depends
+	 * on its service) nullptr: the caller plans itself. */
+	const PassengerPrecomputedPlan *SharedHyperpathPlan(CargoType cargo, StationID origin, StationID destination, OrderListID previous) const;
 	/** Cached-only membership as MayBoardHyperpath, but std::nullopt where a cold (or evicted) failed-carrier
 	 * local policy leaves it unknown; MayBoardHyperpath admits such an unknown conservatively. */
 	std::optional<bool> CachedHyperpathMembership(const PassengerJourneyExecution &intent, CargoType cargo, const std::array<uint32_t, 2> &occurrences, OrderListID previous, OrderListID failed) const;
@@ -399,10 +405,15 @@ private:
 	HyperpathFilterMode hyperpath_boarding_filter = HyperpathFilterMode::Index; ///< Local derived boarding filter; identical decisions, absent from saves.
 	uint64_t hyperpath_lookup_epoch = 1, hyperpath_destination_changes = 0; ///< Derived; monotone across resets and loads.
 	std::array<StationID, HYPERPATH_DESTINATION_LOG> hyperpath_destination_log{}; ///< Derived ring indexed by change number.
+	std::vector<uint64_t> hyperpath_destination_changed; ///< Derived: change count just after each destination's latest change.
 	void BumpHyperpathDestination(StationID destination)
 	{
 		this->hyperpath_destination_log[this->hyperpath_destination_changes % HYPERPATH_DESTINATION_LOG] = destination; ++this->hyperpath_destination_changes;
+		if (destination.base() >= this->hyperpath_destination_changed.size()) this->hyperpath_destination_changed.resize(destination.base() + 1, 0);
+		this->hyperpath_destination_changed[destination.base()] = this->hyperpath_destination_changes;
 	}
+	struct SharedPlan { uint64_t epoch = 0, changes = 0; PassengerPrecomputedPlan plan; };
+	mutable std::map<std::tuple<CargoType, StationID, StationID, OrderListID>, SharedPlan> shared_hyperpath_plans; ///< Derived, bounded; never saved.
 	std::list<PolicyKey> policy_lru;
 	std::map<PolicyKey, CachedPolicy> policies;
 	std::map<std::tuple<bool, CargoType, StationID, StationID>, uint64_t> recent_policy_builds; ///< Bounded diagnostic history, never simulation input.

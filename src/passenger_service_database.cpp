@@ -1131,6 +1131,27 @@ bool PassengerServiceDatabase::MayBoardHyperpath(const PassengerJourneyExecution
 	return false;
 }
 
+const PassengerPrecomputedPlan *PassengerServiceDatabase::SharedHyperpathPlan(CargoType cargo, StationID origin, StationID destination, OrderListID previous) const
+{
+	if (this->RevisionAffectsWaitingPlans()) return nullptr;
+	const uint64_t changed = destination.base() < this->hyperpath_destination_changed.size() ? this->hyperpath_destination_changed[destination.base()] : 0;
+	const auto key = std::tuple(cargo, origin, destination, previous);
+	auto found = this->shared_hyperpath_plans.find(key);
+	if (found != this->shared_hyperpath_plans.end() && found->second.epoch == this->hyperpath_lookup_epoch && found->second.changes >= changed) return &found->second.plan;
+	if (found == this->shared_hyperpath_plans.end()) {
+		if (this->shared_hyperpath_plans.size() >= 32768) {
+			/* Evict the next key, not always the lowest stations. Residency never changes an identity. */
+			auto victim = this->shared_hyperpath_plans.upper_bound(key);
+			if (victim == this->shared_hyperpath_plans.end()) victim = this->shared_hyperpath_plans.begin();
+			this->shared_hyperpath_plans.erase(victim);
+		}
+		found = this->shared_hyperpath_plans.try_emplace(key).first;
+	}
+	found->second.epoch = this->hyperpath_lookup_epoch; found->second.changes = this->hyperpath_destination_changes;
+	found->second.plan = this->PlanPrecomputed(cargo, origin, destination, _state_ticks, previous);
+	return &found->second.plan;
+}
+
 std::optional<bool> PassengerServiceDatabase::CachedHyperpathMembership(const PassengerJourneyExecution &intent, CargoType cargo,
 		const std::array<uint32_t, 2> &occurrences, OrderListID previous, OrderListID failed) const
 {
@@ -1175,7 +1196,11 @@ int PassengerServiceDatabase::HyperpathLookupCandidates(CargoType cargo, const P
 				(this->retained_precomputed_revision != UINT64_MAX && !this->retained_precomputed_hyperpath)) return HYPERPATH_LOOKUP_ALWAYS;
 		const std::array<OrderListID, 2> states{previous, OrderListID::Invalid()};
 		for (size_t i = 0; i < (previous == OrderListID::Invalid() ? 1 : 2); ++i) {
-			auto plan = this->PlanPrecomputed(cargo, intent.boarding, intent.alighting, _state_ticks, states[i]);
+			/* Only the replacement's identity is read: shared across ticks and stations. */
+			PassengerPrecomputedPlan own;
+			const auto *shared = this->SharedHyperpathPlan(cargo, intent.boarding, intent.alighting, states[i]);
+			if (shared == nullptr) { own = this->PlanPrecomputed(cargo, intent.boarding, intent.alighting, _state_ticks, states[i]); shared = &own; }
+			const auto &plan = *shared;
 			if (!plan.ride) continue;
 			if (plan.ride->kind != PassengerRideKind::HyperpathIntent) { out.clear(); return HYPERPATH_LOOKUP_ALWAYS; }
 			const int found = slot_of(*plan.ride);

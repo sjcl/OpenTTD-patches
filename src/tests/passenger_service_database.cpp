@@ -500,6 +500,47 @@ TEST_CASE("Mixed estimated generations replay retained rows and resume identical
 	CHECK(db.GetDiagnostic().searches == searches); CHECK(peer.GetDiagnostic().searches == 0);
 }
 
+TEST_CASE("Shared Hyperpath plan identities follow every row publication and generation", "[passenger][hyperpath][precomputed]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	_settings_game.linkgraph.passenger_transfer_penalty = 20;
+	std::vector<const OrderList *> lists;
+	lists.push_back(f.Train({Stop(A), Stop(B), Stop(C)})->orders); lists.push_back(f.Train({Stop(A), Stop(D)})->orders);
+	lists.push_back(f.Train({Stop(B, 130), Stop(D), Stop(C)})->orders);
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	size_t compared = 0;
+	auto check = [&]() {
+		for (StationID from : {A, B, C, D}) for (StationID to : {A, B, C, D}) for (const OrderList *previous : {static_cast<const OrderList *>(nullptr), lists[0], lists[1], lists[2]}) {
+			const OrderListID excluded = previous == nullptr ? OrderListID::Invalid() : previous->index;
+			const auto *shared = db.SharedHyperpathPlan(PAX, from, to, excluded);
+			const auto fresh = db.PlanPrecomputed(PAX, from, to, _state_ticks, excluded);
+			if (db.RevisionAffectsWaitingPlans()) { CHECK(shared == nullptr); continue; }
+			REQUIRE(shared != nullptr);
+			REQUIRE(shared->ride.has_value() == fresh.ride.has_value());
+			if (fresh.ride) {
+				/* Only the planning time may differ: the identity is time-independent. */
+				auto identity = *shared->ride; identity.not_before = fresh.ride->not_before; identity.planned_at = fresh.ride->planned_at;
+				CHECK(identity == *fresh.ride);
+				++compared;
+			}
+		}
+	};
+	check(); _state_ticks += 500; check();
+	/* A sliced replacement: rows publish (and retained rows retire) between the checks. */
+	_settings_game.linkgraph.passenger_transfer_penalty = 17; db.TickPrecomputed(1);
+	for (size_t step = 0; !db.PrecomputedFinished(); ++step) {
+		REQUIRE(step < 10000); db.TickPrecomputed(29); ++_state_ticks; check();
+	}
+	check();
+	CHECK(compared > 0);
+	/* A legacy generation's plans depend on services too: never shared. */
+	_settings_game.linkgraph.passenger_journey_hyperpath = false; db.TickPrecomputed(1);
+	REQUIRE(db.RevisionAffectsWaitingPlans());
+	check();
+	while (!db.PrecomputedFinished()) db.TickPrecomputed(65536);
+	check();
+}
+
 TEST_CASE("Shared prefix carriers stay aboard only for a safe competitive continuation", "[passenger][precomputed][estimated][sections][boarding]")
 {
 	bool estimated = false, forced = false, no_unload = false, faster_transfer = false, incompatible = false, split = false;
