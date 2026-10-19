@@ -1,0 +1,28 @@
+branch,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick,legacy_samples,hyperpath_samples
+[worker threads],0.949433594,2.509788477,1.560354883,1943,5136
+openttd.exe!RunTileLoop,9.831924707,10.530721533,0.698796826,20134,21565
+openttd.exe!PassengerServiceDatabase::Tick,0.200087500,0.454214258,0.254126758,409,928
+openttd.exe!CallVehicleTicks,11.710058203,11.891460547,0.181402344,23981,24353
+openttd.exe!RunPassengerWaitingEvents,0.726031055,0.819578662,0.093547607,1485,1676
+openttd.exe!CallLandscapeTick,0.409213281,0.433707813,0.024494531,838,888
+openttd.exe!LinkGraphSchedule::JoinNext,0.002460107,0.004483252,0.002023145,5,9
+openttd.exe!IncreaseDate,0.022547217,0.024072852,0.001525635,46,49
+openttd.exe!TimerManager<TimerGameTick>::Elapsed,0.000974707,0.002438428,0.001463721,2,5
+openttd.exe!AnimateAnimatedTiles,0.005862793,0.006847363,0.000984570,12,14
+openttd.exe!SimpleCountedObject::FinalRelease,0.000487549,0.000980127,0.000492578,1,2
+openttd.exe!OnTick_LinkGraph,0.000000000,0.000487988,0.000487988,0,1
+openttd.exe!_Query_perf_frequency,0.000000000,0.000487158,0.000487158,0,1
+openttd.exe!NewsLoop,0.001952393,0.002436523,0.000484131,4,5
+openttd.exe!UpdateLandscapingLimits,0.000486035,0.000488232,0.000002197,1,1
+openttd.exe!MoveToNextNewsItem,0.000488135,0.000487842,-0.000000293,1,1
+openttd.exe!FlushDeferredAspectUpdates,0.014170654,0.014162744,-0.000007910,29,29
+openttd.exe!PerformanceMeasurer::~PerformanceMeasurer,0.000487354,0.000000000,-0.000487354,1,0
+openttd.exe!LinkGraphSchedule::SpawnNext,0.000487500,0.000000000,-0.000487500,1,0
+openttd.exe!CheckCaches,0.000487842,0.000000000,-0.000487842,1,0
+openttd.exe!AI::GameLoop,0.000488184,0.000000000,-0.000488184,1,0
+openttd.exe!_Query_perf_counter,0.000976709,0.000487695,-0.000489014,2,1
+openttd.exe!BasePersistentStorageArray::SwitchMode,0.000975537,0.000000000,-0.000975537,2,0
+[StateGameLoop self],0.001954736,0.000978174,-0.000976562,4,2
+openttd.exe!OnTick_Companies,0.001956689,0.000488330,-0.001468359,4,1
+openttd.exe!BeginPassengerJourneyTick,0.007339258,0.001469824,-0.005869434,15,3
+[outside StateGameLoop],2.717700244,1.172317090,-1.545383154,5565,2400

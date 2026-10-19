@@ -1,0 +1,13 @@
+script C:/Users/bebe/.codex/worktrees/8621/OpenTTD-patches/build-wpr-abba-6c11c67f-2026-10-19/02-B1/hyperpath/on-1-console.txt
+getfulldate
+passenger_journey_stats wait_saved_replay
+passenger_journey_stats inventory
+setting linkgraph.passenger_journey_precomputed true
+setting linkgraph.passenger_journey_hyperpath true
+passenger_journey_stats hyperpath_filter_index
+passenger_journey_stats build_precomputed
+passenger_journey_stats wait_background_ready
+passenger_journey_stats reset
+passenger_journey_stats wpr_begin
+unpause
+script

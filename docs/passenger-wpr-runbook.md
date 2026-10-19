@@ -1,6 +1,6 @@
 # Passenger 実マップ・WPR計測手順
 
-最終更新: 2026-10-19。WindowsでLegacy / Hyperpathを同じセーブから各2,048 tick測るための手順。
+最終更新: 2026-10-20。WindowsでLegacy / Hyperpathを同じセーブから各2,048 tick測るための手順。
 [0b8a21c0の計測](passenger-wpr-coach-memo-0b8a21c0-2026-10-19.md)で、欠落のない新旧4本を取得できた方法を基準にしている。
 この文書へは、毎回読むリポジトリ直下の [AGENTS.md](../AGENTS.md) からリンクしている。
 
@@ -144,10 +144,19 @@ Windows PowerShell 5の `ErrorActionPreference=Stop` で外部コマンドのstd
 古いready/savedを見て新recorderを走らせると、前のstopと次のstartが競合する。
 recorderは二重起動せず、終了・失敗を確認してから切り替える。待ち時間には上限を設け、native gateの待ち上限（現行15分）とも整合させる。
 
+途中で競合して止まった場合は、採用済みの記録と照合結果を保持する。不採用の実行先を監査結果ごと退避し、その本だけ新しい実行先から取り直す。
+recorderを再起動するときは、旧recorderの終了とWPR停止を確認し、job親・stop/completed・tempの名前空間も新しくする。新しいpilotを通してから、採用済みのジョブを飛ばし残りを元の順序で続ける。
+競合チャットの調整は既にユーザーが許可した範囲で行い、採取後に保留解除を連絡する。自分のWPA exportもCPU負荷になるので、相手が性能測定を始める時期と重ねない。
+
 ### 実マップrunner
 
 以下はHyperpathの通常条件の引数。`BUILD` は保存済みexe/PDB・langを持つルート、`FROZEN_INPUT` は固定パッケージ、`FRESH_RUN_DIR` はまだ存在しない実行先。
 recorderと並行して起動する。基準と新版があるときは基準Legacy → 基準Hyperpath → 新版Legacy → 新版Hyperpathの順を記録する。
+
+ABBAを指定された場合は、A1（Legacy→Hyperpath）→B1（Legacy→Hyperpath）→B2（Legacy→Hyperpath）→A2（Legacy→Hyperpath）で各モードをA→B→B→Aにできる。
+各ラウンドに別ルートと対応するexe/PDB・lang・WPA profileを置き、その下に新しい`legacy` / `hyperpath`を作らせると、既存のexport/summarizeをそのまま使える。固定入力は全8本で共用する。
+全採取が終わるまでexportを始めず、各版2本の平均・実測範囲・サンプル数と全8本の生値を保存する。ABBAは直線的な時間ドリフトを釣り合わせるだけで、ノイズや信頼区間を保証しない。
+`StepImpl`のselfを依頼された場合は`simulation_stack`のスタック末端で数え、inclusiveと混同しない。ワーカーへ移った処理は別スレッドとして集計する。
 
 ```text
 python -B utils/passenger_precomputed_real_map.py run BUILD/Release/openttd.exe FROZEN_INPUT FRESH_RUN_DIR --ticks 2048 --timeout 2400 --measurement-wait 2400 --resume --precomputed --hyperpath --warm-precomputed --wait-background-ready --hyperpath-filter-mode index --main-thread-affinity-mask 1 --lang BUILD/lang --wpr-profile --wait-saved-replay
@@ -171,6 +180,7 @@ Legacyは `--hyperpath` を `--no-hyperpath` へ変更する。各本とも同�
 各採取前にrunnerの `PROFILE.wait_for_idle` 等でホスト負荷を待ち、MSBuild nodemodeの残留workerも確認する。
 計測中に別のゲーム、ビルド、テスト、WPA exportを走らせない。ユーザーのゲームを無断終了しない。
 必要な調整は早めに行い、他チャットへの連絡はユーザーが許可した範囲で行う。
+数十分の採取では開始時にプロセスがなくても途中で別ビルドが始まり得る。連絡を許可された同じホストの関連チャットには、採取開始前に予定時間を共有し、新規ビルド・テスト等の保留を調整する。
 
 ## 5. 1本ごとの採用条件
 

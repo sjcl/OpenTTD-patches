@@ -1,0 +1,117 @@
+{
+  "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-recordings-abba-6c11c67f-2026-10-19",
+  "files": {
+    "Release/openttd.exe": {
+      "bytes": 17012224,
+      "sha256": "bcf35a4918bc5f1e5c2f2bf7378953940bc5619354225e7906372dac4390483c",
+      "read_only": true
+    },
+    "Release/openttd.pdb": {
+      "bytes": 144809984,
+      "sha256": "e2dc60fc0d82a553ed56b367c51dda198dae7f73ff04082354b2b5db381eafe8",
+      "read_only": true
+    },
+    "build-identity.json": {
+      "bytes": 1310,
+      "sha256": "e2260734d9d433f3819b32f27d269787927974211dafa9f87833ed89d4c2e756",
+      "read_only": true
+    },
+    "01-A1/legacy/cpu.etl": {
+      "bytes": 354418688,
+      "sha256": "94a2f9514a1e2202e8d028049a9c705e3f9c94485f1e44077c001fc3ee975604",
+      "read_only": true
+    },
+    "01-A1/legacy/result.sav": {
+      "bytes": 46681052,
+      "sha256": "56b358bae4805d20e880354a2b8a553e80f4032f595aeef3eaf69d0d50de7a8e",
+      "read_only": true
+    },
+    "01-A1/hyperpath/cpu.etl": {
+      "bytes": 391118848,
+      "sha256": "9f7ec351da44b9f9f83aee3f82959f3310555352a2249eb2c58946c968ace26f",
+      "read_only": true
+    },
+    "01-A1/hyperpath/result.sav": {
+      "bytes": 46700872,
+      "sha256": "c94043287a7de0af01ff7ef72eb72e7ed5c3b8c6057099a730bcf4d24923aac7",
+      "read_only": true
+    },
+    "02-B1/legacy/cpu.etl": {
+      "bytes": 329252864,
+      "sha256": "60a5dafed64c586c0e580940bd5a8e8763f4efb3fe95a8f126ca82153ec4f92f",
+      "read_only": true
+    },
+    "02-B1/legacy/result.sav": {
+      "bytes": 46681056,
+      "sha256": "99c0d7df7a6fdd14d86697bff4e6770e9eac30950218fa762ab7cfa127aeae29",
+      "read_only": true
+    },
+    "02-B1/hyperpath/cpu.etl": {
+      "bytes": 288358400,
+      "sha256": "9af6e117e1d1852d8d5313c0898c7112094ff4a9fe7ef93c6894fb6db877f774",
+      "read_only": true
+    },
+    "02-B1/hyperpath/result.sav": {
+      "bytes": 46700876,
+      "sha256": "152fdb575d75c9ffd76beae01e0eda663417b5d0ac54aed345a6d7657ba04aec",
+      "read_only": true
+    },
+    "03-B2/legacy/cpu.etl": {
+      "bytes": 265289728,
+      "sha256": "d7bd48d7c34b1ad72534bac02a7a69f5125133393ff9a3ef2d62979b3309381f",
+      "read_only": true
+    },
+    "03-B2/legacy/result.sav": {
+      "bytes": 46681056,
+      "sha256": "99c0d7df7a6fdd14d86697bff4e6770e9eac30950218fa762ab7cfa127aeae29",
+      "read_only": true
+    },
+    "03-B2/hyperpath/cpu.etl": {
+      "bytes": 240123904,
+      "sha256": "281e22cca24b52212aba4d8bf2b7f142b764abd11e1e3aba8d73de4e1f00c781",
+      "read_only": true
+    },
+    "03-B2/hyperpath/result.sav": {
+      "bytes": 46700876,
+      "sha256": "152fdb575d75c9ffd76beae01e0eda663417b5d0ac54aed345a6d7657ba04aec",
+      "read_only": true
+    },
+    "04-A2/legacy/cpu.etl": {
+      "bytes": 251658240,
+      "sha256": "4c8cb9b8e658689757a239dc13925f570d92e80962afad35939daadf919be9e0",
+      "read_only": true
+    },
+    "04-A2/legacy/result.sav": {
+      "bytes": 46681052,
+      "sha256": "56b358bae4805d20e880354a2b8a553e80f4032f595aeef3eaf69d0d50de7a8e",
+      "read_only": true
+    },
+    "04-A2/hyperpath/cpu.etl": {
+      "bytes": 228589568,
+      "sha256": "33f92917e20aa82c6264ab5627f74f35c4b4f73ad2986ebd93dbc4342f0f593e",
+      "read_only": true
+    },
+    "04-A2/hyperpath/result.sav": {
+      "bytes": 46700872,
+      "sha256": "c94043287a7de0af01ff7ef72eb72e7ed5c3b8c6057099a730bcf4d24923aac7",
+      "read_only": true
+    }
+  },
+  "accepted_traces": 8,
+  "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82",
+  "A_existing_independent_backup": {
+    "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-recordings-clang-thin-merged-2026-10-19",
+    "files": {
+      "Release/openttd.exe": {
+        "bytes": 16999424,
+        "sha256": "4f3d303c4a4e99380a90b427f5eec24117f747ccb1ea124eae5e1964e46f27f8",
+        "read_only": true
+      },
+      "Release/openttd.pdb": {
+        "bytes": 144642048,
+        "sha256": "3e413932b675d72ef89a3e2d54e3add87033343edb063c3c2df7e371faa2da79",
+        "read_only": true
+      }
+    }
+  }
+}

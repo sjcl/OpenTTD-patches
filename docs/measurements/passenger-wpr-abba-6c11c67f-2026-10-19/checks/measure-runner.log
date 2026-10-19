@@ -1,0 +1,45 @@
+Waiting for idle host: quiet interval (60s)
+
+Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:
+         Event#: 3437526  (T#0:#3437526)
+         TimeStamp:   55716410, Process: 79688, Thread: 50788, Cpu:   2
+         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}
+         ClassicEventDescriptor: 0x0c  0x00 0x0002
+         MofLength: 112
+01-A1/legacy: exact ticks, zero losses, valid window, canonical=True
+Waiting for idle host: quiet interval (60s)
+
+Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:
+         Event#: 3736774  (T#0:#3736774)
+         TimeStamp:   55459395, Process: 125564, Thread: 89920, Cpu:  14
+         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}
+         ClassicEventDescriptor: 0x0c  0x00 0x0002
+         MofLength: 112
+01-A1/hyperpath: exact ticks, zero losses, valid window, canonical=True
+Waiting for idle host: quiet interval (60s)
+
+Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:
+         Event#: 3204994  (T#0:#3204994)
+         TimeStamp:   56434281, Process: 14712, Thread: 14836, Cpu:   2
+         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}
+         ClassicEventDescriptor: 0x0c  0x00 0x0002
+         MofLength: 112
+02-B1/legacy: exact ticks, zero losses, valid window, canonical=True
+Waiting for idle host: quiet interval (60s)
+
+Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:
+         Event#: 2690430  (T#0:#2690430)
+         TimeStamp:   51489646, Process: 69548, Thread: 129824, Cpu:   8
+         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}
+         ClassicEventDescriptor: 0x0c  0x00 0x0002
+         MofLength: 112
+02-B1/hyperpath: exact ticks, zero losses, valid window, canonical=True
+Waiting for idle host: quiet interval (60s)
+Traceback (most recent call last):
+  File "C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-abba-6c11c67f-2026-10-19\measure.py", line 115, in <module>
+    if __name__=='__main__':{'setup':setup,'measure':measure}[sys.argv[1]]()
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-abba-6c11c67f-2026-10-19\measure.py", line 86, in measure
+    assert process.wait()==0,'Runner failed: '+key
+           ^^^^^^^^^^^^^^^^^
+AssertionError: Runner failed: 03-B2/legacy

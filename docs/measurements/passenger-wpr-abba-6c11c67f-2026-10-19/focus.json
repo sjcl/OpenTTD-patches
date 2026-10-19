@@ -1,0 +1,1586 @@
+{
+  "runs": {
+    "01-A1/legacy": {
+      "round": "01-A1",
+      "label": "A",
+      "mode": "legacy",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 46985007400,
+          "samples": 46979,
+          "ms_per_tick": 22.94189814453125
+        },
+        "StepImpl self": {
+          "ns": 206358500,
+          "samples": 206,
+          "ms_per_tick": 0.100760986328125
+        },
+        "StepImpl inclusive": {
+          "ns": 339661700,
+          "samples": 339,
+          "ms_per_tick": 0.165850439453125
+        },
+        "RetiredPlan": {
+          "ns": 791015700,
+          "samples": 791,
+          "ms_per_tick": 0.386238134765625
+        },
+        "RetiredPlan -> PlanPrecomputed": {
+          "ns": 636022700,
+          "samples": 636,
+          "ms_per_tick": 0.310557958984375
+        },
+        "HyperpathLookupCandidates": {
+          "ns": 200025200,
+          "samples": 200,
+          "ms_per_tick": 0.0976685546875
+        },
+        "HyperpathLookupCandidates -> PlanPrecomputed": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "SharedHyperpathPlan": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "PlanPrecomputed": {
+          "ns": 942231400,
+          "samples": 942,
+          "ms_per_tick": 0.46007392578125
+        },
+        "SharedHyperpathPlan self": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "RetiredPlan -> SharedHyperpathPlan": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "HyperpathLookupCandidates -> SharedHyperpathPlan": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "TickPrecomputed": {
+          "ns": 351731600,
+          "samples": 351,
+          "ms_per_tick": 0.1717439453125
+        },
+        "worker PrepareHyperpathFinish": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        }
+      },
+      "simulation_cpu_ms_per_tick": 22.94189814453125,
+      "all_threads_cpu_ms_per_tick": 26.609031982421875,
+      "main_thread_cpu_ms_per_tick": 25.659598388671874,
+      "simulation_wall_ms_per_tick": 24.10958642578125,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 54495297500,
+          "stack_samples": 54487,
+          "exclusive_total_ns": 54495297500,
+          "exclusive_samples": 54487
+        },
+        "main": {
+          "stack_total_ns": 52550857500,
+          "stack_samples": 52544,
+          "exclusive_total_ns": 52550857500,
+          "exclusive_samples": 52544
+        },
+        "simulation_stack": {
+          "stack_total_ns": 46985007400,
+          "stack_samples": 46979,
+          "exclusive_total_ns": 46985007400,
+          "exclusive_samples": 46979
+        }
+      }
+    },
+    "01-A1/hyperpath": {
+      "round": "01-A1",
+      "label": "A",
+      "mode": "hyperpath",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 49542101700,
+          "samples": 49534,
+          "ms_per_tick": 24.190479345703125
+        },
+        "StepImpl self": {
+          "ns": 567970200,
+          "samples": 567,
+          "ms_per_tick": 0.27732919921875
+        },
+        "StepImpl inclusive": {
+          "ns": 856814900,
+          "samples": 855,
+          "ms_per_tick": 0.418366650390625
+        },
+        "RetiredPlan": {
+          "ns": 237994500,
+          "samples": 238,
+          "ms_per_tick": 0.116208251953125
+        },
+        "RetiredPlan -> PlanPrecomputed": {
+          "ns": 183006700,
+          "samples": 183,
+          "ms_per_tick": 0.089358740234375
+        },
+        "HyperpathLookupCandidates": {
+          "ns": 282087200,
+          "samples": 282,
+          "ms_per_tick": 0.137737890625
+        },
+        "HyperpathLookupCandidates -> PlanPrecomputed": {
+          "ns": 44013000,
+          "samples": 44,
+          "ms_per_tick": 0.02149072265625
+        },
+        "SharedHyperpathPlan": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "PlanPrecomputed": {
+          "ns": 611259800,
+          "samples": 611,
+          "ms_per_tick": 0.29846669921875
+        },
+        "SharedHyperpathPlan self": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "RetiredPlan -> SharedHyperpathPlan": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "HyperpathLookupCandidates -> SharedHyperpathPlan": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "TickPrecomputed": {
+          "ns": 881119700,
+          "samples": 879,
+          "ms_per_tick": 0.430234228515625
+        },
+        "worker PrepareHyperpathFinish": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        }
+      },
+      "simulation_cpu_ms_per_tick": 24.190479345703125,
+      "all_threads_cpu_ms_per_tick": 27.872584912109374,
+      "main_thread_cpu_ms_per_tick": 25.362796435546876,
+      "simulation_wall_ms_per_tick": 25.4311220703125,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 57083053900,
+          "stack_samples": 57070,
+          "exclusive_total_ns": 57083053900,
+          "exclusive_samples": 57070
+        },
+        "main": {
+          "stack_total_ns": 51943007100,
+          "stack_samples": 51934,
+          "exclusive_total_ns": 51943007100,
+          "exclusive_samples": 51934
+        },
+        "simulation_stack": {
+          "stack_total_ns": 49542101700,
+          "stack_samples": 49534,
+          "exclusive_total_ns": 49542101700,
+          "exclusive_samples": 49534
+        }
+      }
+    },
+    "02-B1/legacy": {
+      "round": "02-B1",
+      "label": "B",
+      "mode": "legacy",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 47657958100,
+          "samples": 47650,
+          "ms_per_tick": 23.270487353515627
+        },
+        "StepImpl self": {
+          "ns": 204522400,
+          "samples": 204,
+          "ms_per_tick": 0.099864453125
+        },
+        "StepImpl inclusive": {
+          "ns": 356983400,
+          "samples": 356,
+          "ms_per_tick": 0.17430830078125
+        },
+        "RetiredPlan": {
+          "ns": 898044100,
+          "samples": 898,
+          "ms_per_tick": 0.438498095703125
+        },
+        "RetiredPlan -> PlanPrecomputed": {
+          "ns": 698058000,
+          "samples": 698,
+          "ms_per_tick": 0.3408486328125
+        },
+        "HyperpathLookupCandidates": {
+          "ns": 200093200,
+          "samples": 200,
+          "ms_per_tick": 0.0977017578125
+        },
+        "HyperpathLookupCandidates -> PlanPrecomputed": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "SharedHyperpathPlan": {
+          "ns": 9995500,
+          "samples": 10,
+          "ms_per_tick": 0.004880615234375
+        },
+        "PlanPrecomputed": {
+          "ns": 990319400,
+          "samples": 990,
+          "ms_per_tick": 0.48355439453125
+        },
+        "SharedHyperpathPlan self": {
+          "ns": 9995500,
+          "samples": 10,
+          "ms_per_tick": 0.004880615234375
+        },
+        "RetiredPlan -> SharedHyperpathPlan": {
+          "ns": 9995500,
+          "samples": 10,
+          "ms_per_tick": 0.004880615234375
+        },
+        "HyperpathLookupCandidates -> SharedHyperpathPlan": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "TickPrecomputed": {
+          "ns": 368124600,
+          "samples": 367,
+          "ms_per_tick": 0.17974833984375
+        },
+        "worker PrepareHyperpathFinish": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        }
+      },
+      "simulation_cpu_ms_per_tick": 23.270487353515627,
+      "all_threads_cpu_ms_per_tick": 27.154658935546873,
+      "main_thread_cpu_ms_per_tick": 26.162129345703125,
+      "simulation_wall_ms_per_tick": 24.29020556640625,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 55612741500,
+          "stack_samples": 55602,
+          "exclusive_total_ns": 55612741500,
+          "exclusive_samples": 55602
+        },
+        "main": {
+          "stack_total_ns": 53580040900,
+          "stack_samples": 53571,
+          "exclusive_total_ns": 53580040900,
+          "exclusive_samples": 53571
+        },
+        "simulation_stack": {
+          "stack_total_ns": 47657958100,
+          "stack_samples": 47650,
+          "exclusive_total_ns": 47657958100,
+          "exclusive_samples": 47650
+        }
+      }
+    },
+    "02-B1/hyperpath": {
+      "round": "02-B1",
+      "label": "B",
+      "mode": "hyperpath",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 46107309500,
+          "samples": 46096,
+          "ms_per_tick": 22.513334716796876
+        },
+        "StepImpl self": {
+          "ns": 25069700,
+          "samples": 25,
+          "ms_per_tick": 0.012241064453125
+        },
+        "StepImpl inclusive": {
+          "ns": 215873400,
+          "samples": 215,
+          "ms_per_tick": 0.10540693359375
+        },
+        "RetiredPlan": {
+          "ns": 157949800,
+          "samples": 158,
+          "ms_per_tick": 0.07712392578125
+        },
+        "RetiredPlan -> PlanPrecomputed": {
+          "ns": 48963200,
+          "samples": 49,
+          "ms_per_tick": 0.0239078125
+        },
+        "HyperpathLookupCandidates": {
+          "ns": 313175700,
+          "samples": 313,
+          "ms_per_tick": 0.152917822265625
+        },
+        "HyperpathLookupCandidates -> PlanPrecomputed": {
+          "ns": 41098000,
+          "samples": 41,
+          "ms_per_tick": 0.0200673828125
+        },
+        "SharedHyperpathPlan": {
+          "ns": 223111800,
+          "samples": 223,
+          "ms_per_tick": 0.10894130859375
+        },
+        "PlanPrecomputed": {
+          "ns": 416632800,
+          "samples": 416,
+          "ms_per_tick": 0.203433984375
+        },
+        "SharedHyperpathPlan self": {
+          "ns": 111054600,
+          "samples": 111,
+          "ms_per_tick": 0.05422587890625
+        },
+        "RetiredPlan -> SharedHyperpathPlan": {
+          "ns": 153957200,
+          "samples": 154,
+          "ms_per_tick": 0.0751744140625
+        },
+        "HyperpathLookupCandidates -> SharedHyperpathPlan": {
+          "ns": 69154600,
+          "samples": 69,
+          "ms_per_tick": 0.03376689453125
+        },
+        "TickPrecomputed": {
+          "ns": 240863500,
+          "samples": 240,
+          "ms_per_tick": 0.117609130859375
+        },
+        "worker PrepareHyperpathFinish": {
+          "ns": 567122200,
+          "samples": 567,
+          "ms_per_tick": 0.27691513671875
+        }
+      },
+      "simulation_cpu_ms_per_tick": 22.513334716796876,
+      "all_threads_cpu_ms_per_tick": 26.209072998046874,
+      "main_thread_cpu_ms_per_tick": 23.4747341796875,
+      "simulation_wall_ms_per_tick": 23.561984375,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 53676181500,
+          "stack_samples": 53659,
+          "exclusive_total_ns": 53676181500,
+          "exclusive_samples": 53659
+        },
+        "main": {
+          "stack_total_ns": 48076255600,
+          "stack_samples": 48064,
+          "exclusive_total_ns": 48076255600,
+          "exclusive_samples": 48064
+        },
+        "simulation_stack": {
+          "stack_total_ns": 46107309500,
+          "stack_samples": 46096,
+          "exclusive_total_ns": 46107309500,
+          "exclusive_samples": 46096
+        }
+      }
+    },
+    "03-B2/legacy": {
+      "round": "03-B2",
+      "label": "B",
+      "mode": "legacy",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 48530677200,
+          "samples": 48526,
+          "ms_per_tick": 23.6966197265625
+        },
+        "StepImpl self": {
+          "ns": 190452600,
+          "samples": 190,
+          "ms_per_tick": 0.09299443359375
+        },
+        "StepImpl inclusive": {
+          "ns": 329751900,
+          "samples": 329,
+          "ms_per_tick": 0.161011669921875
+        },
+        "RetiredPlan": {
+          "ns": 893983700,
+          "samples": 894,
+          "ms_per_tick": 0.436515478515625
+        },
+        "RetiredPlan -> PlanPrecomputed": {
+          "ns": 700999400,
+          "samples": 701,
+          "ms_per_tick": 0.34228486328125
+        },
+        "HyperpathLookupCandidates": {
+          "ns": 181020900,
+          "samples": 181,
+          "ms_per_tick": 0.088389111328125
+        },
+        "HyperpathLookupCandidates -> PlanPrecomputed": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "SharedHyperpathPlan": {
+          "ns": 8999500,
+          "samples": 9,
+          "ms_per_tick": 0.004394287109375
+        },
+        "PlanPrecomputed": {
+          "ns": 1002321200,
+          "samples": 1002,
+          "ms_per_tick": 0.4894146484375
+        },
+        "SharedHyperpathPlan self": {
+          "ns": 8999500,
+          "samples": 9,
+          "ms_per_tick": 0.004394287109375
+        },
+        "RetiredPlan -> SharedHyperpathPlan": {
+          "ns": 8999500,
+          "samples": 9,
+          "ms_per_tick": 0.004394287109375
+        },
+        "HyperpathLookupCandidates -> SharedHyperpathPlan": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "TickPrecomputed": {
+          "ns": 342756000,
+          "samples": 342,
+          "ms_per_tick": 0.167361328125
+        },
+        "worker PrepareHyperpathFinish": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        }
+      },
+      "simulation_cpu_ms_per_tick": 23.6966197265625,
+      "all_threads_cpu_ms_per_tick": 27.04817841796875,
+      "main_thread_cpu_ms_per_tick": 26.074732470703125,
+      "simulation_wall_ms_per_tick": 24.4306669921875,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 55394669400,
+          "stack_samples": 55388,
+          "exclusive_total_ns": 55394669400,
+          "exclusive_samples": 55388
+        },
+        "main": {
+          "stack_total_ns": 53401052100,
+          "stack_samples": 53396,
+          "exclusive_total_ns": 53401052100,
+          "exclusive_samples": 53396
+        },
+        "simulation_stack": {
+          "stack_total_ns": 48530677200,
+          "stack_samples": 48526,
+          "exclusive_total_ns": 48530677200,
+          "exclusive_samples": 48526
+        }
+      }
+    },
+    "03-B2/hyperpath": {
+      "round": "03-B2",
+      "label": "B",
+      "mode": "hyperpath",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 48209633800,
+          "samples": 48200,
+          "ms_per_tick": 23.53986025390625
+        },
+        "StepImpl self": {
+          "ns": 28059100,
+          "samples": 28,
+          "ms_per_tick": 0.013700732421875
+        },
+        "StepImpl inclusive": {
+          "ns": 257727800,
+          "samples": 257,
+          "ms_per_tick": 0.12584365234375
+        },
+        "RetiredPlan": {
+          "ns": 169960300,
+          "samples": 170,
+          "ms_per_tick": 0.082988427734375
+        },
+        "RetiredPlan -> PlanPrecomputed": {
+          "ns": 70990900,
+          "samples": 71,
+          "ms_per_tick": 0.034663525390625
+        },
+        "HyperpathLookupCandidates": {
+          "ns": 315973000,
+          "samples": 316,
+          "ms_per_tick": 0.15428369140625
+        },
+        "HyperpathLookupCandidates -> PlanPrecomputed": {
+          "ns": 47999800,
+          "samples": 48,
+          "ms_per_tick": 0.02343740234375
+        },
+        "SharedHyperpathPlan": {
+          "ns": 250957700,
+          "samples": 251,
+          "ms_per_tick": 0.122537939453125
+        },
+        "PlanPrecomputed": {
+          "ns": 458378600,
+          "samples": 458,
+          "ms_per_tick": 0.22381767578125
+        },
+        "SharedHyperpathPlan self": {
+          "ns": 111972300,
+          "samples": 112,
+          "ms_per_tick": 0.054673974609375
+        },
+        "RetiredPlan -> SharedHyperpathPlan": {
+          "ns": 169960300,
+          "samples": 170,
+          "ms_per_tick": 0.082988427734375
+        },
+        "HyperpathLookupCandidates -> SharedHyperpathPlan": {
+          "ns": 80997400,
+          "samples": 81,
+          "ms_per_tick": 0.03954951171875
+        },
+        "TickPrecomputed": {
+          "ns": 278738500,
+          "samples": 278,
+          "ms_per_tick": 0.136102783203125
+        },
+        "worker PrepareHyperpathFinish": {
+          "ns": 574614000,
+          "samples": 574,
+          "ms_per_tick": 0.2805732421875
+        }
+      },
+      "simulation_cpu_ms_per_tick": 23.53986025390625,
+      "all_threads_cpu_ms_per_tick": 27.69886884765625,
+      "main_thread_cpu_ms_per_tick": 24.850653369140623,
+      "simulation_wall_ms_per_tick": 24.7895654296875,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 56727283400,
+          "stack_samples": 56711,
+          "exclusive_total_ns": 56727283400,
+          "exclusive_samples": 56711
+        },
+        "main": {
+          "stack_total_ns": 50894138100,
+          "stack_samples": 50884,
+          "exclusive_total_ns": 50894138100,
+          "exclusive_samples": 50884
+        },
+        "simulation_stack": {
+          "stack_total_ns": 48209633800,
+          "stack_samples": 48200,
+          "exclusive_total_ns": 48209633800,
+          "exclusive_samples": 48200
+        }
+      }
+    },
+    "04-A2/legacy": {
+      "round": "04-A2",
+      "label": "A",
+      "mode": "legacy",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 50358754800,
+          "samples": 50355,
+          "ms_per_tick": 24.5892357421875
+        },
+        "StepImpl self": {
+          "ns": 208422500,
+          "samples": 208,
+          "ms_per_tick": 0.101768798828125
+        },
+        "StepImpl inclusive": {
+          "ns": 351692400,
+          "samples": 351,
+          "ms_per_tick": 0.1717248046875
+        },
+        "RetiredPlan": {
+          "ns": 883001500,
+          "samples": 883,
+          "ms_per_tick": 0.431153076171875
+        },
+        "RetiredPlan -> PlanPrecomputed": {
+          "ns": 708024100,
+          "samples": 708,
+          "ms_per_tick": 0.345714892578125
+        },
+        "HyperpathLookupCandidates": {
+          "ns": 216996500,
+          "samples": 217,
+          "ms_per_tick": 0.105955322265625
+        },
+        "HyperpathLookupCandidates -> PlanPrecomputed": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "SharedHyperpathPlan": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "PlanPrecomputed": {
+          "ns": 1059447000,
+          "samples": 1059,
+          "ms_per_tick": 0.51730810546875
+        },
+        "SharedHyperpathPlan self": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "RetiredPlan -> SharedHyperpathPlan": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "HyperpathLookupCandidates -> SharedHyperpathPlan": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "TickPrecomputed": {
+          "ns": 359690200,
+          "samples": 359,
+          "ms_per_tick": 0.17562998046875
+        },
+        "worker PrepareHyperpathFinish": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        }
+      },
+      "simulation_cpu_ms_per_tick": 24.5892357421875,
+      "all_threads_cpu_ms_per_tick": 28.05043037109375,
+      "main_thread_cpu_ms_per_tick": 27.02249013671875,
+      "simulation_wall_ms_per_tick": 25.30469921875,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 57447281400,
+          "stack_samples": 57442,
+          "exclusive_total_ns": 57447281400,
+          "exclusive_samples": 57442
+        },
+        "main": {
+          "stack_total_ns": 55342059800,
+          "stack_samples": 55338,
+          "exclusive_total_ns": 55342059800,
+          "exclusive_samples": 55338
+        },
+        "simulation_stack": {
+          "stack_total_ns": 50358754800,
+          "stack_samples": 50355,
+          "exclusive_total_ns": 50358754800,
+          "exclusive_samples": 50355
+        }
+      }
+    },
+    "04-A2/hyperpath": {
+      "round": "04-A2",
+      "label": "A",
+      "mode": "hyperpath",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 45753995500,
+          "samples": 45748,
+          "ms_per_tick": 22.340818115234374
+        },
+        "StepImpl self": {
+          "ns": 503778400,
+          "samples": 503,
+          "ms_per_tick": 0.245985546875
+        },
+        "StepImpl inclusive": {
+          "ns": 806398600,
+          "samples": 805,
+          "ms_per_tick": 0.39374931640625
+        },
+        "RetiredPlan": {
+          "ns": 242981100,
+          "samples": 243,
+          "ms_per_tick": 0.118643115234375
+        },
+        "RetiredPlan -> PlanPrecomputed": {
+          "ns": 198998400,
+          "samples": 199,
+          "ms_per_tick": 0.0971671875
+        },
+        "HyperpathLookupCandidates": {
+          "ns": 270988700,
+          "samples": 271,
+          "ms_per_tick": 0.132318701171875
+        },
+        "HyperpathLookupCandidates -> PlanPrecomputed": {
+          "ns": 48010100,
+          "samples": 48,
+          "ms_per_tick": 0.023442431640625
+        },
+        "SharedHyperpathPlan": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "PlanPrecomputed": {
+          "ns": 623186700,
+          "samples": 623,
+          "ms_per_tick": 0.304290380859375
+        },
+        "SharedHyperpathPlan self": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "RetiredPlan -> SharedHyperpathPlan": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "HyperpathLookupCandidates -> SharedHyperpathPlan": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        },
+        "TickPrecomputed": {
+          "ns": 824442200,
+          "samples": 823,
+          "ms_per_tick": 0.40255966796875
+        },
+        "worker PrepareHyperpathFinish": {
+          "ns": 0,
+          "samples": 0,
+          "ms_per_tick": 0.0
+        }
+      },
+      "simulation_cpu_ms_per_tick": 22.340818115234374,
+      "all_threads_cpu_ms_per_tick": 26.667708740234374,
+      "main_thread_cpu_ms_per_tick": 24.180239697265623,
+      "simulation_wall_ms_per_tick": 24.23077880859375,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 54615467500,
+          "stack_samples": 54606,
+          "exclusive_total_ns": 54615467500,
+          "exclusive_samples": 54606
+        },
+        "main": {
+          "stack_total_ns": 49521130900,
+          "stack_samples": 49515,
+          "exclusive_total_ns": 49521130900,
+          "exclusive_samples": 49515
+        },
+        "simulation_stack": {
+          "stack_total_ns": 45753995500,
+          "stack_samples": 45748,
+          "exclusive_total_ns": 45753995500,
+          "exclusive_samples": 45748
+        }
+      }
+    }
+  },
+  "comparison": {
+    "legacy": {
+      "StateGameLoop": {
+        "A": {
+          "mean": 23.765566943359374,
+          "minimum": 22.94189814453125,
+          "maximum": 24.5892357421875,
+          "values": [
+            22.94189814453125,
+            24.5892357421875
+          ],
+          "samples": 97334
+        },
+        "B": {
+          "mean": 23.48355354003906,
+          "minimum": 23.270487353515627,
+          "maximum": 23.6966197265625,
+          "values": [
+            23.270487353515627,
+            23.6966197265625
+          ],
+          "samples": 96176
+        },
+        "delta_ms_per_tick": -0.2820134033203132,
+        "raw_percent": -1.1866470679720686
+      },
+      "StepImpl self": {
+        "A": {
+          "mean": 0.101264892578125,
+          "minimum": 0.100760986328125,
+          "maximum": 0.101768798828125,
+          "values": [
+            0.100760986328125,
+            0.101768798828125
+          ],
+          "samples": 414
+        },
+        "B": {
+          "mean": 0.096429443359375,
+          "minimum": 0.09299443359375,
+          "maximum": 0.099864453125,
+          "values": [
+            0.099864453125,
+            0.09299443359375
+          ],
+          "samples": 394
+        },
+        "delta_ms_per_tick": -0.004835449218749996,
+        "raw_percent": -4.775049966126699
+      },
+      "StepImpl inclusive": {
+        "A": {
+          "mean": 0.1687876220703125,
+          "minimum": 0.165850439453125,
+          "maximum": 0.1717248046875,
+          "values": [
+            0.165850439453125,
+            0.1717248046875
+          ],
+          "samples": 690
+        },
+        "B": {
+          "mean": 0.1676599853515625,
+          "minimum": 0.161011669921875,
+          "maximum": 0.17430830078125,
+          "values": [
+            0.17430830078125,
+            0.161011669921875
+          ],
+          "samples": 685
+        },
+        "delta_ms_per_tick": -0.0011276367187499914,
+        "raw_percent": -0.6680802211196823
+      },
+      "RetiredPlan": {
+        "A": {
+          "mean": 0.40869560546875,
+          "minimum": 0.386238134765625,
+          "maximum": 0.431153076171875,
+          "values": [
+            0.386238134765625,
+            0.431153076171875
+          ],
+          "samples": 1674
+        },
+        "B": {
+          "mean": 0.43750678710937496,
+          "minimum": 0.436515478515625,
+          "maximum": 0.438498095703125,
+          "values": [
+            0.438498095703125,
+            0.436515478515625
+          ],
+          "samples": 1792
+        },
+        "delta_ms_per_tick": 0.02881118164062496,
+        "raw_percent": 7.049545249594802
+      },
+      "RetiredPlan -> PlanPrecomputed": {
+        "A": {
+          "mean": 0.32813642578125,
+          "minimum": 0.310557958984375,
+          "maximum": 0.345714892578125,
+          "values": [
+            0.310557958984375,
+            0.345714892578125
+          ],
+          "samples": 1344
+        },
+        "B": {
+          "mean": 0.34156674804687503,
+          "minimum": 0.3408486328125,
+          "maximum": 0.34228486328125,
+          "values": [
+            0.3408486328125,
+            0.34228486328125
+          ],
+          "samples": 1399
+        },
+        "delta_ms_per_tick": 0.013430322265625017,
+        "raw_percent": 4.092908074331936
+      },
+      "HyperpathLookupCandidates": {
+        "A": {
+          "mean": 0.1018119384765625,
+          "minimum": 0.0976685546875,
+          "maximum": 0.105955322265625,
+          "values": [
+            0.0976685546875,
+            0.105955322265625
+          ],
+          "samples": 417
+        },
+        "B": {
+          "mean": 0.0930454345703125,
+          "minimum": 0.088389111328125,
+          "maximum": 0.0977017578125,
+          "values": [
+            0.0977017578125,
+            0.088389111328125
+          ],
+          "samples": 381
+        },
+        "delta_ms_per_tick": -0.00876650390625,
+        "raw_percent": -8.610487176087
+      },
+      "HyperpathLookupCandidates -> PlanPrecomputed": {
+        "A": {
+          "mean": 0.0,
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "values": [
+            0.0,
+            0.0
+          ],
+          "samples": 0
+        },
+        "B": {
+          "mean": 0.0,
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "values": [
+            0.0,
+            0.0
+          ],
+          "samples": 0
+        },
+        "delta_ms_per_tick": 0.0,
+        "raw_percent": null
+      },
+      "SharedHyperpathPlan": {
+        "A": {
+          "mean": 0.0,
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "values": [
+            0.0,
+            0.0
+          ],
+          "samples": 0
+        },
+        "B": {
+          "mean": 0.004637451171874999,
+          "minimum": 0.004394287109375,
+          "maximum": 0.004880615234375,
+          "values": [
+            0.004880615234375,
+            0.004394287109375
+          ],
+          "samples": 19
+        },
+        "delta_ms_per_tick": 0.004637451171874999,
+        "raw_percent": null
+      },
+      "PlanPrecomputed": {
+        "A": {
+          "mean": 0.48869101562499995,
+          "minimum": 0.46007392578125,
+          "maximum": 0.51730810546875,
+          "values": [
+            0.46007392578125,
+            0.51730810546875
+          ],
+          "samples": 2001
+        },
+        "B": {
+          "mean": 0.486484521484375,
+          "minimum": 0.48355439453125,
+          "maximum": 0.4894146484375,
+          "values": [
+            0.48355439453125,
+            0.4894146484375
+          ],
+          "samples": 1992
+        },
+        "delta_ms_per_tick": -0.0022064941406249594,
+        "raw_percent": -0.4515110918916765
+      },
+      "SharedHyperpathPlan self": {
+        "A": {
+          "mean": 0.0,
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "values": [
+            0.0,
+            0.0
+          ],
+          "samples": 0
+        },
+        "B": {
+          "mean": 0.004637451171874999,
+          "minimum": 0.004394287109375,
+          "maximum": 0.004880615234375,
+          "values": [
+            0.004880615234375,
+            0.004394287109375
+          ],
+          "samples": 19
+        },
+        "delta_ms_per_tick": 0.004637451171874999,
+        "raw_percent": null
+      },
+      "RetiredPlan -> SharedHyperpathPlan": {
+        "A": {
+          "mean": 0.0,
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "values": [
+            0.0,
+            0.0
+          ],
+          "samples": 0
+        },
+        "B": {
+          "mean": 0.004637451171874999,
+          "minimum": 0.004394287109375,
+          "maximum": 0.004880615234375,
+          "values": [
+            0.004880615234375,
+            0.004394287109375
+          ],
+          "samples": 19
+        },
+        "delta_ms_per_tick": 0.004637451171874999,
+        "raw_percent": null
+      },
+      "HyperpathLookupCandidates -> SharedHyperpathPlan": {
+        "A": {
+          "mean": 0.0,
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "values": [
+            0.0,
+            0.0
+          ],
+          "samples": 0
+        },
+        "B": {
+          "mean": 0.0,
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "values": [
+            0.0,
+            0.0
+          ],
+          "samples": 0
+        },
+        "delta_ms_per_tick": 0.0,
+        "raw_percent": null
+      },
+      "TickPrecomputed": {
+        "A": {
+          "mean": 0.17368696289062502,
+          "minimum": 0.1717439453125,
+          "maximum": 0.17562998046875,
+          "values": [
+            0.1717439453125,
+            0.17562998046875
+          ],
+          "samples": 710
+        },
+        "B": {
+          "mean": 0.173554833984375,
+          "minimum": 0.167361328125,
+          "maximum": 0.17974833984375,
+          "values": [
+            0.17974833984375,
+            0.167361328125
+          ],
+          "samples": 709
+        },
+        "delta_ms_per_tick": -0.0001321289062500286,
+        "raw_percent": -0.07607301322508642
+      },
+      "worker PrepareHyperpathFinish": {
+        "A": {
+          "mean": 0.0,
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "values": [
+            0.0,
+            0.0
+          ],
+          "samples": 0
+        },
+        "B": {
+          "mean": 0.0,
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "values": [
+            0.0,
+            0.0
+          ],
+          "samples": 0
+        },
+        "delta_ms_per_tick": 0.0,
+        "raw_percent": null
+      },
+      "simulation_wall_ms_per_tick": {
+        "A": {
+          "mean": 24.707142822265624,
+          "minimum": 24.10958642578125,
+          "maximum": 25.30469921875,
+          "values": [
+            24.10958642578125,
+            25.30469921875
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 24.360436279296877,
+          "minimum": 24.29020556640625,
+          "maximum": 24.4306669921875,
+          "values": [
+            24.29020556640625,
+            24.4306669921875
+          ],
+          "samples": null
+        },
+        "delta_ms_per_tick": -0.3467065429687466,
+        "raw_percent": -1.4032644141122708
+      },
+      "all_threads_cpu_ms_per_tick": {
+        "A": {
+          "mean": 27.32973117675781,
+          "minimum": 26.609031982421875,
+          "maximum": 28.05043037109375,
+          "values": [
+            26.609031982421875,
+            28.05043037109375
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 27.10141867675781,
+          "minimum": 27.04817841796875,
+          "maximum": 27.154658935546873,
+          "values": [
+            27.154658935546873,
+            27.04817841796875
+          ],
+          "samples": null
+        },
+        "delta_ms_per_tick": -0.22831250000000125,
+        "raw_percent": -0.8353997283155334
+      }
+    },
+    "hyperpath": {
+      "StateGameLoop": {
+        "A": {
+          "mean": 23.265648730468747,
+          "minimum": 22.340818115234374,
+          "maximum": 24.190479345703125,
+          "values": [
+            24.190479345703125,
+            22.340818115234374
+          ],
+          "samples": 95282
+        },
+        "B": {
+          "mean": 23.026597485351566,
+          "minimum": 22.513334716796876,
+          "maximum": 23.53986025390625,
+          "values": [
+            22.513334716796876,
+            23.53986025390625
+          ],
+          "samples": 94296
+        },
+        "delta_ms_per_tick": -0.23905124511718157,
+        "raw_percent": -1.0274858349602733
+      },
+      "StepImpl self": {
+        "A": {
+          "mean": 0.261657373046875,
+          "minimum": 0.245985546875,
+          "maximum": 0.27732919921875,
+          "values": [
+            0.27732919921875,
+            0.245985546875
+          ],
+          "samples": 1070
+        },
+        "B": {
+          "mean": 0.0129708984375,
+          "minimum": 0.012241064453125,
+          "maximum": 0.013700732421875,
+          "values": [
+            0.012241064453125,
+            0.013700732421875
+          ],
+          "samples": 53
+        },
+        "delta_ms_per_tick": -0.24868647460937499,
+        "raw_percent": -95.04279268477701
+      },
+      "StepImpl inclusive": {
+        "A": {
+          "mean": 0.40605798339843746,
+          "minimum": 0.39374931640625,
+          "maximum": 0.418366650390625,
+          "values": [
+            0.418366650390625,
+            0.39374931640625
+          ],
+          "samples": 1660
+        },
+        "B": {
+          "mean": 0.11562529296875,
+          "minimum": 0.10540693359375,
+          "maximum": 0.12584365234375,
+          "values": [
+            0.10540693359375,
+            0.12584365234375
+          ],
+          "samples": 472
+        },
+        "delta_ms_per_tick": -0.29043269042968745,
+        "raw_percent": -71.52493050351022
+      },
+      "RetiredPlan": {
+        "A": {
+          "mean": 0.11742568359375,
+          "minimum": 0.116208251953125,
+          "maximum": 0.118643115234375,
+          "values": [
+            0.116208251953125,
+            0.118643115234375
+          ],
+          "samples": 481
+        },
+        "B": {
+          "mean": 0.0800561767578125,
+          "minimum": 0.07712392578125,
+          "maximum": 0.082988427734375,
+          "values": [
+            0.07712392578125,
+            0.082988427734375
+          ],
+          "samples": 328
+        },
+        "delta_ms_per_tick": -0.0373695068359375,
+        "raw_percent": -31.82396362726092
+      },
+      "RetiredPlan -> PlanPrecomputed": {
+        "A": {
+          "mean": 0.09326296386718749,
+          "minimum": 0.089358740234375,
+          "maximum": 0.0971671875,
+          "values": [
+            0.089358740234375,
+            0.0971671875
+          ],
+          "samples": 382
+        },
+        "B": {
+          "mean": 0.0292856689453125,
+          "minimum": 0.0239078125,
+          "maximum": 0.034663525390625,
+          "values": [
+            0.0239078125,
+            0.034663525390625
+          ],
+          "samples": 120
+        },
+        "delta_ms_per_tick": -0.063977294921875,
+        "raw_percent": -68.5988223717432
+      },
+      "HyperpathLookupCandidates": {
+        "A": {
+          "mean": 0.1350282958984375,
+          "minimum": 0.132318701171875,
+          "maximum": 0.137737890625,
+          "values": [
+            0.137737890625,
+            0.132318701171875
+          ],
+          "samples": 553
+        },
+        "B": {
+          "mean": 0.1536007568359375,
+          "minimum": 0.152917822265625,
+          "maximum": 0.15428369140625,
+          "values": [
+            0.152917822265625,
+            0.15428369140625
+          ],
+          "samples": 629
+        },
+        "delta_ms_per_tick": 0.01857246093749998,
+        "raw_percent": 13.754495540304678
+      },
+      "HyperpathLookupCandidates -> PlanPrecomputed": {
+        "A": {
+          "mean": 0.0224665771484375,
+          "minimum": 0.02149072265625,
+          "maximum": 0.023442431640625,
+          "values": [
+            0.02149072265625,
+            0.023442431640625
+          ],
+          "samples": 92
+        },
+        "B": {
+          "mean": 0.021752392578125,
+          "minimum": 0.0200673828125,
+          "maximum": 0.02343740234375,
+          "values": [
+            0.0200673828125,
+            0.02343740234375
+          ],
+          "samples": 89
+        },
+        "delta_ms_per_tick": -0.0007141845703124983,
+        "raw_percent": -3.1788757388090505
+      },
+      "SharedHyperpathPlan": {
+        "A": {
+          "mean": 0.0,
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "values": [
+            0.0,
+            0.0
+          ],
+          "samples": 0
+        },
+        "B": {
+          "mean": 0.11573962402343749,
+          "minimum": 0.10894130859375,
+          "maximum": 0.122537939453125,
+          "values": [
+            0.10894130859375,
+            0.122537939453125
+          ],
+          "samples": 474
+        },
+        "delta_ms_per_tick": 0.11573962402343749,
+        "raw_percent": null
+      },
+      "PlanPrecomputed": {
+        "A": {
+          "mean": 0.3013785400390625,
+          "minimum": 0.29846669921875,
+          "maximum": 0.304290380859375,
+          "values": [
+            0.29846669921875,
+            0.304290380859375
+          ],
+          "samples": 1234
+        },
+        "B": {
+          "mean": 0.213625830078125,
+          "minimum": 0.203433984375,
+          "maximum": 0.22381767578125,
+          "values": [
+            0.203433984375,
+            0.22381767578125
+          ],
+          "samples": 874
+        },
+        "delta_ms_per_tick": -0.08775270996093751,
+        "raw_percent": -29.117106330651033
+      },
+      "SharedHyperpathPlan self": {
+        "A": {
+          "mean": 0.0,
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "values": [
+            0.0,
+            0.0
+          ],
+          "samples": 0
+        },
+        "B": {
+          "mean": 0.0544499267578125,
+          "minimum": 0.05422587890625,
+          "maximum": 0.054673974609375,
+          "values": [
+            0.05422587890625,
+            0.054673974609375
+          ],
+          "samples": 223
+        },
+        "delta_ms_per_tick": 0.0544499267578125,
+        "raw_percent": null
+      },
+      "RetiredPlan -> SharedHyperpathPlan": {
+        "A": {
+          "mean": 0.0,
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "values": [
+            0.0,
+            0.0
+          ],
+          "samples": 0
+        },
+        "B": {
+          "mean": 0.0790814208984375,
+          "minimum": 0.0751744140625,
+          "maximum": 0.082988427734375,
+          "values": [
+            0.0751744140625,
+            0.082988427734375
+          ],
+          "samples": 324
+        },
+        "delta_ms_per_tick": 0.0790814208984375,
+        "raw_percent": null
+      },
+      "HyperpathLookupCandidates -> SharedHyperpathPlan": {
+        "A": {
+          "mean": 0.0,
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "values": [
+            0.0,
+            0.0
+          ],
+          "samples": 0
+        },
+        "B": {
+          "mean": 0.036658203125,
+          "minimum": 0.03376689453125,
+          "maximum": 0.03954951171875,
+          "values": [
+            0.03376689453125,
+            0.03954951171875
+          ],
+          "samples": 150
+        },
+        "delta_ms_per_tick": 0.036658203125,
+        "raw_percent": null
+      },
+      "TickPrecomputed": {
+        "A": {
+          "mean": 0.4163969482421875,
+          "minimum": 0.40255966796875,
+          "maximum": 0.430234228515625,
+          "values": [
+            0.430234228515625,
+            0.40255966796875
+          ],
+          "samples": 1702
+        },
+        "B": {
+          "mean": 0.12685595703125,
+          "minimum": 0.117609130859375,
+          "maximum": 0.136102783203125,
+          "values": [
+            0.117609130859375,
+            0.136102783203125
+          ],
+          "samples": 518
+        },
+        "delta_ms_per_tick": -0.28954099121093746,
+        "raw_percent": -69.53484948274232
+      },
+      "worker PrepareHyperpathFinish": {
+        "A": {
+          "mean": 0.0,
+          "minimum": 0.0,
+          "maximum": 0.0,
+          "values": [
+            0.0,
+            0.0
+          ],
+          "samples": 0
+        },
+        "B": {
+          "mean": 0.278744189453125,
+          "minimum": 0.27691513671875,
+          "maximum": 0.2805732421875,
+          "values": [
+            0.27691513671875,
+            0.2805732421875
+          ],
+          "samples": 1141
+        },
+        "delta_ms_per_tick": 0.278744189453125,
+        "raw_percent": null
+      },
+      "simulation_wall_ms_per_tick": {
+        "A": {
+          "mean": 24.830950439453126,
+          "minimum": 24.23077880859375,
+          "maximum": 25.4311220703125,
+          "values": [
+            25.4311220703125,
+            24.23077880859375
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 24.17577490234375,
+          "minimum": 23.561984375,
+          "maximum": 24.7895654296875,
+          "values": [
+            23.561984375,
+            24.7895654296875
+          ],
+          "samples": null
+        },
+        "delta_ms_per_tick": -0.6551755371093755,
+        "raw_percent": -2.638543936153115
+      },
+      "all_threads_cpu_ms_per_tick": {
+        "A": {
+          "mean": 27.270146826171874,
+          "minimum": 26.667708740234374,
+          "maximum": 27.872584912109374,
+          "values": [
+            27.872584912109374,
+            26.667708740234374
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 26.95397092285156,
+          "minimum": 26.209072998046874,
+          "maximum": 27.69886884765625,
+          "values": [
+            26.209072998046874,
+            27.69886884765625
+          ],
+          "samples": null
+        },
+        "delta_ms_per_tick": -0.316175903320314,
+        "raw_percent": -1.1594213457511438
+      }
+    }
+  }
+}

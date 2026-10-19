@@ -1,0 +1,13 @@
+parent,child,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick
+openttd.exe!RunPassengerWaitingEvents,openttd.exe!StationCargoList::RoutePassengerJourneys,0.722710840,0.778804834,0.056093994
+openttd.exe!RunPassengerWaitingEvents,openttd.exe!_Query_perf_counter,0.000000000,0.000484717,0.000484717
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,openttd.exe!_Query_perf_counter,0.000489355,0.000000000,-0.000489355
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!PassengerServiceDatabase::IsCurrent,0.016591357,0.015629395,-0.000961963
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,ntoskrnl.exe!KiInterruptDispatch,0.000976221,0.000000000,-0.000976221
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,[self],0.000976807,0.000000000,-0.000976807
+openttd.exe!RunPassengerWaitingEvents,[self],0.002931299,0.001465723,-0.001465576
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,"openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy::<lambda_10>::operator()<std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::tuple<std::tuple<PoolID<VehicleIDTag>,CargoType,unsigned short,unsigned long long,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned long long,std::array<unsigned int,2> >,bool> > > > >",0.324714697,0.312000635,-0.012714062
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,"openttd.exe!std::tuple<std::tuple<PoolID<VehicleIDTag>,CargoType,unsigned short,unsigned long long,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned long long,std::array<unsigned int,2> >::_Three_way_compare<std::tuple<PoolID<VehicleIDTag>,CargoType,unsigned short,unsigned long long,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned long long,std::array<unsigned int,2> >",0.074210596,0.049800586,-0.024410010
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,[self],0.266105566,0.163562402,-0.102543164
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!PassengerJourneyLoadingContext::RetiredPlan,0.411617725,0.067364844,-0.344252881
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,openttd.exe!PassengerPrecomputedTable::PrepareGraph,1.506840088,0.008312549,-1.498527539

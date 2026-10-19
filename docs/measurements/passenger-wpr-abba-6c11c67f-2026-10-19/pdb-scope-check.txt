@@ -1,0 +1,19 @@
+StateGameLoop:
+ 74524 | S_GPROC32 [size = 76] `StateGameLoop_LinkGraphPauseControl`
+176560 | S_GPROC32 [size = 56] `StateGameLoop`
+CanBoard:
+257584 | S_GPROC32 [size = 80] `PassengerJourneyLoadingContext::CanBoard`
+287368 | S_LPROC32 [size = 88] `PassengerJourneyLoadingContext::CanBoardUncached`
+         inlinee: 0x17654 (CanBoard)
+MayUseHyperpathPolicy:
+344292 | S_GPROC32 [size = 96] `PassengerJourneyLoadingContext::MayUseHyperpathPolicy`
+350920 | S_UDT [size = 76] `PassengerJourneyLoadingContext::MayUseHyperpathPolicy::<lambda_10>`
+351000 | S_LPROC32 [size = 456] `PassengerJourneyLoadingContext::MayUseHyperpathPolicy::<lambda_10>::operator()<std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::tuple<std::tuple<PoolID<VehicleIDTag>,CargoType,unsigned short,unsigned long long,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned long long,std::array<unsigned int,2> >,bool> > > > >`
+PlanPrecomputed:
+260560 | S_GPROC32 [size = 84] `PassengerServiceDatabase::PlanPrecomputed`
+StepImpl:
+253388 | S_GPROC32 [size = 76] `PassengerPrecomputedTable::StepImpl`
+RetiredPlan:
+336356 | S_LPROC32 [size = 84] `PassengerJourneyLoadingContext::RetiredPlan`
+HyperpathLookupCandidates:
+295376 | S_GPROC32 [size = 92] `PassengerServiceDatabase::HyperpathLookupCandidates`

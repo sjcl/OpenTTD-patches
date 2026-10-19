@@ -1,0 +1,12 @@
+{
+  "run": "03-B2/legacy first attempt",
+  "reason": "Foreign 6d2b ninja/lld-link build overlapped the marker interval; rejected before performance comparison.",
+  "retained_local_raw_trace": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-6c11c67f-2026-10-19\\rejected\\03-B2-legacy-competition\\cpu.etl",
+  "raw_trace_sha256": "680a57d4476b0979a1655492b96b95457967a81a26844231513ced2f6d2a73f7",
+  "raw_trace_bytes": 1225785344,
+  "canonical_equal_to_A": true,
+  "simulation_timing_valid": false,
+  "accepted_traces_not_repeated": 4,
+  "restart": "New recorder gate namespace and second pilot; retry only the contaminated run, then finish the remaining three.",
+  "coordination": "The user had authorized coordination messages earlier in this session; Clang + LLVM版を性能比較 acknowledged holding new tests/builds until captures complete."
+}
