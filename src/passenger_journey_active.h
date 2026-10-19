@@ -15,6 +15,7 @@
 bool IsPassengerJourneyRoutingEnabled(CargoType cargo);
 uint64_t PassengerJourneyServiceSignature(const OrderList &orders, CargoType cargo, size_t *budget = nullptr);
 void PassengerJourneySettingsChanged(int32_t);
+void PassengerAircraftCostSettingsChanged(int32_t);
 class PassengerJourneyLoadingContext;
 void RouteWaitingPassengerJourneys(Station *station, PassengerJourneyLoadingContext *loading = nullptr);
 void AfterLoadPassengerJourneys();

@@ -66,7 +66,7 @@ namespace {
 	}
 	struct DatabaseWireLayout {
 		size_t publication, precomputed, modes;
-		std::vector<size_t> facilities;
+		std::vector<size_t> facilities, movement_waits;
 	};
 	/** Parse record counts so corruption fixtures address fields in the current format. */
 	DatabaseWireLayout InspectDatabaseWire(const std::vector<uint8_t> &wire)
@@ -79,11 +79,12 @@ namespace {
 		};
 		auto words = [&](size_t n) { while (n-- != 0) value(); };
 		auto service = [&]() {
-			words(5); auto stops = value(); facility_words += (stops + 20) / 21; words(static_cast<size_t>(stops) * 9);
+			words(5); auto stops = value(); facility_words += (stops + 20) / 21;
+			for (size_t i = 0; i < stops; ++i) { words(9); result.movement_waits.push_back(cursor); words(1); }
 			words(static_cast<size_t>(value()) * (4 + NUM_CARGO));
 			words(4); auto slots = value(); words(static_cast<size_t>(slots)); value();
 		};
-		REQUIRE(value() == 1); words(5);
+		REQUIRE(value() == 2); words(5);
 		words(static_cast<size_t>(value()) * 2);
 		for (uint64_t n = value(); n != 0; --n) service();
 		result.publication = cursor;
@@ -94,7 +95,7 @@ namespace {
 		words(2); for (uint64_t n = value(); n != 0; --n) service();
 		result.modes = cursor; words(4);
 		for (size_t i = 0; i < facility_words; ++i) { result.facilities.push_back(cursor); value(); }
-		REQUIRE(cursor == wire.size());
+		words(6); REQUIRE(cursor == wire.size());
 		return result;
 	}
 	struct PeriodicTrain : Vehicle {
@@ -1524,7 +1525,7 @@ TEST_CASE("Periodic database rejects malformed and oversized saved state", "[pas
 	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto wire = db.Save(); PassengerServiceDatabase other;
 	const auto original = wire; const auto layout = InspectDatabaseWire(wire);
 	wire.pop_back(); CHECK_FALSE(other.Load(wire));
-	for (uint8_t version : {0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}) {
+	for (uint8_t version : {0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}) {
 		wire = original; wire[0] = version; CHECK_FALSE(other.Load(wire));
 	}
 	for (size_t offset : {layout.modes, layout.modes + 8}) {
@@ -2020,6 +2021,42 @@ TEST_CASE("Waypoint waits and reversals are operating events in periodic and sna
 		CHECK(plan.arrival == NOW + 10 + waypoint.GetTravelTime() + dwell + 40);
 		PassengerJourneyPlanner planner(graph); auto old = planner.Plan(PAX, A, D, NOW); REQUIRE(old.HasJourney()); CHECK(old.journeys.front().arrival == plan.arrival);
 	}
+}
+
+TEST_CASE("Aircraft scaling excludes intermediate depot waiting in both timetable compilers", "[passenger][aircraft_cost][periodic]")
+{
+	Fixture f;
+	Order depot; depot.MakeGoToDepot(DepotID{0}, {OrderDepotTypeFlag::PartOfOrders});
+	depot.SetTravelTime(30); depot.SetTravelTimetabled(true); depot.SetWaitTime(75); depot.SetWaitTimetabled(true);
+	std::vector orders{Stop(A, 1000, 10), depot, Stop(D, 70, 10)};
+	f.Train(orders); // Install physical station fixtures for the estimated compiler.
+	for (bool estimated : {false, true}) {
+		PassengerPeriodicService service;
+		service.timetable = estimated ? PassengerPeriodicTimetable::CompileEstimated(orders, VehicleType::Aircraft) : PassengerPeriodicTimetable::Compile(orders);
+		REQUIRE(service.timetable.stops.size() == 2);
+		CHECK(service.timetable.stops[1].arrival == 185); CHECK(service.timetable.stops[1].intermediate_wait == 75);
+		PassengerPeriodicVehicle air; air.type = VehicleType::Aircraft; service.vehicles.push_back(air);
+		service.BuildAircraftCosts({50, 74}); CHECK(service.AircraftAdjustment(0, 1) == 24);
+	}
+	PassengerServiceGraphLimits limits; limits.horizon = 2000;
+	const auto graph = PassengerServiceGraph::Build(PAX, NOW, limits);
+	REQUIRE_FALSE(graph.GetTrips().empty()); const auto &visits = graph.GetTrips().front().prediction.visits;
+	REQUIRE(visits.size() >= 2); CHECK(visits[1].arrival == NOW + 185); CHECK(visits[1].movement_from_previous.base() == 100);
+}
+
+TEST_CASE("Old passenger database wires recapture missing movement metadata once", "[passenger][aircraft_cost][save]")
+{
+	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto wire = db.Save();
+	const auto layout = InspectDatabaseWire(wire);
+	wire.resize(wire.size() - 48); // v1 has neither the three snapshots nor incoming wait fields.
+	for (auto it = layout.movement_waits.rbegin(); it != layout.movement_waits.rend(); ++it) wire.erase(wire.begin() + *it, wire.begin() + *it + 8);
+	wire[0] = 1;
+	PassengerServiceDatabase loaded; REQUIRE(loaded.Load(wire)); loaded.FinishLoad(true);
+	CHECK(loaded.IsBuilding()); CHECK(loaded.GetDiagnostic().services == 0);
+	for (int i = 0; i < 128 && loaded.IsBuilding(); ++i) loaded.Tick();
+	REQUIRE_FALSE(loaded.IsBuilding()); REQUIRE(loaded.Plan(PAX, A, D, NOW).ride);
+	PassengerServiceDatabase peer; REQUIRE(peer.Load(loaded.Save())); peer.FinishLoad(true);
+	CHECK(peer.Save() == loaded.Save());
 }
 
 TEST_CASE("Depot traversal separates passenger continuity from timing certainty", "[passenger][periodic][operational][depot][active]")
@@ -2674,7 +2711,8 @@ TEST_CASE("A staging memory boundary remains bounded and loadable during deletio
 {
 	Fixture f; f.Train({Stop(A), Stop(D)}); auto &db = f.Build(); auto wire = db.Save();
 	const auto layout = InspectDatabaseWire(wire);
-	const std::vector<uint8_t> suffix(wire.begin() + layout.precomputed, wire.end());
+	const std::vector<uint8_t> suffix(wire.begin() + layout.precomputed, wire.end() - 48);
+	const std::vector<uint8_t> costs(wire.end() - 48, wire.end());
 	wire.resize(layout.publication);
 	auto put = [&](uint64_t value) { for (uint i = 0; i < 8; ++i) { wire.push_back(value & 255); value >>= 8; } };
 	put(1); put(NOW.base()); put(0); put(0); // Published revision, batch tick, publishing, bootstrap.
@@ -2683,11 +2721,12 @@ TEST_CASE("A staging memory boundary remains bounded and loadable during deletio
 	for (uint16_t index = 0; index < 32; ++index) {
 		put(1000 + index); put(1); put(1); put(1); put(0);
 		size_t stops = index == 31 ? 4062 : 4096; put(stops);
-		for (size_t i = 0; i < stops; ++i) { put(A.base()); put(0); put(0); put(0); put(1); put(1); put(0); put(1); put(0); }
+		for (size_t i = 0; i < stops; ++i) { put(A.base()); put(0); put(0); put(0); put(1); put(1); put(0); put(1); put(0); put(0); }
 		put(0); put(0); put(0); put(0); put(0); put(0); put(0); put(NOW.base()); // Fleet, dispatch fields, estimate and staged age.
 	}
 	wire.insert(wire.end(), suffix.begin(), suffix.end());
 	for (uint16_t index = 0; index < 32; ++index) for (size_t at = 0; at < (index == 31 ? 4062 : 4096); at += 21) put(0);
+	wire.insert(wire.end(), costs.begin(), costs.end());
 	REQUIRE(db.Load(wire)); db.FinishLoad(true);
 	REQUIRE(db.GetDiagnostic().staged_bytes == PassengerServiceDatabase::MAX_BYTES - 1024);
 	db.Tick(); CHECK(db.GetDiagnostic().staged_bytes <= PassengerServiceDatabase::MAX_BYTES);
@@ -3120,7 +3159,7 @@ TEST_CASE("Precomputed active journeys bypass OD admission and survive partial-b
 	CHECK(db.GetDiagnostic().searches == timed_searches);
 	CHECK(db.GetPrecomputedDiagnostic(PAX).hits == 1);
 	CHECK(GetPassengerJourneyTickDiagnostic().query_cache_hits == 99);
-	auto wire = db.Save(); REQUIRE(wire[0] == 1);
+	auto wire = db.Save(); REQUIRE(wire[0] == 2);
 	PassengerServiceDatabase peer; REQUIRE(peer.Load(wire)); peer.FinishLoad(true);
 	CHECK(peer.Save() == wire);
 	CHECK(peer.PlanPrecomputed(PAX, A, D, NOW).ride == db.PlanPrecomputed(PAX, A, D, NOW).ride);
@@ -3557,7 +3596,7 @@ TEST_CASE("Precomputed waiting events survive save tables without inventing a ro
 	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
 	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
 	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
-	REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] == 1);
+	REQUIRE(_sl_xv_feature_versions[XSLFI_PASSENGER_PERIODIC] == 2);
 	GoodsEntry source{}, loaded{}; source.CreateData(); loaded.CreateData();
 	auto &a = source.data->cargo;
 	a.passenger_routing_dirty = false; a.passenger_routing_revision = 17; a.passenger_routing_rows = 23; a.passenger_routing_due = NOW + 100;

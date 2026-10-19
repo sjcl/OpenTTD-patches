@@ -65,10 +65,10 @@ namespace {
 		PassengerJourneyLeg leg{};
 		StateTicks arrival{};
 		int64_t waiting = 0;
-		int64_t riding = 0;
 		int64_t transfer_time = 0;
 		int64_t penalty = 0;
 		int64_t score = 0;
+		int64_t aircraft_adjustment = 0;
 		uint32_t boardings = 0;
 		uint32_t transfers = 0;
 		bool capacity_uncertain = false;
@@ -87,8 +87,11 @@ namespace {
 		return pa->boardings == pb->boardings;
 	}
 
-	static bool Dominates(const JourneyLabel &a, const JourneyLabel &b)
+	static bool Dominates(const JourneyLabel &a, const JourneyLabel &b, bool aircraft_costs)
 	{
+		/* Different clock times can carry different flight discounts. Keeping
+		 * both avoids assuming that the earlier label can wait for free. */
+		if (aircraft_costs && a.arrival != b.arrival) return false;
 		return a.arrival <= b.arrival && a.waiting <= b.waiting && a.score <= b.score && a.penalty <= b.penalty && a.transfers <= b.transfers &&
 				a.prediction_status <= b.prediction_status && a.capacity_uncertain <= b.capacity_uncertain &&
 				(a.minimum_free.has_value() == b.minimum_free.has_value()) && (!a.minimum_free || *a.minimum_free >= *b.minimum_free);
@@ -336,11 +339,11 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 				/* Every completion must pay the accumulated costs and at least the relaxed boarding
 				 * distance. Once K candidates exist, a strictly worse (score, arrival, boardings)
 				 * lower bound cannot alter their order, including the later capacity/ID tie-breaks. */
-				if (parent.boardings != 0 && destinations.size() == limits.candidates && reachable.earliest_destination) {
+				if (!this->graph.HasAircraftDiscount() && parent.boardings != 0 && destinations.size() == limits.candidates && reachable.earliest_destination) {
 					uint32_t boardings = parent.boardings + boardings_left(station);
 					StateTicks arrival = std::max(parent.arrival, *reachable.earliest_destination);
 					int64_t transfers = parent.transfers + boardings_left(station);
-					int64_t score = JourneyAdd(arrival.base() - ready.base(), parent.penalty);
+					int64_t score = JourneyAdd(arrival.base() - ready.base() + parent.aircraft_adjustment, parent.penalty);
 					score = JourneyAdd(score, JourneyScale(transfers, evaluation.transfer_penalty, 1));
 					score = JourneyAdd(score, JourneyScale(parent.waiting, evaluation.waiting_weight, 1000));
 					score = JourneyAdd(score, JourneyScale(transfers * evaluation.minimum_transfer, evaluation.transfer_time_weight, 1000));
@@ -381,7 +384,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 					const int64_t waiting = parent.waiting + (continuing ? 0 : start.departure->base() - parent.arrival.base());
 					minimum_penalty = JourneyAdd(minimum_penalty, JourneyScale(waiting, evaluation.waiting_weight, 1000));
 					minimum_penalty = JourneyAdd(minimum_penalty, JourneyScale(JourneyAdd(parent.transfer_time, connection), evaluation.transfer_time_weight, 1000));
-					if (worse_than_completed(JourneyAdd(start.departure->base() - ready.base(), minimum_penalty))) { ++result.diagnostic.pruned_boardings; continue; }
+					if (worse_than_completed(JourneyAdd(start.departure->base() - ready.base() + parent.aircraft_adjustment, minimum_penalty))) { ++result.diagnostic.pruned_boardings; continue; }
 					if (!can_finish_ride(boarding)) {
 						++result.diagnostic.pruned_boardings;
 						continue;
@@ -405,7 +408,8 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 							prediction_uncertain = true;
 							break;
 						}
-						if (worse_than_completed(JourneyAdd(visit.arrival->base() - ready.base(), minimum_penalty))) break;
+						const int64_t aircraft_adjustment = parent.aircraft_adjustment + this->graph.AircraftAdjustment(boarding, alighting);
+						if (worse_than_completed(JourneyAdd(visit.arrival->base() - ready.base() + aircraft_adjustment, minimum_penalty))) break;
 						if (stop.can_alight && boardings_left(stop.station) != JourneyReachability::UNREACHABLE) {
 							/* Waiting at a previous interchange can replace a loop. With weighted waiting,
 							 * riding a positive-time circuit can be preferable, so only suppress its zero-time
@@ -453,14 +457,14 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 								label.transfers = transfers;
 								label.transfer_time = JourneyAdd(parent.transfer_time, connection);
 								label.waiting = parent.waiting + (continuing ? 0 : start.departure->base() - parent.arrival.base());
-								label.riding = parent.riding + visit.arrival->base() - (continuing ? ready.base() : start.departure->base());
 								label.penalty = JourneyAdd(parent.penalty, continuing ? 0 : CapacityPenalty(capacity, evaluation));
 								label.capacity_uncertain = parent.capacity_uncertain || (!continuing && (unknown_capacity || capacity.certainty != PassengerCapacityCertainty::Confirmed));
 								if (continuing) label.minimum_free = UINT64_MAX; // Already seated; no new seats required.
 								else if (!unknown_capacity && (parent.boardings == 0 || parent.minimum_free)) label.minimum_free =
 										parent.boardings == 0 ? *capacity.future_free : std::min(*parent.minimum_free, *capacity.future_free);
 								label.prediction_status = parent.prediction_status;
-								label.score = JourneyAdd(label.arrival.base() - ready.base(), label.penalty);
+								label.aircraft_adjustment = aircraft_adjustment;
+								label.score = JourneyAdd(label.arrival.base() - ready.base() + aircraft_adjustment, label.penalty);
 								label.score = JourneyAdd(label.score, JourneyScale(transfers, evaluation.transfer_penalty, 1));
 								label.score = JourneyAdd(label.score, JourneyScale(label.waiting, evaluation.waiting_weight, 1000));
 								label.score = JourneyAdd(label.score, JourneyScale(label.transfer_time, evaluation.transfer_time_weight, 1000));
@@ -470,7 +474,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 								std::optional<size_t> completed_to_replace;
 								for (size_t id : bucket) {
 									if (!spend(1 + label.boardings)) { stopped = true; break; }
-									if (SamePath(labels[id], label, labels) && Dominates(labels[id], label)) { dominated = true; break; }
+									if (SamePath(labels[id], label, labels) && Dominates(labels[id], label, this->graph.UsesAircraftCosts())) { dominated = true; break; }
 								}
 								if (stopped) break;
 								if (!dominated && stop.station == destination && bucket.size() >= limits.candidates) {
@@ -488,7 +492,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 										limits.labels = std::min(limits.labels, (limits.memory_bytes - auxiliary_bytes) / LABEL_BYTES);
 										if (labels.size() == limits.labels) { limit(PassengerJourneyStopReason::MemoryLimit); stopped = true; break; }
 									}
-									std::erase_if(bucket, [&](size_t id) { return id == completed_to_replace || (SamePath(label, labels[id], labels) && Dominates(label, labels[id])); });
+									std::erase_if(bucket, [&](size_t id) { return id == completed_to_replace || (SamePath(label, labels[id], labels) && Dominates(label, labels[id], this->graph.UsesAircraftCosts())); });
 									if (bucket.size() >= limits.labels_per_station) {
 									limit(PassengerJourneyStopReason::LabelLimit);
 										auto worst = std::max_element(bucket.begin(), bucket.end(), [&](size_t a, size_t b) { return LabelOrder(labels[a]) < LabelOrder(labels[b]); });
@@ -537,7 +541,7 @@ PassengerJourneyResult PassengerJourneyPlanner::Search(StationID origin, Station
 		PassengerPlannedJourney journey;
 		journey.arrival = label.arrival;
 		journey.waiting = StateTicksDelta{label.waiting};
-		journey.riding = StateTicksDelta{label.riding};
+		journey.riding = StateTicksDelta{label.arrival.base() - ready.base() - label.waiting};
 		journey.generalized_time = StateTicksDelta{label.score};
 		journey.capacity_penalty = StateTicksDelta{label.penalty};
 		journey.transfers = label.transfers;

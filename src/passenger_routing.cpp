@@ -111,7 +111,7 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 	VehicleOrderID index = state.current_order;
 	std::map<int, int32_t> dispatch_history;
 	std::optional<StateTicks> previous_boarding;
-	StateTicksDelta leg_time{0};
+	StateTicksDelta leg_time{0}, movement_time{0};
 	bool leg_known = true;
 	bool have_previous_stop = false;
 	auto unknown_timing = [&]() {
@@ -190,6 +190,7 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 			}
 			if (prefix_only && !timing_known) return uncertain(PassengerPredictionStop::Timing);
 			advance_leg(travel, travel_known);
+			movement_time += StateTicksDelta{travel};
 		}
 		skip_travel = false;
 
@@ -211,6 +212,8 @@ static PassengerJourney PredictPassengerJourneyImpl(const PassengerRouteState &s
 			if (count == 0 || (count & (count - 1)) == 0) visits->visits.reserve(std::min(max_visits, std::max<size_t>(1, count * 2)));
 			visits->visits.push_back({ index, timing_known && !(steps == 0 && state.loading) ? std::optional(tick) : std::nullopt,
 					std::nullopt, steps == 0 && state.loading, have_previous_stop && leg_known ? std::optional(leg_time) : std::nullopt });
+			visits->visits.back().movement_from_previous = movement_time;
+			movement_time = StateTicksDelta{0};
 			leg_time = StateTicksDelta{0};
 			leg_known = true;
 			have_previous_stop = true;

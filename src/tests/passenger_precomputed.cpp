@@ -22,6 +22,7 @@
 #include "passenger_benchmark_cpu.h"
 #include "../settings_type.h"
 #include "../date_func.h"
+#include "../core/backup_type.hpp"
 
 namespace {
 	constexpr CargoType PAX{0};
@@ -94,6 +95,73 @@ TEST_CASE("Hyperpath fixed point preserves single waits and exact acceptance", "
 	for (size_t i = 0; i < 9; ++i) REQUIRE(many.Add(100, PassengerStrategy::Frequency(100)));
 	CHECK(many.Cost() == 112); // ceil(100 + 100/9), from the independent Fraction oracle.
 	CHECK(PassengerWide::Multiply(UINT64_MAX, UINT64_MAX) == PassengerWide{UINT64_MAX - 1, 1});
+}
+
+TEST_CASE("Aircraft table costs preserve physical metadata and separate identical train patterns", "[passenger][aircraft_cost][precomputed][hyperpath]")
+{
+	std::array services{Service(0, {A, D}), Service(1, {A, D})};
+	services[0].vehicles.front().type = VehicleType::Aircraft;
+	std::array records{&services[0], &services[1]};
+	for (bool hyperpath : {false, true}) for (bool optimized : {false, true}) for (bool flat : {false, true}) {
+		CAPTURE(hyperpath, optimized, flat);
+		PassengerPrecomputedTable table;
+		table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, optimized, true, hyperpath, true, true, flat, {100, 1000});
+		while (!table.Finished()) table.Step(7);
+		CHECK(table.GetDiagnostic().patterns == 2);
+		auto plan = table.Plan(A, D, StateTicks{}); REQUIRE(plan.ride);
+		CHECK(plan.riding == 100); CHECK(plan.waiting == 110);
+		if (hyperpath) {
+			size_t work = 10000; auto routes = table.InspectRoutes(A, D, OrderListID::Invalid(), OrderListID::Invalid(), work);
+			REQUIRE(routes.candidates.size() == 1); CHECK(routes.candidates.front().ride.service == services[1].id);
+		} else CHECK(plan.ride->service == services[1].id);
+	}
+	std::array one{&services[0]};
+	for (bool hyperpath : {false, true}) {
+		int64_t base = 0;
+		for (auto cost : {PassengerAircraftCost{}, PassengerAircraftCost{50, 74}, PassengerAircraftCost{300, 0}}) {
+			PassengerPrecomputedTable table;
+			table.Begin(one, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, hyperpath, true, true, true, cost);
+			while (!table.Finished()) table.Step(65536);
+			auto plan = table.Plan(A, D, StateTicks{}); REQUIRE(plan.ride);
+			if (cost.IsDefault()) base = plan.cost;
+			CHECK(plan.cost == base + cost.Adjustment(100));
+			CHECK(plan.riding == 100); CHECK(plan.waiting == 110);
+		}
+	}
+}
+
+TEST_CASE("Aircraft preference arithmetic saturates without overflowing its ratio", "[passenger][aircraft_cost]")
+{
+	CHECK(PassengerAircraftCost{}.Cost(INT64_MAX) == INT64_MAX);
+	CHECK(PassengerAircraftCost{50, 0}.Cost(INT64_MAX) == INT64_MAX / 2);
+	CHECK(PassengerAircraftCost{65535, UINT32_MAX}.Cost(INT64_MAX) == INT64_MAX);
+	CHECK(PassengerAircraftCost{10, 0}.Cost(1) == 0);
+	CHECK(PassengerAircraftCost{50, 74}.Cost(101) == 124);
+}
+
+TEST_CASE("Aircraft settings are frozen across cooperative graphs and asymmetric worker timing", "[passenger][aircraft_cost][parallel][network]")
+{
+	AutoRestoreBackup settings{_settings_game.linkgraph, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup days{DateDetail::_effective_day_length, uint8_t{1}};
+	std::array services{Service(0, {A, B, A, D}), Service(1, {A, C, D}, 120), Service(2, {B, C}, 70)};
+	services[0].vehicles.front().type = VehicleType::Aircraft;
+	std::array records{&services[0], &services[1], &services[2]};
+	for (bool hyperpath : {false, true}) for (auto cost : {PassengerAircraftCost{50, 0}, PassengerAircraftCost{300, 74}}) {
+		PassengerPrecomputedTable serial, parallel;
+		serial.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, true, {}, true, true, true, hyperpath, true, true, true, cost);
+		_settings_game.linkgraph.aircraft_link_scale = cost.scale;
+		_settings_game.linkgraph.aircraft_link_add = cost.addition == 74 ? 1 : 0;
+		parallel.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, true, {}, true, true, true, hyperpath);
+		// Both graph preparation and workers must ignore subsequent global edits.
+		_settings_game.linkgraph.aircraft_link_scale = 700; _settings_game.linkgraph.aircraft_link_add = 365;
+		for (auto *table : {&serial, &parallel}) while (!table->PrepareGraph(7)) {}
+		PrimePassengerWorkers(parallel, 4);
+		while (!serial.Finished()) {
+			CHECK(serial.Step(7) == parallel.StepParallel(7, 4));
+			REQUIRE(PassengerPrecomputedTestAccess::Published(serial) == PassengerPrecomputedTestAccess::Published(parallel));
+		}
+		CHECK(parallel.Finished());
+	}
 }
 
 TEST_CASE("Parallel passenger searches preserve every publication boundary and stored field", "[passenger][precomputed][parallel][save][network]")

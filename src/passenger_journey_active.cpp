@@ -850,7 +850,8 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		auto result = snapshot->planner.Plan(cargo, this->station, packet.GetPassengerDestination(), _state_ticks, limits, ActiveJourneyEvaluation(), 1);
 		CountJourneySearch(result, snapshot->planner, query_start, this->station, packet.GetPassengerDestination());
 		if (result.stop_reason == PassengerJourneyStopReason::PredictionHorizon ||
-				(result.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound && result.journeys.front().generalized_time.base() >= horizon)) {
+				(horizon < 65536 && result.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound &&
+				(snapshot->graph.HasAircraftDiscount() || result.journeys.front().generalized_time.base() >= horizon))) {
 			snapshot->failure = PassengerJourneyFallbackReason::PredictionHorizon;
 			if (horizon < 65536) continue;
 			return reject(PassengerJourneyFallbackReason::PredictionHorizon);
@@ -1130,6 +1131,16 @@ StationID PassengerOdFallbackContext::BoardingVia(const CargoPacket &packet, con
 	/* A live direct ride takes priority over an intermediate CargoDist hop. Both
 	 * checks reuse one order prefix and require no LinkGraph reverse exploration. */
 	StationID via = destination;
+	/* A penalized aircraft must not bypass an existing CargoDist ground corridor
+	 * merely because it also serves the destination directly. CargoDist already
+	 * applies these settings; keep its usable hop until timed routing resumes. */
+	if (vehicle->type == VehicleType::Aircraft && (_settings_game.linkgraph.aircraft_link_scale > 100 || _settings_game.linkgraph.aircraft_link_add != 0)) {
+		StationID hop = _settings_game.linkgraph.passenger_journey_precomputed ? packet.GetPassengerLegacyHop() :
+				CurrentPassengerLegacyHop(packet, cargo, vehicle->last_station_visited, packet.GetPassengerLegacyHop());
+		if (Station::IsValidID(hop) && hop != vehicle->last_station_visited && hop != destination) {
+			return this->CanReach(vehicle, cargo, hop) ? hop : StationID::Invalid();
+		}
+	}
 	if (!this->CanReach(vehicle, cargo, destination)) {
 		/* Precomputed waiting cohorts are indexed by their saved hop. Flow
 		 * changes are routing events, never a hidden per-packet boarding search. */
@@ -1686,7 +1697,8 @@ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Dec
 		auto result = snapshot->planner.PlanOnboard(cargo, *onboard, packet.GetPassengerDestination(), limits, ActiveJourneyEvaluation(), 1);
 		CountJourneySearch(result, snapshot->planner, query_start, this->station, packet.GetPassengerDestination());
 		if (result.stop_reason == PassengerJourneyStopReason::PredictionHorizon ||
-				(result.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound && result.journeys.front().generalized_time.base() >= horizon)) {
+				(horizon < 65536 && result.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound &&
+				(snapshot->graph.HasAircraftDiscount() || result.journeys.front().generalized_time.base() >= horizon))) {
 			snapshot->failure = PassengerJourneyFallbackReason::PredictionHorizon;
 			if (horizon < 65536) continue;
 			this->failure = PassengerJourneyFallbackReason::PredictionHorizon; return fallback();
@@ -2018,8 +2030,15 @@ std::array<uint, 3> CountReservedPassengerRoutingModes(const Station &station, C
 	return counts;
 }
 
+void PassengerAircraftCostSettingsChanged(int32_t)
+{
+	GetPassengerServiceDatabase().UpdateAircraftCosts();
+	ClearPassengerOdFallbackCache();
+}
+
 void PassengerJourneySettingsChanged(int32_t)
 {
+	PassengerAircraftCostSettingsChanged(0);
 	if (!_settings_game.linkgraph.passenger_journey_precomputed) GetPassengerServiceDatabase().DiscardPrecomputed();
 	InvalidatePassengerServiceDatabase();
 	/* Reserved cargo lives on vehicles. Return it before changing queue keys or mode. */

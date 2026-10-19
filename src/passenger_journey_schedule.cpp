@@ -116,7 +116,7 @@ PassengerSchedulePlan PassengerSchedulePlanner::Search(const PassengerServiceDat
 					int64_t wait = freq.wait;
 					if (rounds && !Add(wait, evaluation.minimum_transfer)) continue;
 					int64_t next_cost = cost;
-					if (!Add(next_cost, duration) || !Add(next_cost, wait) || !Add(next_cost, freq.capacity_penalty) ||
+					if (!Add(next_cost, duration + s.AircraftAdjustment(ref.stop, alighting)) || !Add(next_cost, wait) || !Add(next_cost, freq.capacity_penalty) ||
 							(rounds && !Add(next_cost, evaluation.transfer_penalty)) ||
 							(evaluation.waiting_weight && (wait > INT64_MAX / evaluation.waiting_weight || !Add(next_cost, wait * evaluation.waiting_weight / 1000))) ||
 							(rounds && !Add(next_cost, int64_t(evaluation.minimum_transfer) * evaluation.transfer_time_weight / 1000))) continue;

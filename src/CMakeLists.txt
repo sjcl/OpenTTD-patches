@@ -58,6 +58,7 @@ add_files(
     passenger_od.h
     passenger_service_graph.cpp
     passenger_service_graph.h
+    passenger_aircraft_cost.h
     passenger_service_database.cpp
     passenger_service_database.h
     passenger_precomputed.cpp
