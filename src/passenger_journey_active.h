@@ -243,13 +243,17 @@ class PassengerJourneyLoadingContext {
 	using HyperpathMembershipKey = std::tuple<HyperpathKey, OrderListID, uint64_t, std::array<uint32_t, 2>>;
 	std::map<HyperpathMembershipKey, bool> hyperpath_memberships; ///< Base membership only, local to this loading context.
 	uint64_t hyperpath_memo_serial;
+	StateTicks hyperpath_memo_ticks{}; ///< A context normally lives within one tick; a later tick renews the serial.
+	using RetiredPlanKey = std::tuple<CargoType, StationID, StationID, StateTicks, OrderListID>;
+	std::map<RetiredPlanKey, PassengerPrecomputedPlan> retired_plans; ///< Plans replacing a retired Hyperpath intent.
+	const PassengerPrecomputedPlan &RetiredPlan(CargoType cargo, const PassengerJourneyExecution &intent, OrderListID previous);
 	void RefreshBoardingRevision(); ///< Clears every revision-bound memo when the database's boarding revision moved.
 	std::optional<PassengerJourneyExecution> ResolveHyperpath(const PassengerJourneyExecution &intent, const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo, bool override_failure = false, OrderListID failed = OrderListID::Invalid());
 public:
 	PassengerJourneyLoadingContext();
 	/** Identity of this context's revision-bound memos, renewed whenever they are cleared or a
 	 * consist is invalidated. Unique per process; only compared for equality, never ordering. */
-	uint64_t HyperpathMemoSerial() { this->RefreshBoardingRevision(); return this->hyperpath_memo_serial; }
+	uint64_t HyperpathMemoSerial();
 	void EnableWaitingEvents() { this->waiting_events = true; } ///< Actual station simulation only; read-only predicates never wake packets.
 	int8_t hyperpath_filter_choice = -1; ///< Alternate boarding-filter diagnostic: fixed at this context's first Hyperpath walk.
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);

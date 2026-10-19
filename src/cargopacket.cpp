@@ -1855,14 +1855,41 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 	 * Round-robin primary buckets and FIFO inside each bucket survive index
 	 * reconstruction. Packet IDs are only unique handles, never priorities. */
 	const StationID last = this->passenger_boarding_last;
+	/* Walk scratch, reused across walks and never ordering: taken for this walk and returned on
+	 * exit, so a nested walk from a visitor gets its own. Simulation runs on one thread. */
+	struct Scratch {
+		std::vector<Cursor> heap;
+		std::vector<const void *> selected; ///< Sorted cohort identities; membership only.
+		std::vector<StationID> legacy_keys;
+	};
+	static thread_local std::vector<std::unique_ptr<Scratch>> spare;
+	std::unique_ptr<Scratch> scratch;
+	if (spare.empty()) {
+		scratch = std::make_unique<Scratch>();
+	} else {
+		scratch = std::move(spare.back()); spare.pop_back();
+	}
+	struct GiveBack {
+		std::unique_ptr<Scratch> &scratch;
+		~GiveBack()
+		{
+			scratch->heap.clear(); scratch->selected.clear(); scratch->legacy_keys.clear();
+			try { spare.push_back(std::move(scratch)); } catch (const std::bad_alloc &) { /* Reuse is optional. */ }
+		}
+	} give_back{scratch};
 	/* Identity membership only: pointer values never determine visit order. A
 	 * cohort can be reached through its own service and several section keys. */
-	std::set<const std::set<BoardingOrder> *> selected_groups;
+	auto select = [&](const void *group) {
+		auto &selected = scratch->selected;
+		auto it = std::lower_bound(selected.begin(), selected.end(), group, std::less<const void *>{});
+		if (it != selected.end() && *it == group) return false;
+		selected.insert(it, group); return true;
+	};
 	auto rank = [last](const BoardingOrder &order) { return std::pair(last != StationID::Invalid() && std::get<0>(order) <= last, order); };
 	auto later = [&](const Cursor &a, const Cursor &b) { return rank(a.order) > rank(b.order); };
 	/* Every cohort is collected before the first pop: one heapify instead of a push each.
 	 * Ranks are distinct (packet IDs), so the pop sequence is the same either way. */
-	std::vector<Cursor> initial;
+	auto &initial = scratch->heap;
 	auto cursor = [](Position begin, Position end, std::optional<StationID> ceiling, bool validate, uint8_t hyperpath = 0, size_t packets = 0) {
 		auto next = std::next(begin);
 		if (next != end && ceiling && std::get<0>(*next) > *ceiling) next = end;
@@ -1874,7 +1901,7 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 	auto add_group = [&](const std::set<BoardingOrder> &group, bool validate = false, uint8_t hyperpath = 0, bool unique = false) {
 		if (group.empty()) return;
 		if (!unique || validate_mode) {
-			if (!selected_groups.insert(&group).second) {
+			if (!select(&group)) {
 				if (unique) ++_passenger_event_diagnostic.hyperpath_lookup_duplicates;
 				return;
 			}
@@ -1933,7 +1960,8 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 				db.HyperpathBoardingOccurrences(this->passenger_index_cargo, station, service, vehicle->First()->cur_real_order_index);
 		const auto walk_started = walk ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
 		uint64_t walk_groups = 0;
-		std::set<const HyperpathWaiting *> admitted_groups; // Validate only.
+		std::optional<std::set<const HyperpathWaiting *>> admitted_groups; // Validate only.
+		if (validate) admitted_groups.emplace();
 		auto consider = [&](const HyperpathKey &key, const HyperpathWaiting &policy, bool adjusted) {
 			++_passenger_event_diagnostic.hyperpath_groups_checked;
 			bool base = policy.expiries.empty() || *policy.expiries.begin() <= _state_ticks;
@@ -1982,7 +2010,7 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 			}
 			if (admitted) {
 				++_passenger_event_diagnostic.hyperpath_groups_admitted;
-				if (validate) admitted_groups.insert(&policy);
+				if (validate) admitted_groups->insert(&policy);
 			}
 		};
 		if (walk && strategy == INDEXED) {
@@ -2026,7 +2054,7 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 				if (refs != lookup.occurrences[slot].end()) for (const auto &ref : refs->second) candidate(ref);
 			}
 			for (const auto &ref : lookup.always) candidate(ref);
-			for (const auto *group : admitted_groups) {
+			for (const auto *group : *admitted_groups) {
 				++_passenger_event_diagnostic.hyperpath_index_validated;
 				if (!candidates.contains(group)) ++_passenger_event_diagnostic.hyperpath_index_violations;
 			}
@@ -2072,7 +2100,9 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 		merge_keys(keys.sections[0], keys.sections[1], add_section);
 	}
 	const bool routing = vehicle != nullptr && IsPassengerJourneyRoutingEnabled(this->passenger_index_cargo);
-	std::set<StationID> legacy_keys(next.begin(), next.end()); legacy_keys.insert(StationID::Invalid());
+	auto &legacy_keys = scratch->legacy_keys; // Ascending and unique, as a std::set would iterate.
+	legacy_keys.assign(next.begin(), next.end()); legacy_keys.push_back(StationID::Invalid());
+	std::sort(legacy_keys.begin(), legacy_keys.end()); legacy_keys.erase(std::unique(legacy_keys.begin(), legacy_keys.end()), legacy_keys.end());
 	for (StationID key : legacy_keys) for (bool known : {false, true}) {
 		if (known && routing) continue;
 		auto group = this->legacy_boarding_index.find({known, key});
@@ -2110,9 +2140,12 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 			}
 		}
 	}
-	std::priority_queue<Cursor, std::vector<Cursor>, decltype(later)> candidates(later, std::move(initial));
+	/* The algorithms std::priority_queue uses, on the reused buffer. */
+	auto &candidates = scratch->heap;
+	std::make_heap(candidates.begin(), candidates.end(), later);
 	while (!candidates.empty()) {
-		auto current = candidates.top(); candidates.pop();
+		std::pop_heap(candidates.begin(), candidates.end(), later);
+		auto current = candidates.back(); candidates.pop_back();
 		if (current.hyperpath != 0) {
 			const auto *packet = CargoPacket::Get(std::get<2>(current.order));
 			/* Retain the original group predicate before exposing a conservative
@@ -2125,7 +2158,10 @@ bool StationCargoList::VisitBoardingCandidates(std::span<const StationID> next, 
 		if (current.validate && !loading.CanBoard(*CargoPacket::Get(std::get<2>(current.order)), vehicle, this->passenger_index_cargo)) continue;
 		/* Advance before the action can erase/reinsert its current packet or
 		 * delete its empty cohort. Other packet positions remain stable. */
-		if (current.next != current.end) candidates.push(cursor(current.next, current.end, current.ceiling, false));
+		if (current.next != current.end) {
+			candidates.push_back(cursor(current.next, current.end, current.ceiling, false));
+			std::push_heap(candidates.begin(), candidates.end(), later);
+		}
 		if (!visitor(std::get<2>(current.order))) return false;
 	}
 	return true;
@@ -2366,8 +2402,9 @@ uint StationCargoList::Truncate(uint max_move, StationCargoAmountMap *cargo_per_
  */
 uint StationCargoList::Reserve(uint max_move, VehicleCargoList *dest, std::span<const StationID> next_station, TileIndex current_tile, const Vehicle *vehicle, PassengerJourneyLoadingContext *loading)
 {
-	PassengerJourneyLoadingContext local_loading;
-	return this->ShiftJourneyCargo(CargoReservation(this, dest, max_move, current_tile), next_station, vehicle, loading == nullptr ? local_loading : *loading);
+	std::optional<PassengerJourneyLoadingContext> local_loading;
+	if (loading == nullptr) loading = &local_loading.emplace();
+	return this->ShiftJourneyCargo(CargoReservation(this, dest, max_move, current_tile), next_station, vehicle, *loading);
 }
 
 /**
@@ -2384,8 +2421,8 @@ uint StationCargoList::Reserve(uint max_move, VehicleCargoList *dest, std::span<
  */
 uint StationCargoList::Load(uint max_move, VehicleCargoList *dest, std::span<const StationID> next_station, TileIndex current_tile, const Vehicle *vehicle, PassengerJourneyLoadingContext *loading)
 {
-	PassengerJourneyLoadingContext local_loading;
-	if (loading == nullptr) loading = &local_loading;
+	std::optional<PassengerJourneyLoadingContext> local_loading; // Only without a caller's context: MSVC containers allocate on construction.
+	if (loading == nullptr) loading = &local_loading.emplace();
 	/* Return invalid Journey reservations only, retaining Legacy/valid reservations. */
 	if (dest->ReservedCount() > 0) {
 		dest->ReturnReserved(this, StationID::Invalid(), current_tile,
@@ -2477,8 +2514,8 @@ void StationCargoList::RecordCapacityMiss(std::span<const StationID> next, const
 
 bool StationCargoList::HasCargoFor(std::span<const StationID> next, const Vehicle *vehicle, PassengerJourneyLoadingContext *loading, CargoType cargo) const
 {
-	PassengerJourneyLoadingContext local_loading;
-	if (loading == nullptr) loading = &local_loading;
+	std::optional<PassengerJourneyLoadingContext> local_loading; // Only without a caller's context: MSVC containers allocate on construction.
+	if (loading == nullptr) loading = &local_loading.emplace();
 	if (_settings_game.linkgraph.passenger_journey_precomputed) {
 		CargoType actual_cargo = cargo < NUM_CARGO ? cargo : vehicle == nullptr ? INVALID_CARGO : vehicle->cargo_type;
 		if (actual_cargo != this->passenger_index_cargo) { const_cast<StationCargoList *>(this)->ClearWaitingIndex(); const_cast<StationCargoList *>(this)->passenger_index_cargo = actual_cargo; }

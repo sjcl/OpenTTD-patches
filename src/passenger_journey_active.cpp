@@ -1400,13 +1400,31 @@ static uint64_t NextHyperpathMemoSerial()
 	return ++serial;
 }
 
-PassengerJourneyLoadingContext::PassengerJourneyLoadingContext() : hyperpath_memo_serial(NextHyperpathMemoSerial()) {}
+PassengerJourneyLoadingContext::PassengerJourneyLoadingContext() : hyperpath_memo_serial(NextHyperpathMemoSerial()), hyperpath_memo_ticks(_state_ticks) {}
+
+uint64_t PassengerJourneyLoadingContext::HyperpathMemoSerial()
+{
+	this->RefreshBoardingRevision();
+	if (this->hyperpath_memo_ticks != _state_ticks) { this->hyperpath_memo_serial = NextHyperpathMemoSerial(); this->hyperpath_memo_ticks = _state_ticks; }
+	return this->hyperpath_memo_serial;
+}
+
+const PassengerPrecomputedPlan &PassengerJourneyLoadingContext::RetiredPlan(CargoType cargo, const PassengerJourneyExecution &intent, OrderListID previous)
+{
+	/* The plan is independent of the consist: every group and consist of this station pass that
+	 * asks for the same retired OD and arriving carrier shares it. */
+	this->RefreshBoardingRevision();
+	auto [found, inserted] = this->retired_plans.try_emplace(RetiredPlanKey{cargo, intent.boarding, intent.alighting, _state_ticks, previous});
+	if (inserted) found->second = GetPassengerServiceDatabase().PlanPrecomputed(cargo, intent.boarding, intent.alighting, _state_ticks, previous);
+	return found->second;
+}
 
 void PassengerJourneyLoadingContext::RefreshBoardingRevision()
 {
 	const auto revision = GetPassengerServiceDatabase().BoardingRevision();
 	if (this->pending_revision == revision) return;
 	this->pending_plans.clear(); this->hyperpath_rides.clear(); this->hyperpath_boardings.clear(); this->hyperpath_memberships.clear();
+	this->retired_plans.clear();
 	this->pending_revision = revision;
 	this->hyperpath_memo_serial = NextHyperpathMemoSerial();
 }
@@ -1489,7 +1507,7 @@ bool PassengerJourneyLoadingContext::MayUseHyperpathPolicy(const CargoPacket &re
 		return (base && entry->second) || (adjusted && failed_member(policy));
 	};
 	if (current) return inspect(intent, cached);
-	auto plan = db.PlanPrecomputed(cargo, intent.boarding, intent.alighting, _state_ticks, previous);
+	const auto &plan = this->RetiredPlan(cargo, intent, previous);
 	if (!plan.ride) return false;
 	if (plan.ride->kind != PassengerRideKind::HyperpathIntent) return true;
 	return inspect(*plan.ride, this->hyperpath_memberships.end());
@@ -1520,7 +1538,7 @@ bool PassengerJourneyLoadingContext::CanUseHyperpathPolicy(const CargoPacket &re
 	if (!db.IsCurrent(intent)) {
 		const auto *arriving = OrderList::GetIfValid(representative.GetPassengerArrivingService());
 		auto previous = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == representative.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
-		auto plan = db.PlanPrecomputed(cargo, intent.boarding, intent.alighting, _state_ticks, previous);
+		const auto &plan = this->RetiredPlan(cargo, intent, previous);
 		if (!plan.ride) return false;
 		intent = *plan.ride;
 		if (intent.kind != PassengerRideKind::HyperpathIntent) return true; // A retained legacy row is validated per packet.
@@ -1771,8 +1789,8 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 	}
 	CounterTimer category{TickBudget().diagnostic.waiting_microseconds};
 	PassengerJourneyActiveContext context(nullptr, station);
-	PassengerJourneyLoadingContext local_loading;
-	if (loading == nullptr) loading = &local_loading;
+	std::optional<PassengerJourneyLoadingContext> local_loading; // Only without a caller's context: MSVC containers allocate on construction.
+	if (loading == nullptr) loading = &local_loading.emplace();
 	const bool search = IsJourneyRetryTick(station);
 	std::map<OrderListID, uint64_t> signatures;
 	std::map<std::tuple<VehicleID, VehicleOrderID, VehicleOrderID, StationID>, bool> usable;
