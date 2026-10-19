@@ -295,26 +295,9 @@ void ClientNetworkGameSocketHandler::ClientError(NetworkRecvStatus res)
 	if (my_client != nullptr) my_client->CheckConnection();
 }
 
-/**
- * Actual game loop for the client.
- * @return Whether everything went okay, or not.
- */
-/* static */ bool ClientNetworkGameSocketHandler::GameLoop()
+/** Validate a completed frame, including a sync received after that frame ran. */
+/* static */ bool ClientNetworkGameSocketHandler::CheckSync()
 {
-	_frame_counter++;
-
-	const size_t total_sync_records = _network_sync_records.size();
-	_network_sync_records.push_back({ _frame_counter, _random.state[0], _state_checksum.state });
-	_record_sync_records = true;
-
-	NetworkExecuteLocalCommandQueue();
-
-	StateGameLoop();
-
-	_network_sync_records.push_back({ NSRE_FRAME_DONE, _random.state[0], _state_checksum.state });
-	_network_sync_record_counts.push_back((uint)(_network_sync_records.size() - total_sync_records));
-	_record_sync_records = false;
-
 	/* Check if we are in sync! */
 	if (_sync_frame != 0) {
 		if (_sync_frame == _frame_counter) {
@@ -352,6 +335,10 @@ void ClientNetworkGameSocketHandler::ClientError(NetworkRecvStatus res)
 			if (_network_first_time) {
 				_network_first_time = false;
 				SendAck();
+				/* Download/replay alone do not complete a join. Keep its progress
+				 * visible through preparation and close it at the first real sync.
+				 * New-company registration has its own command completion hook. */
+				if (_network_join_status != NetworkJoinStatus::Registering) CloseWindowById(WindowClass::NetworkStatus, NetworkStatusWindowNumber::Join);
 			}
 
 			_sync_frame = 0;
@@ -360,6 +347,36 @@ void ClientNetworkGameSocketHandler::ClientError(NetworkRecvStatus res)
 			_sync_frame = 0;
 		}
 	}
+
+	return true;
+}
+
+/**
+ * Actual game loop for the client.
+ * @return Whether everything went okay, or not.
+ */
+/* static */ bool ClientNetworkGameSocketHandler::GameLoop()
+{
+	/* Receive slices can deliver a sync for the frame we just completed.
+	 * Validate it before advancing, or a joining peer can miss every sync
+	 * and never send its initial ACK. Preparation has already released us. */
+	if (_sync_frame != 0 && _sync_frame == _frame_counter && !CheckSync()) return false;
+
+	_frame_counter++;
+
+	const size_t total_sync_records = _network_sync_records.size();
+	_network_sync_records.push_back({ _frame_counter, _random.state[0], _state_checksum.state });
+	_record_sync_records = true;
+
+	NetworkExecuteLocalCommandQueue();
+
+	StateGameLoop();
+
+	_network_sync_records.push_back({ NSRE_FRAME_DONE, _random.state[0], _state_checksum.state });
+	_network_sync_record_counts.push_back((uint)(_network_sync_records.size() - total_sync_records));
+	_record_sync_records = false;
+
+	if (!CheckSync()) return false;
 
 	if (_network_sync_record_counts.size() >= 128) {
 		/* Remove records from start of queue */
@@ -1190,7 +1207,13 @@ NetworkRecvStatus ClientNetworkGameSocketHandler::ReceiveServerPassengerPrepare(
 		if (!this->passenger_prepare_frame || !this->passenger_prepared || _frame_counter != frame) return NetworkRecvStatus::MalformedPacket;
 		this->passenger_prepare_frame.reset(); this->passenger_prepared = false; this->passenger_prepare_announced = false;
 	}
+	SetWindowDirty(WindowClass::NetworkStatus, NetworkStatusWindowNumber::Join);
 	return NetworkRecvStatus::Okay;
+}
+
+bool ClientNetworkGameSocketHandler::IsWaitingForPassengerPreparation()
+{
+	return my_client != nullptr && my_client->passenger_prepare_frame.has_value();
 }
 
 bool ClientNetworkGameSocketHandler::PreparePassengerRouting()
@@ -1210,6 +1233,7 @@ bool ClientNetworkGameSocketHandler::PreparePassengerRouting()
 		auto p = std::make_unique<Packet>(my_client, PacketGameType::ClientPassengerPrepared, TCP_MTU);
 		p->Send_uint32(*my_client->passenger_prepare_frame); my_client->SendPacket(std::move(p));
 		my_client->passenger_prepared = true;
+		SetWindowDirty(WindowClass::NetworkStatus, NetworkStatusWindowNumber::Join);
 	}
 	return false;
 }
@@ -1228,7 +1252,6 @@ NetworkRecvStatus ClientNetworkGameSocketHandler::FinishMapLoad()
 {
 	/* Say we received the map and restored its exact saved frontier! */
 	SendMapOk();
-	CloseWindowById(WindowClass::NetworkStatus, NetworkStatusWindowNumber::Join);
 
 	/* As we skipped switch-mode, update the time we "switched". */
 	_game_session_stats.start_time = std::chrono::steady_clock::now();

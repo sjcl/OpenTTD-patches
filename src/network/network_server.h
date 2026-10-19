@@ -24,16 +24,19 @@ extern NetworkClientSocketPool _networkclientsocket_pool;
 
 /** Class for handling the server side of the game connection. */
 class ServerNetworkGameSocketHandler : public NetworkClientSocketPool::PoolItem<&_networkclientsocket_pool>, public NetworkGameSocketHandler, public TCPListenHandler<ServerNetworkGameSocketHandler, PacketGameType, PacketGameType::ServerFull, PacketGameType::ServerBanned> {
+	friend struct NetworkPassengerPreparationTestAccess;
 	NetworkGameKeys intl_keys;
 	uint64_t min_key_message_id = 0;
 	uint8_t *rcon_reply_key = nullptr;
 	uint64_t map_load_work = 0, map_load_work_limit = 0; ///< Progress is bounded by the snapshot actually sent.
 	NetworkJoinProgress join_progress;
+	std::chrono::steady_clock::time_point map_send_started{};
 	friend void NetworkServer_Tick(bool send_frame);
 	std::optional<uint32_t> passenger_prepare_frame;
 	bool passenger_prepared = false;
 	std::chrono::steady_clock::time_point passenger_prepare_started{}, passenger_prepare_sent{};
 	void SendPassengerPreparation(bool preparing);
+	void BeginPassengerPreparation(uint32_t frame, std::chrono::steady_clock::time_point now);
 
 protected:
 	std::unique_ptr<class NetworkAuthenticationServerHandler> authentication_handler = nullptr; ///< The handler for the authentication.
