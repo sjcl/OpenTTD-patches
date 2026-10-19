@@ -236,6 +236,7 @@ public:
 		result.retained_destinations = old.destinations; result.retained_bytes = old.bytes; result.retained_envelope = old.envelope;
 		return result;
 	}
+	PassengerParallelBuildDiagnostic GetPrecomputedParallelDiagnostic(CargoType cargo) const { return this->precomputed[cargo].GetParallelDiagnostic(); } ///< Current generation only.
 	PassengerHyperpathMemoryDiagnostic InspectPrecomputedMemory(CargoType cargo, bool retained = false) const
 	{ return (retained ? this->retained_precomputed[cargo] : this->precomputed[cargo]).InspectMemory(); }
 	uint64_t GetPublishedRevision() const { return this->published_revision; }
