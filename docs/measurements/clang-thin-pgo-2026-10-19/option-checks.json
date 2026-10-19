@@ -1,0 +1,62 @@
+[
+  {
+    "name": "default-off",
+    "command": [
+      "cmake",
+      "-DCHECK_COMPILER=MSVC",
+      "-P",
+      "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\check-options.cmake"
+    ],
+    "return_code": 0,
+    "output": ""
+  },
+  {
+    "name": "invalid-mode",
+    "command": [
+      "cmake",
+      "-DCHECK_COMPILER=Clang",
+      "-DOPTION_PGO=INVALID",
+      "-P",
+      "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\check-options.cmake"
+    ],
+    "return_code": 1,
+    "output": "CMake Error at cmake/ProfileGuidedOptimization.cmake:12 (message):\n  OPTION_PGO must be OFF, GENERATE, or USE\nCall Stack (most recent call first):\n  build-clang-thin-pgo/check-options.cmake:3 (configure_pgo)\n\n\n"
+  },
+  {
+    "name": "unsupported-compiler",
+    "command": [
+      "cmake",
+      "-DCHECK_COMPILER=MSVC",
+      "-DOPTION_PGO=GENERATE",
+      "-P",
+      "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\check-options.cmake"
+    ],
+    "return_code": 1,
+    "output": "CMake Error at cmake/ProfileGuidedOptimization.cmake:15 (message):\n  OPTION_PGO requires Clang and a matching llvm-profdata\nCall Stack (most recent call first):\n  build-clang-thin-pgo/check-options.cmake:3 (configure_pgo)\n\n\n"
+  },
+  {
+    "name": "missing-profile",
+    "command": [
+      "cmake",
+      "-DCHECK_COMPILER=Clang",
+      "-DOPTION_PGO=USE",
+      "-P",
+      "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\check-options.cmake"
+    ],
+    "return_code": 1,
+    "output": "CMake Error at cmake/ProfileGuidedOptimization.cmake:23 (message):\n  OPTION_PGO=USE requires an existing PGO_PROFILE_FILE (.profdata)\nCall Stack (most recent call first):\n  build-clang-thin-pgo/check-options.cmake:3 (configure_pgo)\n\n\n"
+  },
+  {
+    "name": "profile-is-directory",
+    "command": [
+      "cmake",
+      "-DCHECK_COMPILER=Clang",
+      "-DOPTION_PGO=USE",
+      "-DPGO_PROFILE_FILE=C:/Users/bebe/.codex/worktrees/6d2b/OpenTTD-patches/build-clang-thin-pgo",
+      "-P",
+      "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-clang-thin-pgo\\check-options.cmake"
+    ],
+    "return_code": 1,
+    "output": "CMake Error at cmake/ProfileGuidedOptimization.cmake:23 (message):\n  OPTION_PGO=USE requires an existing PGO_PROFILE_FILE (.profdata)\nCall Stack (most recent call first):\n  build-clang-thin-pgo/check-options.cmake:3 (configure_pgo)\n\n\n"
+  }
+]

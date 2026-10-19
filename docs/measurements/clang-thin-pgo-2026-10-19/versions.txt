@@ -1,0 +1,10 @@
+clang version 19.1.5
+Target: x86_64-pc-windows-msvc
+Thread model: posix
+InstalledDir: C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\Llvm\x64\bin
+
+LLD 19.1.5
+
+LLVM (http://llvm.org/):
+  LLVM version 19.1.5
+  Optimized build.

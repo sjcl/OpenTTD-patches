@@ -1,0 +1,35 @@
+{
+  "status": "measurement_blocked_by_automatic_approval_review",
+  "attempts": [
+    {
+      "action": "Initial WPR helper launch",
+      "status": "cancelled_by_windows"
+    },
+    {
+      "action": "User-approved Start-Process pwsh -Verb RunAs -WindowStyle Hidden -File build-clang-thin-pgo/record.ps1",
+      "recording_started": "unconfirmed",
+      "status": "returned_process_id",
+      "process_id": 91660
+    },
+    {
+      "action": "Start measurement and query WPR status with sandbox escalation",
+      "errors": [
+        "Automatic approval review failed: Selected model is at capacity",
+        "The automatic permission approval review did not finish before its deadline"
+      ],
+      "status": "not_executed",
+      "retry": "Retried after waiting at the user request; still unavailable"
+    },
+    {
+      "action": "User-requested WPR retry on 2026-10-19; status queries and helper restart",
+      "status": "not_executed",
+      "errors": [
+        "Automatic approval review failed: Selected model is at capacity",
+        "The automatic permission approval review did not finish before its deadline"
+      ],
+      "retry": "Waited and retried; helper restart timed out twice"
+    }
+  ],
+  "measurement": "No WPR data recorded; plain CPU counters available",
+  "cleanup": "recorder-stop.txt written for bounded helper shutdown"
+}
