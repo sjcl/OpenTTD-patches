@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "source_paths": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-windows-checks\\portable-8\\original\\source",
+    "C:\\Users\\bebe\\.codex\\worktrees\\6d2b\\OpenTTD-patches\\build-windows-checks\\portable-8\\relocated source\\source"
+  ],
+  "compiler_defaults": "Visual Studio generator with no -T or compiler override selected LLVM 23.1.3",
+  "relocated_static_function_profile": true,
+  "profile_summary": true,
+  "function_entry_count": true
+}

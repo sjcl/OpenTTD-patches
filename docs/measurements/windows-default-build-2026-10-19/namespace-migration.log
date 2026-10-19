@@ -1,0 +1,51 @@
+Failed to find real location of C:\Users\bebe\AppData\Local\Programs\Python\Python313\python.exe
+{
+  "profile_sha256": "1bcd4ad1bc15c07b26ae52cde1b9b2318675e1278d07204678eb252d476c4bf3",
+  "mappings": [
+    {
+      "source": "src/passenger_journey_active.cpp",
+      "old": "10BDF943",
+      "canonical": "5515DE12"
+    },
+    {
+      "source": "src/station_passenger_service_gui.cpp",
+      "old": "1778CEC8",
+      "canonical": "FA9DC255"
+    },
+    {
+      "source": "src/passenger_service_index.cpp",
+      "old": "2016E82F",
+      "canonical": "58A25837"
+    },
+    {
+      "source": "src/passenger_service_database.cpp",
+      "old": "50B3ECC5",
+      "canonical": "874196C4"
+    },
+    {
+      "source": "src/passenger_journey_planner.cpp",
+      "old": "5132BF28",
+      "canonical": "5603254F"
+    },
+    {
+      "source": "src/linkgraph/passenger_route_overlay.cpp",
+      "old": "86FF1AB",
+      "canonical": "9AB80112"
+    },
+    {
+      "source": "src/passenger_precomputed.cpp",
+      "old": "D6DC379",
+      "canonical": "310E4756"
+    },
+    {
+      "source": "src/framerate_gui.cpp",
+      "old": "E968CBD7",
+      "canonical": "60249966"
+    },
+    {
+      "source": "src/passenger_journey_schedule.cpp",
+      "old": "F70FE746",
+      "canonical": "E5F723B0"
+    }
+  ]
+}

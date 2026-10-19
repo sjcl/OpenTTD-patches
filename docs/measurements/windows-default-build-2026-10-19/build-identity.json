@@ -1,0 +1,28 @@
+{
+  "base_commit": "377bca5df659ddbf9438cbea3e2fea23dbe7e814",
+  "revision": "jgrpp-ya-0.73.3+4-32-g377bca5df-m",
+  "sources": {
+    "CMakeLists.txt": "e986d976e18123df40415331ec5d0130d37562acb45740a1b803a851c606d7e0",
+    "CMakePresets.json": "15c183c4a7892d11aef83babbf660c3c5c798b11668b73d5f0e593a4264579a0",
+    "COMPILING.md": "34801086cb513dcbce912c239823cc8f822d7d331b481fa6e269c70d184598cf",
+    "cmake/WindowsDefaults.cmake": "1540af47b842e94e9da6d1c5c2ee8ae7ff70782ec33332f54587e5449ca1c0f9",
+    "cmake/WindowsLLVMVersion.cmake": "aa2ee70021cf5332985a60fa8526caac672dc68e89e1d2bbc169a228fc1dfe3e",
+    "cmake/ProfileGuidedOptimization.cmake": "78ef1afc0e4bf3cb02b47c8dafd91caa0ae1629300aba6192b00a0b270d8f3ec",
+    "cmake/ClangCLRuntime.cmake": "977745f8b7b41cdb9b046a4f8b45e9cd8819b22c127efd459071078175511270",
+    "cmake/LinkTimeOptimization.cmake": "cff7430684aa2ba76ada37bc15b2af0400a21ef25a3380d8467abb416b815b1d",
+    "os/windows/Build.ps1": "44dbafb2c2aaeafa40ff6a8ebc253d551769ebf403f30c703850924a7693a8e0",
+    "os/windows/InstallLLVM.ps1": "612bc578eab28c4530c5fa689a8ac495aa8e626281d989a49ff0fd00974d5c2a",
+    "os/windows/PreparePGO.py": "3e59b601393bdb1aa896a8494d6be1d52f0590c06d763700a9947ad0e2af7b75",
+    "src/core/arena_alloc.hpp": "e1d1096711f66fffc6f0df64be86ac50537ea9ca1bcd47bb5cca8c4be2512c34",
+    "src/os/windows/win32.cpp": "0b191e460e9f532895d6a144aeb40564764f08e1c82874c3737835ee6ef9037c",
+    "src/tests/arena_alloc.cpp": "e8b7b98e4aee48b31787751e4f2236d47bcfb3900ef1a79953ae278eb604c289",
+    ".github/workflows/ci-windows.yml": "02501a15bf953f058baf8b48c01576ef1d9510c55532af109946215c554dacef",
+    ".github/workflows/release-windows.yml": "fca0e130465caa0cb39b1646eb3968e0df27f0ff700f145ab547a49f83416fe2"
+  },
+  "ctest_passed": 784,
+  "ctest_seconds": 113.77,
+  "local_runtime_architecture": "x64",
+  "remote_actions_executed": false,
+  "machine_update": "LLVM.LLVM 18.1.8 -> 23.1.3; version gate restored at 23.1.3",
+  "profile_sha256": "1bcd4ad1bc15c07b26ae52cde1b9b2318675e1278d07204678eb252d476c4bf3"
+}
