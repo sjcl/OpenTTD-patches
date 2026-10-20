@@ -3742,6 +3742,17 @@ STR_STATION_VIEW_PASSENGER_SERVICE_RESERVED                    :乗車予約済�
 STR_STATION_VIEW_PASSENGER_SERVICE_UPDATING                    :系統情報更新待ち
 STR_STATION_VIEW_PASSENGER_SERVICE_UNGROUPED                   :グループ未設定
 STR_STATION_VIEW_PASSENGER_SERVICE_CHECKING                    :系統確認中
+STR_STATION_VIEW_PASSENGER_ROUTE_TITLE                        :{BLACK}{STATION}までの推定経路
+STR_STATION_VIEW_PASSENGER_ROUTE_CANDIDATE                    :候補{COMMA}
+STR_STATION_VIEW_PASSENGER_ROUTE_DIRECT                       :（直通）
+STR_STATION_VIEW_PASSENGER_ROUTE_SERVICE                      :  ↓ {RAW_STRING}
+STR_STATION_VIEW_PASSENGER_ROUTE_TRANSFER                     :{STATION}（乗換）
+STR_STATION_VIEW_PASSENGER_ROUTE_DESTINATION                  :{STATION}（目的地）
+STR_STATION_VIEW_PASSENGER_ROUTE_UNDETERMINED                 :以降の経路は未確定
+STR_STATION_VIEW_PASSENGER_ROUTE_MORE                         :ほかの経路候補あり
+STR_STATION_VIEW_PASSENGER_ROUTE_UNKNOWN                      :経路が不明、または未確認の旅客が含まれます。
+STR_STATION_VIEW_PASSENGER_ROUTE_REPRESENTATIVE               :複数の旅客群を代表した経路例です。実際の乗車割合を予測するものではありません。
+STR_STATION_VIEW_PASSENGER_ROUTE_ESTIMATE                     :※ 現在の経路表から推定した経路です。{}実際の乗車・乗換は変わる場合があります。
 STR_STATION_VIEW_GROUP_PASSENGER_TOOLTIP                       :{BLACK}待機中の旅客は「乗車系統 → 最終目的地 → 出発地」で表示します。系統別人数は代表候補で分類した人数で、実際の乗車人数の予測ではありません。一般貨物と「予定」表示にはグループ化設定が適用されます。
 STR_STATION_VIEW_GROUP_OTHER_CARGO                             :{BLACK}一般貨物:
 STR_STATION_VIEW_PASSENGER_DESTINATION_UNKNOWN                 :{RED}目的地不明: {CARGO_SHORT}

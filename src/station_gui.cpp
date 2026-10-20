@@ -20,6 +20,7 @@
 #include "cargotype.h"
 #include "station_gui.h"
 #include "station_cargo_gui.h"
+#include "station_passenger_route_gui.h"
 #include "group.h"
 #include "linkgraph/linkgraph_gui.h"
 #include "strings_func.h"
@@ -1330,6 +1331,7 @@ struct StationViewWindow : public Window {
 	struct RowDisplay {
 		std::vector<StationCargoKey> path; ///< IDs only; remains safe if a partial service classification moves.
 		StationID station = StationID::Invalid(); ///< Service rows never act as station links.
+		uint count = 0;
 	};
 
 	typedef std::vector<RowDisplay> CargoDataVector;
@@ -1409,6 +1411,7 @@ struct StationViewWindow : public Window {
 	CargoDataEntry cached_destinations{}; ///< Cache for the flows passing through this station.
 	CargoDataVector displayed_rows{}; ///< Parent entry of currently displayed rows (including collapsed ones).
 	StationPassengerServiceCache passenger_services; ///< Persistent ID cache and fair, resumable GUI work.
+	StationPassengerRouteCache passenger_routes; ///< Bounded, client-local last-hover route examples.
 	StationCargoGroupingMode grouping_mode = StationCargoGroupingMode::Conventional;
 	uint passenger_service_age = 0;
 	bool passenger_service_changed = false;
@@ -1507,6 +1510,36 @@ struct StationViewWindow : public Window {
 
 	bool OnTooltip(Point pt, WidgetID widget, TooltipCloseCondition close_cond) override
 	{
+		if (widget == WID_SV_WAITING) {
+			auto row = GetStationPassengerRouteRow(this->vscroll->GetScrolledRowFromWidget(pt.y, this, WID_SV_WAITING,
+					WidgetDimensions::scaled.framerect.top), this->vscroll->GetPosition(), this->displayed_rows.size());
+			if (!row) return false;
+			const auto &display = this->displayed_rows[*row];
+			auto target = GetStationPassengerRouteTarget(this->current_mode == MODE_WAITING, display.path);
+			if (!target) return false;
+			const auto &examples = this->passenger_routes.Get(*Station::Get(this->window_number), *target, display.count, this->passenger_services);
+			std::string text = GetString(STR_STATION_VIEW_PASSENGER_ROUTE_TITLE, target->destination);
+			uint number = 0;
+			for (const auto &route : examples.routes) {
+				text += "\n" + GetString(STR_STATION_VIEW_PASSENGER_ROUTE_CANDIDATE, ++number);
+				if (route.complete && route.legs.size() == 1) text += " " + GetString(STR_STATION_VIEW_PASSENGER_ROUTE_DIRECT);
+				text += "\n" + GetString(STR_STATION_NAME, static_cast<StationID>(this->window_number));
+				for (const auto &leg : route.legs) {
+					auto service = this->passenger_services.Resolve(target->cargo, leg);
+					text += "\n" + GetString(STR_STATION_VIEW_PASSENGER_ROUTE_SERVICE, GetPassengerServiceName(service));
+					text += "\n" + GetString(leg.alighting == target->destination ? STR_STATION_VIEW_PASSENGER_ROUTE_DESTINATION :
+							STR_STATION_VIEW_PASSENGER_ROUTE_TRANSFER, leg.alighting);
+				}
+				if (!route.complete) text += "\n" + GetString(STR_STATION_VIEW_PASSENGER_ROUTE_UNDETERMINED);
+			}
+			if (examples.more) text += "\n" + GetString(STR_STATION_VIEW_PASSENGER_ROUTE_MORE);
+			if (examples.unknown) text += "\n" + GetString(STR_STATION_VIEW_PASSENGER_ROUTE_UNKNOWN);
+			if (examples.multiple) text += "\n" + GetString(STR_STATION_VIEW_PASSENGER_ROUTE_REPRESENTATIVE);
+			text += "\n" + GetString(STR_STATION_VIEW_PASSENGER_ROUTE_ESTIMATE);
+			GuiShowTooltips(this, GetEncodedString(STR_JUST_RAW_STRING, text), close_cond);
+			return true;
+		}
+
 		if (widget == WID_SV_RENAME) {
 			GuiShowTooltips(this, GetEncodedString(STR_STATION_VIEW_RENAME_TOOLTIP_EXTRA, STR_STATION_VIEW_EDIT_TOOLTIP, STR_BUTTON_DEFAULT), close_cond);
 			return true;
@@ -1886,6 +1919,7 @@ struct StationViewWindow : public Window {
 	{
 		RowDisplay row;
 		row.station = entry.IsService() ? StationID::Invalid() : entry.GetStation();
+		row.count = entry.GetCount();
 		for (const CargoDataEntry *node = &entry; node->GetParent() != nullptr; node = node->GetParent()) {
 			row.path.push_back(node->IsService() ? StationCargoKey{PassengerServiceExpansionKey(node->GetService())} : node->GetKey());
 		}
@@ -2513,6 +2547,7 @@ void InvalidateStationPassengerServiceDisplay(OrderListID service)
 		if (window->window_class != WindowClass::StationView) continue;
 		auto *station = static_cast<StationViewWindow *>(window);
 		station->passenger_services.Invalidate(service);
+		station->passenger_routes.Clear();
 		station->SetWidgetDirty(WID_SV_WAITING);
 	}
 }

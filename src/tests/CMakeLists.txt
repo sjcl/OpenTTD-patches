@@ -35,6 +35,7 @@ add_test_files(
     test_bitset.cpp
     test_main.cpp
     station_cargo_gui.cpp
+    station_passenger_route_gui.cpp
     test_map.cpp
     test_network_crypto.cpp
     test_network_debug.cpp

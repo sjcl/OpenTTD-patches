@@ -563,6 +563,8 @@ add_files(
     station_func.h
     station_gui.cpp
     station_passenger_service_gui.cpp
+    station_passenger_route_gui.cpp
+    station_passenger_route_gui.h
     station_gui.h
     station_cargo_gui.h
     station_kdtree.h

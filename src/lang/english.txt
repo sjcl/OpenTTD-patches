@@ -3961,6 +3961,17 @@ STR_STATION_VIEW_PASSENGER_SERVICE_RESERVED                    :Reserved for boa
 STR_STATION_VIEW_PASSENGER_SERVICE_UPDATING                    :Waiting for service update
 STR_STATION_VIEW_PASSENGER_SERVICE_UNGROUPED                   :Group not set
 STR_STATION_VIEW_PASSENGER_SERVICE_CHECKING                    :Checking service
+STR_STATION_VIEW_PASSENGER_ROUTE_TITLE                        :{BLACK}Estimated routes to {STATION}
+STR_STATION_VIEW_PASSENGER_ROUTE_CANDIDATE                    :Example {COMMA}
+STR_STATION_VIEW_PASSENGER_ROUTE_DIRECT                       :(direct)
+STR_STATION_VIEW_PASSENGER_ROUTE_SERVICE                      :  ↓ {RAW_STRING}
+STR_STATION_VIEW_PASSENGER_ROUTE_TRANSFER                     :{STATION} (transfer)
+STR_STATION_VIEW_PASSENGER_ROUTE_DESTINATION                  :{STATION} (destination)
+STR_STATION_VIEW_PASSENGER_ROUTE_UNDETERMINED                 :Further route undetermined
+STR_STATION_VIEW_PASSENGER_ROUTE_MORE                         :Other route candidates exist
+STR_STATION_VIEW_PASSENGER_ROUTE_UNKNOWN                      :Some passengers have unknown or uninspected routes.
+STR_STATION_VIEW_PASSENGER_ROUTE_REPRESENTATIVE               :These examples represent several passenger cohorts; no boarding proportions are predicted.
+STR_STATION_VIEW_PASSENGER_ROUTE_ESTIMATE                     :Estimated from current routing tables.{}Actual boarding and transfers may change.
 STR_STATION_VIEW_GROUP_PASSENGER_TOOLTIP                       :{BLACK}Waiting passengers use service, final destination and source. Passenger counts are grouped by a representative candidate service, not a prediction of boarding numbers. Other cargo and planned flows use the cargo grouping selection.
 STR_STATION_VIEW_GROUP_OTHER_CARGO                             :{BLACK}Other cargo
 STR_STATION_VIEW_PASSENGER_DESTINATION_UNKNOWN                 :{RED}{CARGO_SHORT} to unknown destination
