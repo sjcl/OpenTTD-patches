@@ -48,6 +48,25 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
   - 原因: a968222f の `Board` 共有キャッシュにヒットすると `table.Board` が呼ばれず、追い出された failed-carrier の local policy が作り直されない。そのため display が `Unavailable` になっていた。
   - 修正: failed carrier があるときは共有キャッシュを通さない（`CachedHyperpathMembership` と同じ方針）。`Board` の答えは同じで、local policy が残るかどうかも a968222f より前と同じになる。
 
+### 目的地単位の generation sweep（88dc128a、未計測）
+
+- **ユーザーの判断で、挙動を変える案（B）を選んだ。** canonical は merge 後の基準とも一致しない。比較は性能と、validate・決定性で行う。
+- **何が重かったか**: 55f1cfe0 の B1（Hyperpath）では、`Passenger scheduler cause` の generation が 43,211 packet・317,815 µs / 2,048 tick（7.4 µs/packet）だった。
+  - 実マップは置き換えの構築中（現在の表 333 行、保持中の旧表 4,603 行）。行がほぼ 6 tick ごとに公開される。
+  - 公開のたびに `WakePassengerWaitingCargo` が未解決 packet を持つ全駅の `dirty` を立て、全件 sweep が始まっていた。fallback 待ちは数十人しかいないのに、その計画のし直しが繰り返されていた。
+- **変更**:
+  - Hyperpath の計画は目的地の行だけで決まる。行は `graph->stations` の順に公開され、`station_index[d]` がその番号になる。
+  - 同じ世代の表で行が r0 → r1 に増えただけの sweep は、目的地の番号が [r0, r1) に入る packet だけを計画し直す。対象外の packet は計画せず、national work も使わない。station slice の work を 1 だけ使って読み飛ばす。
+  - 行の公開は `dirty` ではなく、保存される `published` で駅を起こす。
+  - `dirty`、間隔を空けた revision sweep、世代の変化、Legacy の表がある場合は、従来どおり全件 sweep にする。目的地を絞った sweep は `swept`/`revision` を更新しない。
+  - 目的地を絞った sweep の途中で表の世代が変わったら、残りを全件 sweep にする。
+  - リストごとに保存するフィールドを追加した（`published`、`rows_from`、`generation`）。古いセーブは全件 sweep から始まる。
+- **確認済み**: 全 819 テスト、表構築の digest 不変（`cd999757a6c5fbc5` / `575548db5660677a`）。新しいテスト「Row publications sweep only waiting packets of their new destinations」は、絞り込みを外す改変と世代の切り替えを外す改変の両方で失敗することを確認した。
+- **計測で見る診断**: 新しい行 `Passenger generation sweeps: full=; row_limited=; skipped_packets=` と、`Passenger scheduler cause: cause=generation`。
+- **次にやること**: ユーザーに次の計測を依頼する。A = cdebb1a0（jgrpp-ya merge 後。9439af0e とツリーは同じ）、B = 88dc128a。
+  - ABBA（Legacy・Hyperpath）。canonical は一致しない見込みなので、各版の 2 本どうしで一致すること（決定性）を確かめる。
+  - validate を各版 1 本ずつ（B は必須）。
+
 ## 3. 計測の基準（2026-10-19 から）
 
 - **リリース構成**: LLVM 23.1.3 の ThinLTO（clang-cl/LLD）。ユーザーの [Windows 既定ビルド](windows-default-build-2026-10-19.md)。
@@ -110,6 +129,8 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
 
 | commit | 内容 | 実マップの結果 |
 | --- | --- | --- |
+| 88dc128a | generation sweep を、新しく公開された行の目的地に絞る（挙動が変わる） | 未計測 |
+| 7b3f2c4b | jgrpp-ya merge 後、failed carrier の `Board` は共有キャッシュを通さない | 全テスト合格。実マップは未計測 |
 | 55f1cfe0 | `Board`/plan キャッシュを binding 更新に追従させる修正 | [ABBA8本・validate1本](passenger-wpr-abba-55f1cfe0-2026-10-20.md)でcanonical一致、違反カウンター0 |
 | 0d99a67f | 乗り継ぎグループの保存済み判定を、DB の直接写像キャッシュで tick 間共有。context memo は廃止 | canonical 不一致（原因は a968222f 側。上記） |
 | a968222f | 共有キャッシュを固定サイズの直接写像に変更し、表の `Board` 結果も共有 | 同上 |
@@ -142,7 +163,8 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
 
 ## 7. 未着手の案
 
-- 行の公開に合わせて、その目的地の待機 packet だけを再計画する（sweep を目的地単位に絞る）。挙動が変わるので、canonical の再基準化が必要。
+- （88dc128a で実装）行の公開に合わせて、その目的地の待機 packet だけを再計画する。
+- 失敗（failure）と期限切れ（expiry）の再計画。55f1cfe0 の B1 では failure 134,017 packet・0.22 ms/tick、expiry 197,808 packet・0.11 ms/tick で、generation より大きい。
 - 待機索引のノード系コンテナを pool 化する。
 - 原因別タイマーをサンプリングにする（診断値の意味が変わる）。
 - radix キューとリング型キューを Clang で比べ直す。以前は GCC では速く、MSVC では遅かった。
