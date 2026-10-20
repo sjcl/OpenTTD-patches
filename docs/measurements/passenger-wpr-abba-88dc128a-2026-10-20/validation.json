@@ -1,0 +1,472 @@
+{
+  "accepted_traces": 8,
+  "native_tests": {
+    "A": {
+      "tests": 818,
+      "assertions": 11055867
+    },
+    "B": {
+      "tests": 819,
+      "assertions": 11055928
+    }
+  },
+  "same_input": true,
+  "same_capture_profile": true,
+  "runs": {
+    "01-A1/legacy": {
+      "exact_ticks": 2048,
+      "canonical": {
+        "same_version_same_mode": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        }
+      },
+      "window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "raw_csv_hashes_match": true,
+      "unresolved_product_functions": {},
+      "invalid_event_times_us": [
+        61011932
+      ],
+      "invalid_events_outside_markers": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 59908380200,
+          "stack_samples": 59904,
+          "exclusive_total_ns": 59908380200,
+          "exclusive_samples": 59904
+        },
+        "main": {
+          "stack_total_ns": 58563282600,
+          "stack_samples": 58560,
+          "exclusive_total_ns": 58563282600,
+          "exclusive_samples": 58560
+        },
+        "simulation_stack": {
+          "stack_total_ns": 53317508400,
+          "stack_samples": 53314,
+          "exclusive_total_ns": 53317508400,
+          "exclusive_samples": 53314
+        }
+      },
+      "payments_valid": true
+    },
+    "01-A1/hyperpath": {
+      "exact_ticks": 2048,
+      "canonical": {
+        "same_version_same_mode": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        }
+      },
+      "window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "raw_csv_hashes_match": true,
+      "unresolved_product_functions": {},
+      "invalid_event_times_us": [
+        41415912
+      ],
+      "invalid_events_outside_markers": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 42248823400,
+          "stack_samples": 42240,
+          "exclusive_total_ns": 42248823400,
+          "exclusive_samples": 42240
+        },
+        "main": {
+          "stack_total_ns": 39478938100,
+          "stack_samples": 39472,
+          "exclusive_total_ns": 39478938100,
+          "exclusive_samples": 39472
+        },
+        "simulation_stack": {
+          "stack_total_ns": 37664347500,
+          "stack_samples": 37658,
+          "exclusive_total_ns": 37664347500,
+          "exclusive_samples": 37658
+        }
+      },
+      "payments_valid": true
+    },
+    "02-B1/legacy": {
+      "exact_ticks": 2048,
+      "canonical": {
+        "same_version_same_mode": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        }
+      },
+      "window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "raw_csv_hashes_match": true,
+      "unresolved_product_functions": {},
+      "invalid_event_times_us": [
+        49838740
+      ],
+      "invalid_events_outside_markers": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 49158696300,
+          "stack_samples": 49154,
+          "exclusive_total_ns": 49158696300,
+          "exclusive_samples": 49154
+        },
+        "main": {
+          "stack_total_ns": 47902896100,
+          "stack_samples": 47899,
+          "exclusive_total_ns": 47902896100,
+          "exclusive_samples": 47899
+        },
+        "simulation_stack": {
+          "stack_total_ns": 43757602900,
+          "stack_samples": 43754,
+          "exclusive_total_ns": 43757602900,
+          "exclusive_samples": 43754
+        }
+      },
+      "payments_valid": true
+    },
+    "02-B1/hyperpath": {
+      "exact_ticks": 2048,
+      "canonical": {
+        "same_version_same_mode": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        }
+      },
+      "window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "raw_csv_hashes_match": true,
+      "unresolved_product_functions": {},
+      "invalid_event_times_us": [
+        46872030
+      ],
+      "invalid_events_outside_markers": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 47662757700,
+          "stack_samples": 47657,
+          "exclusive_total_ns": 47662757700,
+          "exclusive_samples": 47657
+        },
+        "main": {
+          "stack_total_ns": 44944903900,
+          "stack_samples": 44939,
+          "exclusive_total_ns": 44944903900,
+          "exclusive_samples": 44939
+        },
+        "simulation_stack": {
+          "stack_total_ns": 42971743000,
+          "stack_samples": 42966,
+          "exclusive_total_ns": 42971743000,
+          "exclusive_samples": 42966
+        }
+      },
+      "payments_valid": true
+    },
+    "03-B2/legacy": {
+      "exact_ticks": 2048,
+      "canonical": {
+        "same_version_same_mode": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        }
+      },
+      "window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "raw_csv_hashes_match": true,
+      "unresolved_product_functions": {},
+      "invalid_event_times_us": [
+        48670046
+      ],
+      "invalid_events_outside_markers": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 47769459600,
+          "stack_samples": 47764,
+          "exclusive_total_ns": 47769459600,
+          "exclusive_samples": 47764
+        },
+        "main": {
+          "stack_total_ns": 46693782300,
+          "stack_samples": 46689,
+          "exclusive_total_ns": 46693782300,
+          "exclusive_samples": 46689
+        },
+        "simulation_stack": {
+          "stack_total_ns": 42022679600,
+          "stack_samples": 42018,
+          "exclusive_total_ns": 42022679600,
+          "exclusive_samples": 42018
+        }
+      },
+      "payments_valid": true
+    },
+    "03-B2/hyperpath": {
+      "exact_ticks": 2048,
+      "canonical": {
+        "same_version_same_mode": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        }
+      },
+      "window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "raw_csv_hashes_match": true,
+      "unresolved_product_functions": {},
+      "invalid_event_times_us": [
+        58102538
+      ],
+      "invalid_events_outside_markers": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 58785530800,
+          "stack_samples": 58776,
+          "exclusive_total_ns": 58785530800,
+          "exclusive_samples": 58776
+        },
+        "main": {
+          "stack_total_ns": 55711802000,
+          "stack_samples": 55704,
+          "exclusive_total_ns": 55711802000,
+          "exclusive_samples": 55704
+        },
+        "simulation_stack": {
+          "stack_total_ns": 52883423700,
+          "stack_samples": 52876,
+          "exclusive_total_ns": 52883423700,
+          "exclusive_samples": 52876
+        }
+      },
+      "payments_valid": true
+    },
+    "04-A2/legacy": {
+      "exact_ticks": 2048,
+      "canonical": {
+        "same_version_same_mode": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        }
+      },
+      "window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "raw_csv_hashes_match": true,
+      "unresolved_product_functions": {},
+      "invalid_event_times_us": [
+        48372595
+      ],
+      "invalid_events_outside_markers": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 47605466300,
+          "stack_samples": 47600,
+          "exclusive_total_ns": 47605466300,
+          "exclusive_samples": 47600
+        },
+        "main": {
+          "stack_total_ns": 46435012200,
+          "stack_samples": 46430,
+          "exclusive_total_ns": 46435012200,
+          "exclusive_samples": 46430
+        },
+        "simulation_stack": {
+          "stack_total_ns": 41966717200,
+          "stack_samples": 41962,
+          "exclusive_total_ns": 41966717200,
+          "exclusive_samples": 41962
+        }
+      },
+      "payments_valid": true
+    },
+    "04-A2/hyperpath": {
+      "exact_ticks": 2048,
+      "canonical": {
+        "same_version_same_mode": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        }
+      },
+      "window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "raw_csv_hashes_match": true,
+      "unresolved_product_functions": {},
+      "invalid_event_times_us": [
+        43285090
+      ],
+      "invalid_events_outside_markers": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 43765464600,
+          "stack_samples": 43758,
+          "exclusive_total_ns": 43765464600,
+          "exclusive_samples": 43758
+        },
+        "main": {
+          "stack_total_ns": 41242391300,
+          "stack_samples": 41236,
+          "exclusive_total_ns": 41242391300,
+          "exclusive_samples": 41236
+        },
+        "simulation_stack": {
+          "stack_total_ns": 39217114400,
+          "stack_samples": 39211,
+          "exclusive_total_ns": 39217114400,
+          "exclusive_samples": 39211
+        }
+      },
+      "payments_valid": true
+    }
+  },
+  "real_map_validate": {
+    "A": {
+      "exit_code": 0,
+      "canonical_fields": 24,
+      "canonical_comparison": "Compare with same-version normal index after capture",
+      "diagnostics": {
+        "memo": {
+          "hits": 0,
+          "validated": 13679678,
+          "conservative": 12071,
+          "violations": 0,
+          "lookup_duplicates": 0
+        },
+        "lookup": {
+          "rebuilds": 4321,
+          "indexed_groups": 288104,
+          "validated_groups": 970780,
+          "violations": 0
+        }
+      },
+      "exact_ticks": true,
+      "saved_replay": {
+        "ready": true,
+        "elapsed_us": 0
+      },
+      "warm_complete": true,
+      "background_ready": {
+        "completed": true,
+        "initial": 1,
+        "total": 13,
+        "elapsed_us": 14496855,
+        "tick_before": 3197276448,
+        "tick_after": 3197276448
+      },
+      "validation_only": true,
+      "simulation_timing_valid": false,
+      "command": [
+        "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        "-B",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+        "run",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\A\\Release\\openttd.exe",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-clang-thin-2026-10-19\\input",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\A\\validate",
+        "--ticks",
+        "2048",
+        "--timeout",
+        "2400",
+        "--measurement-wait",
+        "2400",
+        "--resume",
+        "--precomputed",
+        "--hyperpath",
+        "--warm-precomputed",
+        "--wait-background-ready",
+        "--hyperpath-filter-mode",
+        "validate",
+        "--main-thread-affinity-mask",
+        "1",
+        "--lang",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\A\\lang",
+        "--wait-saved-replay",
+        "--validation-only"
+      ],
+      "counters_passed": true,
+      "passed": true
+    },
+    "B": {
+      "exit_code": 0,
+      "canonical_fields": 24,
+      "canonical_comparison": "Compare with same-version normal index after capture",
+      "diagnostics": {
+        "memo": {
+          "hits": 0,
+          "validated": 13679679,
+          "conservative": 12070,
+          "violations": 0,
+          "lookup_duplicates": 0
+        },
+        "lookup": {
+          "rebuilds": 4321,
+          "indexed_groups": 288104,
+          "validated_groups": 970769,
+          "violations": 0
+        }
+      },
+      "exact_ticks": true,
+      "saved_replay": {
+        "ready": true,
+        "elapsed_us": 0
+      },
+      "warm_complete": true,
+      "background_ready": {
+        "completed": true,
+        "initial": 1,
+        "total": 13,
+        "elapsed_us": 10148094,
+        "tick_before": 3197276448,
+        "tick_after": 3197276448
+      },
+      "validation_only": true,
+      "simulation_timing_valid": false,
+      "command": [
+        "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        "-B",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+        "run",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\B\\Release\\openttd.exe",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-clang-thin-2026-10-19\\input",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\B\\validate",
+        "--ticks",
+        "2048",
+        "--timeout",
+        "2400",
+        "--measurement-wait",
+        "2400",
+        "--resume",
+        "--precomputed",
+        "--hyperpath",
+        "--warm-precomputed",
+        "--wait-background-ready",
+        "--hyperpath-filter-mode",
+        "validate",
+        "--main-thread-affinity-mask",
+        "1",
+        "--lang",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\B\\lang",
+        "--wait-saved-replay",
+        "--validation-only"
+      ],
+      "counters_passed": true,
+      "passed": true
+    }
+  },
+  "canonical_rule": "Same-version same-mode repetitions only; cross-version differences expected"
+}

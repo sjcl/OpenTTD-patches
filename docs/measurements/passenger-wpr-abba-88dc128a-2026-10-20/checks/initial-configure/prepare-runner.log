@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-abba-88dc128a-2026-10-20\prepare_A.py", line 128, in <module>
+    if __name__=='__main__':{'freeze':freeze,'build':build}[sys.argv[1]]()
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-abba-88dc128a-2026-10-20\prepare_A.py", line 82, in build
+    assert '-flto=thin' in text and '-fprofile' not in text
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

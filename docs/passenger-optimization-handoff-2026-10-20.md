@@ -1,7 +1,7 @@
 # Passenger Hyperpath 最適化の引き継ぎ（2026-10-20）
 
 Claude（claude.ai のクラウドセッション）から Claude Code セッションへの引き継ぎ資料。
-対象ブランチは `sjcl/OpenTTD-patches` の `merge/hyperpath-with-table-build`。最新は `55f1cfe0`。
+対象ブランチは `sjcl/OpenTTD-patches` の `merge/hyperpath-with-table-build`。今回の実マップ比較は merge 後の `cdebb1a0` と `88dc128a`（下記）。
 
 ## 1. 目的と進め方
 
@@ -10,7 +10,7 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
   - 決定性
   - マルチプレイの同期（異なるコンパイラ・worker 数でも desync しない）
   - セーブ互換
-- **これまでの最適化はすべて、結果を変えないものとして作った。** 計測の canonical 24 項目（packet・DB・所属・積載・支払いの digest、配送数、公開行数、総 Work など）が前の版と完全一致することを合格条件にしている。
+- 結果を変えない最適化では、canonical 24項目が同じモードの基準版と完全一致することを確認する。merge や88dc128aのように挙動変更を明示した版は、版間差分を保存し、同じ版・同じモードの反復一致で決定性を確認する。canonical と validate は別判定。
 - 作業の分担。
   - 実装・テスト・push は AI 側。
   - 実マップ計測はユーザー側（Windows、Ryzen 9 9950X）。別のエージェントが計測し、結果を `docs/` と `docs/measurements/` に push する。
@@ -48,7 +48,7 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
   - 原因: a968222f の `Board` 共有キャッシュにヒットすると `table.Board` が呼ばれず、追い出された failed-carrier の local policy が作り直されない。そのため display が `Unavailable` になっていた。
   - 修正: failed carrier があるときは共有キャッシュを通さない（`CachedHyperpathMembership` と同じ方針）。`Board` の答えは同じで、local policy が残るかどうかも a968222f より前と同じになる。
 
-### 目的地単位の generation sweep（88dc128a、未計測）
+### 目的地単位の generation sweep（88dc128a、実マップ確認済み）
 
 - **ユーザーの判断で、挙動を変える案（B）を選んだ。** canonical は merge 後の基準とも一致しない。比較は性能と、validate・決定性で行う。
 - **何が重かったか**: 55f1cfe0 の B1（Hyperpath）では、`Passenger scheduler cause` の generation が 43,211 packet・317,815 µs / 2,048 tick（7.4 µs/packet）だった。
@@ -63,6 +63,12 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
   - リストごとに保存するフィールドを追加した（`published`、`rows_from`、`generation`）。古いセーブは全件 sweep から始まる。
 - **確認済み**: 全 819 テスト、表構築の digest 不変（`cd999757a6c5fbc5` / `575548db5660677a`）。新しいテスト「Row publications sweep only waiting packets of their new destinations」は、絞り込みを外す改変と世代の切り替えを外す改変の両方で失敗することを確認した。
 - **計測で見る診断**: 新しい行 `Passenger generation sweeps: full=; row_limited=; skipped_packets=` と、`Passenger scheduler cause: cause=generation`。
+
+- **実マップ（2026-10-20）**: [cdebb1a0 / 88dc128a の ThinLTO ABBA・各版validate](passenger-wpr-abba-88dc128a-2026-10-20.md)を取得済み。8本すべて採用、同じ版・同じモードのcanonical 24項目は4組すべて一致。A/B間はLegacy一致、Hyperpathはpacket_state_digest・ownership_digestの2項目が異なる。両版のvalidateはmemo・lookupのviolations=0、lookup_duplicates=0で、各版の通常indexともcanonical一致した。Aは7b3f2c4bを含み、9439af0eと全treeが同一。
+- **generationの削減は再現**: Hyperpathは23,417→5,154 packets（−77.99%）、原因別タイマー平均234,800→73,230 µs / 2,048 tick（−68.81%）。Bのsweepsは両方ともfull=7,979、row_limited=33,736、skipped_packets=18,935。Legacyは両版29,388 packets、Bはfull=39,153でrow_limited/skipped_packets=0。
+- **時間の判断は保留**: RoutePassengerJourneys inclusiveの生平均はHyperpath 0.722120→0.885772 ms/tick（＋22.66%、実測範囲非重複）、Legacy 1.005526→0.898759（−10.62%、範囲は重なる）。HyperpathではRunTileLoop・CallVehicleTicksも広く増え、StateGameLoopは18.769888→23.402140 ms/tick。この各2本だけで今回のsweep変更単独の回帰・高速化とは断定せず、generation件数の削減と区別する。再採取で都合のよい値に置き換えていない。
+- **次回のビルド**: merge後CMakeはFull LTO既定。ThinLTO比較はOPTION_NO_LTO=ONで自動指定を抑え、C/C++ Release flagsへ-flto=thinを明示し、実tlogも照合する。[手順書](passenger-wpr-runbook.md)と今回のレシピを使う。
+
 - **次にやること**: ユーザーに次の計測を依頼する。A = cdebb1a0（jgrpp-ya merge 後。9439af0e とツリーは同じ）、B = 88dc128a。
   - ABBA（Legacy・Hyperpath）。canonical は一致しない見込みなので、各版の 2 本どうしで一致すること（決定性）を確かめる。
   - validate を各版 1 本ずつ（B は必須）。
@@ -131,6 +137,7 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
 | --- | --- | --- |
 | 88dc128a | generation sweep を、新しく公開された行の目的地に絞る（挙動が変わる） | 未計測 |
 | 7b3f2c4b | jgrpp-ya merge 後、failed carrier の `Board` は共有キャッシュを通さない | 全テスト合格。実マップは未計測 |
+| 88dc128a | 新しい公開行の目的地だけをgeneration sweep | 上記ABBAでgeneration −78%、Route inclusiveの短縮は未確認 |
 | 55f1cfe0 | `Board`/plan キャッシュを binding 更新に追従させる修正 | [ABBA8本・validate1本](passenger-wpr-abba-55f1cfe0-2026-10-20.md)でcanonical一致、違反カウンター0 |
 | 0d99a67f | 乗り継ぎグループの保存済み判定を、DB の直接写像キャッシュで tick 間共有。context memo は廃止 | canonical 不一致（原因は a968222f 側。上記） |
 | a968222f | 共有キャッシュを固定サイズの直接写像に変更し、表の `Board` 結果も共有 | 同上 |

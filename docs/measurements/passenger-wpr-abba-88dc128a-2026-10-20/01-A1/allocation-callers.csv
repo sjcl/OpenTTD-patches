@@ -1,0 +1,172 @@
+heap_function,application_caller,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerPrecomputedTable::StoredCandidates,0.000000000,0.035148975,0.035148975
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerPrecomputedTable::LocalPolicy,0.000000000,0.012693311,0.012693311
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerPrecomputedTable::LocalPolicy,0.000000000,0.009277197,0.009277197
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerJourneyLoadingContext::ResolveHyperpath,0.000000000,0.008789795,0.008789795
+ntdll.dll!RtlAllocateHeap,openttd.exe!StationCargoList::AddBoardingEntry,0.070310547,0.078728027,0.008417480
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerPrecomputedTable::StoredCandidates,0.000000000,0.008301709,0.008301709
+ntdll.dll!RtlAllocateHeap,openttd.exe!RegisterPassengerJourneyPacket,0.001949365,0.007323242,0.005373877
+ntdll.dll!RtlAllocateHeap,openttd.exe!GenerateStationCargo,0.010740967,0.014653564,0.003912598
+ntdll.dll!RtlAllocateHeap,"openttd.exe!CYapfCostRailT<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::CYapfCostRailT",0.000000000,0.003908643,0.003908643
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerJourneyActiveContext::~PassengerJourneyActiveContext,0.004397266,0.007871631,0.003474365
+ntdll.dll!RtlAllocateHeap,openttd.exe!StationCargoList::IndexHyperpathGroup,0.005370703,0.008787598,0.003416895
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerPrecomputedTable::Row::operator=,0.008298975,0.010860498,0.002561523
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerPrecomputedTable::GraphSnapshot::~GraphSnapshot,0.002446875,0.004897705,0.002450830
+ntdll.dll!RtlFreeHeap,openttd.exe!StationCargoList::RefreshHyperpathLookup,0.000000000,0.002441260,0.002441260
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerPrecomputedTable::GraphSnapshot::StartDestination,0.000000000,0.001495410,0.001495410
+ntdll.dll!RtlFreeHeap,openttd.exe!GenerateStationCargo,0.000974854,0.002441406,0.001466553
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerPrecomputedTable::GraphSnapshot::GraphSnapshot,0.005382959,0.006848779,0.001465820
+ntdll.dll!RtlAllocateHeap,openttd.exe!StationCargoList::UpdatePassengerRoutingSchedule,0.005376563,0.006841797,0.001465234
+ntdll.dll!RtlFreeHeap,openttd.exe!StationCargoList::IndexHyperpathGroup,0.000000000,0.001463818,0.001463818
+ntdll.dll!RtlFreeHeap,openttd.exe!StationCargoList::AddBoardingEntry,0.000000000,0.000981396,0.000981396
+ntdll.dll!RtlAllocateHeap,"openttd.exe!Pool<Vehicle,PoolID<VehicleIDTag>,512,0,0,VehiclePoolOps>::GetNew",0.003415527,0.004395752,0.000980225
+ntdll.dll!RtlFreeHeap,openttd.exe!SteamSmokeTick,0.000000000,0.000977783,0.000977783
+ntdll.dll!RtlFreeHeap,openttd.exe!PrepareUnload,0.000000000,0.000976611,0.000976611
+ntdll.dll!RtlAllocateHeap,"openttd.exe!jgr::ring_buffer<CargoPacket *,std::allocator<CargoPacket *> >::setup_insert",0.000000000,0.000975928,0.000975928
+ntdll.dll!RtlAllocateHeap,"openttd.exe!btree::btree<btree::btree_set_params<LinkRefresher::Hop,std::less<LinkRefresher::Hop>,std::allocator<LinkRefresher::Hop>,256> >::internal_insert_common",0.001465527,0.002441357,0.000975830
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerJourneyLoadingContext::HyperpathBoardingOccurrences,0.000000000,0.000975684,0.000975684
+ntdll.dll!RtlFreeHeap,"openttd.exe!btree::btree<btree::btree_set_params<BaseTimer<TimerWindow> *,TimerManager<TimerWindow>::base_timer_sorter,std::allocator<BaseTimer<TimerWindow> *>,256> >::internal_insert_common",0.000000000,0.000975586,0.000975586
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerPrecomputedTable::GraphSnapshot::SearchHyperpath,0.000000000,0.000974707,0.000974707
+ntdll.dll!RtlAllocateHeap,openttd.exe!Order::AssignOrder,0.005374316,0.006346436,0.000972119
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerOdDistribution::Allocate,0.001953516,0.002449219,0.000495703
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerServiceDatabase::ClearRetainedPrecomputed,0.001465918,0.001956885,0.000490967
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerPrecomputedTable::operator=,0.000489014,0.000979199,0.000490186
+ntdll.dll!RtlAllocateHeap,"openttd.exe!btree::btree<btree::btree_map_params<std::pair<unsigned short,unsigned short>,LinkGraph::BaseEdge,std::less<std::pair<unsigned short,unsigned short> >,std::allocator<std::pair<const std::pair<unsigned short,unsigned short>,LinkGraph::BaseEdge> >,256> >::rebalance_or_split",0.000000000,0.000489502,0.000489502
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerPrecomputedTable::ExpandPolicy,0.000000000,0.000489160,0.000489160
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerServiceDatabase::Publish,0.000000000,0.000488867,0.000488867
+ntdll.dll!RtlAllocateHeap,"openttd.exe!btree::btree<btree::btree_set_params<unsigned int,std::less<unsigned int>,std::allocator<unsigned int>,256> >::internal_insert_common",0.000000000,0.000488525,0.000488525
+ntdll.dll!RtlFreeHeap,openttd.exe!TruncateCargo,0.000000000,0.000488525,0.000488525
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerPrecomputedTable::GraphSnapshot::ExactFlatPayloads,0.000000000,0.000488477,0.000488477
+ntdll.dll!RtlAllocateHeap,"openttd.exe!CYapfFollowRegionT<CYapfRegion_TypesT<CYapfRegionWater,NodeList<CYapfRegionNodeT<CYapfRegionPatchNodeKey> > > >::FindWaterRegionPath",0.000000000,0.000488379,0.000488379
+ntdll.dll!RtlFreeHeap,"openttd.exe!btree::btree<btree::btree_map_params<unsigned int,unsigned int,std::less<unsigned int>,std::allocator<std::pair<const unsigned int,unsigned int> >,256> >::internal_clear",0.000000000,0.000488135,0.000488135
+ntdll.dll!RtlFreeHeap,openttd.exe!Layouter::Layouter,0.002441602,0.002929688,0.000488086
+ntdll.dll!RtlFreeHeap,openttd.exe!MoveGoodsToStation,0.000488770,0.000976758,0.000487988
+ntdll.dll!RtlFreeHeap,openttd.exe!StationCargoList::UnindexHyperpathGroup,0.000000000,0.000487891,0.000487891
+ntdll.dll!RtlAllocateHeap,openttd.exe!StationCargoList::RoutePassengerJourneys,0.004888818,0.005376367,0.000487549
+ntdll.dll!RtlFreeHeap,openttd.exe!FormatString,0.000488672,0.000976221,0.000487549
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerPrecomputedTable::Candidates,0.000000000,0.000487500,0.000487500
+ntdll.dll!RtlAllocateHeap,openttd.exe!CargoPacket::Split,0.000000000,0.000487354,0.000487354
+ntdll.dll!RtlFreeHeap,"openttd.exe!btree::btree<btree::btree_map_params<unsigned long long,OverflowSafeInt<long long>,std::less<unsigned long long>,std::allocator<std::pair<const unsigned long long,OverflowSafeInt<long long> > >,256> >::try_merge_or_rebalance",0.000000000,0.000487305,0.000487305
+ntdll.dll!RtlFreeHeap,"openttd.exe!CYapfT<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::~CYapfT",0.000976904,0.001463965,0.000487061
+ntdll.dll!RtlAllocateHeap,openttd.exe!GetPassengerRouteState,0.001462598,0.001465430,0.000002832
+ntdll.dll!RtlFreeHeap,openttd.exe!DieselSmokeTick,0.001462158,0.001464746,0.000002588
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerPrecomputedTable::StepImpl,0.001950635,0.001953125,0.000002490
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerJourneyBoardingContext::ValidateServiceRide,0.001462500,0.001464600,0.000002100
+ntdll.dll!RtlFreeHeap,openttd.exe!ShowNewGrfVehicleError::<lambda_0>::operator(),0.000485791,0.000487891,0.000002100
+ntdll.dll!RtlAllocateHeap,"openttd.exe!CYapfFollowRoadT<CYapfRoad_TypesT<CYapfRoad,CYapfDestinationTileRoadT> >::ChooseRoadTrack",0.000488818,0.000490869,0.000002051
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerServiceDatabase::TickBuild,0.000488232,0.000489111,0.000000879
+ntdll.dll!RtlFreeHeap,openttd.exe!RoadFindPathToDest,0.000488330,0.000489014,0.000000684
+ntdll.dll!RtlAllocateHeap,openttd.exe!RebuildVehicleTickCaches,0.000487695,0.000488086,0.000000391
+ntdll.dll!RtlFreeHeap,openttd.exe!PopulateSeparationState,0.000977100,0.000977295,0.000000195
+ntdll.dll!RtlFreeHeap,openttd.exe!NodeList<CYapfShipNode>::~NodeList,0.000976416,0.000976514,0.000000098
+ntdll.dll!RtlFreeHeap,openttd.exe!StationCargoList::HyperpathWaiting::~HyperpathWaiting,0.006835498,0.006835449,-0.000000049
+ntdll.dll!RtlAllocateHeap,"openttd.exe!btree::btree<btree::btree_map_params<PoolID<StationIDTag>,unsigned int,std::less<PoolID<StationIDTag> >,std::allocator<std::pair<const PoolID<StationIDTag>,unsigned int> >,256> >::insert_unique_args<const std::piecewise_construct_t &,std::tuple<const PoolID<StationIDTag> &>,std::tuple<> >",0.000975391,0.000975293,-0.000000098
+ntdll.dll!RtlFreeHeap,openttd.exe!ChooseTrainTrack,0.000487695,0.000487549,-0.000000146
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerJourneyLoadingContext::CanBoardUncached,0.000488721,0.000488525,-0.000000195
+ntdll.dll!RtlAllocateHeap,"openttd.exe!CYapfBaseT<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::FindPath",0.002440527,0.002440234,-0.000000293
+ntdll.dll!RtlFreeHeap,openttd.exe!VehicleOrderSaver::SwitchToNextOrder,0.000488184,0.000487842,-0.000000342
+ntdll.dll!RtlFreeHeap,openttd.exe!TileLoop_Town,0.003417773,0.003417383,-0.000000391
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerPrecomputedTable::DestinationWorkspace::DestinationWorkspace,0.003426660,0.003425732,-0.000000928
+ntdll.dll!RtlAllocateHeap,"openttd.exe!jgr::ring_buffer<TrainReservationLookAheadItem,std::allocator<TrainReservationLookAheadItem> >::emplace_back_realloc<TrainReservationLookAheadItem>",0.000490625,0.000488232,-0.000002393
+ntdll.dll!RtlFreeHeap,openttd.exe!UnregisterPassengerJourneyPacket,0.014159814,0.013677148,-0.000482666
+ntdll.dll!RtlAllocateHeap,openttd.exe!UniscribeParagraphLayout::UniscribeVisualRun::UniscribeVisualRun,0.013177246,0.012693896,-0.000483350
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerServiceDatabase::Invalidate,0.000484229,0.000000000,-0.000484229
+ntdll.dll!RtlFreeHeap,openttd.exe!StationCargoList::ShiftJourneyCargo<CargoLoad>,0.010736523,0.010251807,-0.000484717
+ntdll.dll!RtlAllocateHeap,"openttd.exe!jgr::ring_buffer<LinkGraph *,std::allocator<LinkGraph *> >::emplace_back_realloc<LinkGraph *const &>",0.001947949,0.001462598,-0.000485352
+ntdll.dll!RtlAllocateHeap,"openttd.exe!btree::btree<btree::btree_set_params<BaseTimer<TimerWindow> *,TimerManager<TimerWindow>::base_timer_sorter,std::allocator<BaseTimer<TimerWindow> *>,256> >::internal_insert_common",0.001951709,0.001464941,-0.000486768
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerJourneyBoardingContext::PassengerJourneyBoardingContext,0.001464160,0.000977148,-0.000487012
+ntdll.dll!RtlFreeHeap,openttd.exe!ValidatePassengerServiceRide,0.000975146,0.000488135,-0.000487012
+ntdll.dll!RtlFreeHeap,openttd.exe!StationCargoList::IndexPacket,0.000975244,0.000488184,-0.000487061
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerOdFallbackContext::CanReach,0.000487256,0.000000000,-0.000487256
+ntdll.dll!RtlFreeHeap,"openttd.exe!CYapfFollowRailT<CYapfRail_TypesT<CYapfRailNo90,CFollowTrackT<0,Train,0,0>,CYapfDestinationTileOrStationRailT,CYapfFollowRailT> >::stCheckReverseTrain",0.000487793,0.000000000,-0.000487793
+ntdll.dll!RtlFreeHeap,openttd.exe!CargoPacket::FallbackPassengerJourney,0.000488281,0.000000000,-0.000488281
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerOdFallbackContext::CanReach,0.000488428,0.000000000,-0.000488428
+ntdll.dll!RtlFreeHeap,openttd.exe!CargoPacket::Merge,0.000488525,0.000000000,-0.000488525
+ntdll.dll!RtlAllocateHeap,openttd.exe!StationCargoList::ShiftJourneyCargo<CargoLoad>,0.000488623,0.000000000,-0.000488623
+ntdll.dll!RtlAllocateHeap,"openttd.exe!Kdtree<ViewportSignKdtreeItem,Kdtree_ViewportSignXYFunc,int,int>::FreeSubtree",0.004392578,0.003903906,-0.000488672
+ntdll.dll!RtlAllocateHeap,"openttd.exe!jgr::ring_buffer<CargoPacket *,std::allocator<CargoPacket *> >::emplace_front_realloc<CargoPacket *const &>",0.000488672,0.000000000,-0.000488672
+ntdll.dll!RtlFreeHeap,"openttd.exe!jgr::ring_buffer<CargoPacket *,std::allocator<CargoPacket *> >::emplace_front_realloc<CargoPacket *const &>",0.000488721,0.000000000,-0.000488721
+ntdll.dll!RtlFreeHeap,openttd.exe!FreeTrainTrackReservation,0.000489209,0.000000000,-0.000489209
+ntdll.dll!RtlFreeHeap,openttd.exe!LinkGraphJob::~LinkGraphJob,0.000489307,0.000000000,-0.000489307
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerJourneyActiveContext::Decide,0.000489990,0.000000000,-0.000489990
+ntdll.dll!RtlAllocateHeap,"openttd.exe!BumpAllocContainer<CYapfRailSegment,1024>::New<CYapfRailSegmentKey &>",0.000978613,0.000488281,-0.000490332
+ntdll.dll!RtlAllocateHeap,openttd.exe!StationCargoList::VisitBoardingCandidates<`lambda at C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-clang-thin-2026-10-19\compile\save-integrity\cargopacket.cpp:1701:56'>::<lambda_5>::operator(),0.000976953,0.000486523,-0.000490430
+ntdll.dll!RtlFreeHeap,openttd.exe!UpdateSeparationOrder,0.001954150,0.001463232,-0.000490918
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerPrecomputedTable::DestinationWorkspace::~DestinationWorkspace,0.001470313,0.000977393,-0.000492920
+ntdll.dll!RtlFreeHeap,openttd.exe!StationCargoList::UpdatePassengerRoutingSchedule,0.010264404,0.009770752,-0.000493652
+ntdll.dll!RtlFreeHeap,openttd.exe!UniscribeParagraphLayout::~UniscribeParagraphLayout,0.003422754,0.002929102,-0.000493652
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerPrecomputedTable::PassengerPrecomputedTable,0.014692578,0.014198145,-0.000494434
+ntdll.dll!RtlAllocateHeap,openttd.exe!MoveGoodsToStation,0.001459082,0.000488623,-0.000970459
+ntdll.dll!RtlAllocateHeap,openttd.exe!StationCargoList::VisitBoardingCandidates<`lambda at C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-clang-thin-2026-10-19\compile\save-integrity\cargopacket.cpp:2501:56'>::<lambda_5>::operator(),0.001461035,0.000488379,-0.000972656
+ntdll.dll!RtlFreeHeap,openttd.exe!TryLongReserveChooseTrainTrackFromReservationEnd,0.001951416,0.000977539,-0.000973877
+ntdll.dll!RtlAllocateHeap,openttd.exe!LinkRefresher::Run,0.001954346,0.000980127,-0.000974219
+ntdll.dll!RtlFreeHeap,"openttd.exe!jgr::ring_buffer<LinkGraph *,std::allocator<LinkGraph *> >::emplace_back_realloc<LinkGraph *const &>",0.000974561,0.000000000,-0.000974561
+ntdll.dll!RtlAllocateHeap,openttd.exe!ForAllStationsAroundTilesIntl,0.000975195,0.000000000,-0.000975195
+ntdll.dll!RtlAllocateHeap,openttd.exe!SoundLoader_Wav::Load,0.000975195,0.000000000,-0.000975195
+ntdll.dll!RtlFreeHeap,openttd.exe!CargoPacket::~CargoPacket,0.000975732,0.000000000,-0.000975732
+ntdll.dll!RtlFreeHeap,openttd.exe!LoadUnloadStation,0.002929492,0.001953174,-0.000976318
+ntdll.dll!RtlAllocateHeap,openttd.exe!PrepareUnload,0.002441895,0.001465283,-0.000976611
+ntdll.dll!RtlAllocateHeap,openttd.exe!StationCargoList::VisitBoardingCandidates<`lambda at C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-clang-thin-2026-10-19\compile\save-integrity\cargopacket.cpp:1701:56'>::<lambda_14>::operator(),0.000976709,0.000000000,-0.000976709
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerJourneyShadowContext::PassengerJourneyShadowContext,0.000976904,0.000000000,-0.000976904
+ntdll.dll!RtlFreeHeap,openttd.exe!ElectricSparkTick,0.001465332,0.000488232,-0.000977100
+ntdll.dll!RtlFreeHeap,"openttd.exe!Kdtree<ViewportSignKdtreeItem,Kdtree_ViewportSignXYFunc,int,int>::FreeSubtree",0.000977832,0.000000000,-0.000977832
+ntdll.dll!RtlFreeHeap,openttd.exe!AppendSpecialEventsLogEntry,0.001467139,0.000488525,-0.000978613
+ntdll.dll!RtlAllocateHeap,"openttd.exe!Pool<CargoPayment,PoolID<CargoPaymentIDTag>,512,0,0,DefaultPoolOps<CargoPayment> >::GetNew",0.001953711,0.000974805,-0.000978906
+ntdll.dll!RtlAllocateHeap,"openttd.exe!btree::btree<btree::btree_set_params<LinkRefresher::Hop,std::less<LinkRefresher::Hop>,std::allocator<LinkRefresher::Hop>,256> >::insert_unique_hint_args<const LinkRefresher::Hop &>",0.001467676,0.000488721,-0.000978955
+ntdll.dll!RtlAllocateHeap,openttd.exe!Layouter::LineCacheKey::LineCacheKey,0.002446289,0.001464648,-0.000981641
+ntdll.dll!RtlFreeHeap,"openttd.exe!robin_hood::detail::Table<1,80,unsigned int,CYapfRailNode *,robin_hood::hash<unsigned int,void>,std::equal_to<unsigned int> >::insertKeyPrepareEmptySpot<unsigned int>",0.003898633,0.002442871,-0.001455762
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerPeriodicTimetable::Compile,0.001951123,0.000488574,-0.001462549
+ntdll.dll!RtlAllocateHeap,openttd.exe!NodeList<CYapfRoadNode>::NodeList,0.002440332,0.000977246,-0.001463086
+ntdll.dll!RtlFreeHeap,"openttd.exe!btree::btree<btree::btree_set_params<LinkRefresher::Hop,std::less<LinkRefresher::Hop>,std::allocator<LinkRefresher::Hop>,256> >::internal_insert_common",0.002439453,0.000976318,-0.001463135
+ntdll.dll!RtlFreeHeap,openttd.exe!CallVehicleTicks,0.001464014,0.000000000,-0.001464014
+ntdll.dll!RtlFreeHeap,openttd.exe!LinkRefresher::Run,0.001464355,0.000000000,-0.001464355
+ntdll.dll!RtlAllocateHeap,"openttd.exe!btree::btree<btree::btree_set_params<LinkRefresher::Hop,std::less<LinkRefresher::Hop>,std::allocator<LinkRefresher::Hop>,256> >::rebalance_or_split",0.001955029,0.000488135,-0.001466895
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerServiceDatabase::TickBuild,0.003903662,0.001972021,-0.001931641
+ntdll.dll!RtlAllocateHeap,"openttd.exe!PassengerDestinationQueue<std::tuple<long long,unsigned int,unsigned int> >::Radix::Insert",0.001950293,0.000000000,-0.001950293
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerJourneyBoardingContext::~PassengerJourneyBoardingContext,0.003417725,0.001466553,-0.001951172
+ntdll.dll!RtlAllocateHeap,"openttd.exe!btree::btree<btree::btree_map_params<unsigned long long,OverflowSafeInt<long long>,std::less<unsigned long long>,std::allocator<std::pair<const unsigned long long,OverflowSafeInt<long long> > >,256> >::rebalance_or_split",0.002928857,0.000977588,-0.001951270
+ntdll.dll!RtlAllocateHeap,openttd.exe!Layouter::Layouter,0.003907764,0.001955469,-0.001952295
+ntdll.dll!RtlFreeHeap,openttd.exe!StationCargoList::Truncate,0.004881006,0.002927881,-0.001953125
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerPeriodicService::PassengerPeriodicService,0.001954102,0.000000000,-0.001954102
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerJourneyLoadingContext::PrepareBoard,0.001956494,0.000000000,-0.001956494
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerJourneyLoadingContext::~PassengerJourneyLoadingContext,0.016108936,0.013680176,-0.002428760
+ntdll.dll!RtlFreeHeap,openttd.exe!UniscribeParagraphLayout::NextLine,0.003904980,0.001464941,-0.002440039
+ntdll.dll!RtlFreeHeap,openttd.exe!ForAllStationsAroundTilesIntl,0.002928955,0.000488184,-0.002440771
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerJourneyLoadingContext::PendingPlan,0.004883838,0.002442676,-0.002441162
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerRoutingContext::~PassengerRoutingContext,0.002441357,0.000000000,-0.002441357
+ntdll.dll!RtlFreeHeap,openttd.exe!GetStringBoundingBox,0.003418066,0.000976562,-0.002441504
+ntdll.dll!RtlFreeHeap,openttd.exe!StationCargoList::RoutePassengerJourneys,0.007820117,0.005376611,-0.002443506
+ntdll.dll!RtlAllocateHeap,openttd.exe!FormatString,0.003911719,0.001463232,-0.002448486
+ntdll.dll!RtlFreeHeap,openttd.exe!Layouter::LineCacheItem::~LineCacheItem,0.005375000,0.002443506,-0.002931494
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerJourneyActiveContext::PassengerJourneyActiveContext,0.011231152,0.007819727,-0.003411426
+ntdll.dll!RtlAllocateHeap,"openttd.exe!robin_hood::detail::Table<1,80,unsigned int,CYapfRailNode *,robin_hood::hash<unsigned int,void>,std::equal_to<unsigned int> >::insertKeyPrepareEmptySpot<unsigned int>",0.004397266,0.000979492,-0.003417773
+ntdll.dll!RtlFreeHeap,openttd.exe!UniscribeParagraphLayoutFactory::GetParagraphLayout,0.004394580,0.000975586,-0.003418994
+ntdll.dll!RtlFreeHeap,openttd.exe!PassengerPrecomputedTable::~PassengerPrecomputedTable,0.005868262,0.002447363,-0.003420898
+ntdll.dll!RtlAllocateHeap,openttd.exe!UniscribeItemizeString,0.003422461,0.000000000,-0.003422461
+ntdll.dll!RtlFreeHeap,openttd.exe!UniscribeParagraphLayout::UniscribeVisualRun::~UniscribeVisualRun,0.014648096,0.010740967,-0.003907129
+ntdll.dll!RtlAllocateHeap,openttd.exe!NodeList<CYapfRailNode>::NodeList,0.009274512,0.004881055,-0.004393457
+ntdll.dll!RtlFreeHeap,openttd.exe!VehicleCargoList::Stage,0.010258643,0.005372754,-0.004885889
+ntdll.dll!RtlAllocateHeap,openttd.exe!StationCargoList::Append,0.021986475,0.017089258,-0.004897217
+ntdll.dll!RtlAllocateHeap,openttd.exe!VehicleCargoList::Stage,0.007806885,0.002442725,-0.005364160
+ntdll.dll!RtlFreeHeap,openttd.exe!NodeList<CYapfRailNode>::~NodeList,0.010743896,0.005372852,-0.005371045
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerJourneyLoadingContext::CanBoard,0.012704395,0.007326709,-0.005377686
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerJourneyActiveContext::QueryWaiting,0.008786230,0.002934277,-0.005851953
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerJourneyLoadingContext::RetiredPlan,0.005863281,0.000000000,-0.005863281
+ntdll.dll!RtlAllocateHeap,openttd.exe!PopulateSeparationState,0.011720752,0.005373633,-0.006347119
+ntdll.dll!RtlFreeHeap,openttd.exe!UniscribeRun::~UniscribeRun,0.024412695,0.018065234,-0.006347461
+ntdll.dll!RtlFreeHeap,openttd.exe!NodeList<CYapfRoadNode>::~NodeList,0.008299707,0.001951660,-0.006348047
+ntdll.dll!RtlAllocateHeap,openttd.exe!UniscribeParagraphLayoutFactory::GetParagraphLayout,0.012697119,0.006345264,-0.006351855
+ntdll.dll!RtlAllocateHeap,"openttd.exe!btree::btree<btree::btree_set_params<Station *,StationCompare,std::allocator<Station *>,256> >::insert_unique_args<Station *const &>",0.011233496,0.004398242,-0.006835254
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerOdFallbackContext::PassengerOdFallbackContext,0.015624023,0.008305859,-0.007318164
+ntdll.dll!RtlAllocateHeap,openttd.exe!UniscribeParagraphLayout::NextLine,0.024413086,0.017087646,-0.007325439
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerJourneyLoadingContext::PassengerJourneyLoadingContext,0.017096729,0.009768262,-0.007328467
+ntdll.dll!RtlFreeHeap,"openttd.exe!StationCargoList::RemoveBoardingEntry::<lambda_9>::operator()<std::map<PoolID<StationIDTag>,std::set<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned long long>,std::less<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned long long> >,std::allocator<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned long long> > >,std::less<PoolID<StationIDTag> >,std::allocator<std::pair<const PoolID<StationIDTag>,std::set<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned long long>,std::less<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned long long> >,std::allocator<std::tuple<PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,unsigned long long> > > > > > >",0.009817090,0.002445898,-0.007371191
+ntdll.dll!RtlAllocateHeap,openttd.exe!StationCargoList::RefreshWaitingPacket,0.042495801,0.033784961,-0.008710840
+ntdll.dll!RtlAllocateHeap,openttd.exe!UniscribeShapeRun,0.027341064,0.012210645,-0.015130420
+ntdll.dll!RtlFreeHeap,openttd.exe!StationCargoList::RemoveBoardingEntry,0.044935547,0.029313232,-0.015622314
+ntdll.dll!RtlFreeHeap,openttd.exe!StationCargoList::RefreshWaitingPacket,0.063511426,0.047426807,-0.016084619
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerOdDistribution::Allocate,0.027828320,0.007813818,-0.020014502
+ntdll.dll!RtlAllocateHeap,openttd.exe!PassengerPrecomputedTable::StepImpl,0.021516748,0.000488379,-0.021028369
+ntdll.dll!RtlFreeHeap,openttd.exe!StationCargoList::ForgetWaitingPacket,0.085968750,0.061083594,-0.024885156
+ntdll.dll!RtlAllocateHeap,openttd.exe!StationCargoList::IndexPacket,0.097178467,0.043460352,-0.053718115
+ntdll.dll!RtlAllocateHeap,"openttd.exe!robin_hood::detail::Table<1,80,unsigned int,CYapfRailSegment *,robin_hood::hash<unsigned int,void>,std::equal_to<unsigned int> >::rehashPowerOfTwo",0.188056299,0.063000928,-0.125055371

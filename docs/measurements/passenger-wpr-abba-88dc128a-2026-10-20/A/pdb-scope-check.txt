@@ -1,0 +1,13 @@
+StateGameLoop:
+ 74524 | S_GPROC32 [size = 76] `StateGameLoop_LinkGraphPauseControl`
+176560 | S_GPROC32 [size = 56] `StateGameLoop`
+RoutePassengerJourneys:
+408520 | S_GPROC32 [size = 80] `StationCargoList::RoutePassengerJourneys`
+437492 | S_UDT [size = 64] `StationCargoList::RoutePassengerJourneys::<lambda_0>`
+437560 | S_LPROC32 [size = 104] `StationCargoList::RoutePassengerJourneys::<lambda_0>::operator()`
+RunPassengerWaitingEvents:
+ 24960 | S_GPROC32 [size = 68] `RunPassengerWaitingEvents`
+MayUseHyperpathPolicy:
+351024 | S_GPROC32 [size = 96] `PassengerJourneyLoadingContext::MayUseHyperpathPolicy`
+353616 | S_UDT [size = 76] `PassengerJourneyLoadingContext::MayUseHyperpathPolicy::<lambda_0>`
+353696 | S_LPROC32 [size = 120] `PassengerJourneyLoadingContext::MayUseHyperpathPolicy::<lambda_0>::operator()`

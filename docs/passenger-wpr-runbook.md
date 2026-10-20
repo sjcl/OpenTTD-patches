@@ -79,6 +79,7 @@ buildは `cmake --build BUILD --config Release --target openttd_test openttd --p
 
 上のMSVC例に固定せず、依頼されたビルド条件を明示する。Windows既定PGOがUSEの版でPGOなしを求められた場合は、`OPTION_PGO=OFF`を明示してprofile生成・使用フラグがないことを確認する。
 `openttd_lib`とexeの両方に`-flto=thin`、`/O2 /Ob2 /MT /Z7`が入ることを、生成プロジェクトと実際のコンパイルコマンドで確認する。ClangCLのコマンド履歴は`clang-cl.command.1.tlog`であり、MSVCの`CL.command.1.tlog`と同じ名前とは限らない。
+merge後のCMakeが`-flto=full`を直接付ける版では、`OPTION_NO_LTO=OFF`だけではThinLTOにならない。ThinLTO比較では`OPTION_NO_LTO=ON`でその自動指定を抑え、`CMAKE_CXX_FLAGS_RELEASE`と`CMAKE_C_FLAGS_RELEASE`へ`/O2 /Ob2 /DNDEBUG /Z7 -flto=thin`を明示する。製品CMakeを書き換えず、両版で同じ指定を使い、生成プロジェクトと実tlogに`-flto=thin`があり`-flto=full`やPGOフラグがないことをビルド前後で検査する。
 bitcodeオブジェクト、compiler-rt builtinsの実リンク先・ハッシュも確認する。runtimeのディレクトリとファイル名はLLVM配布版で異なるので、固定パスを推測せず実リンク指定からたどる。
 
 リンク後にSDKの`mt.exe`で元の`os/windows/openttd.manifest`を再埋め込みし、取り出した内容を検証する。`/Z7`を付けて内部化された関数のCodeView情報を残し、対応PDBの`StateGameLoop`や旅客関数名を採取前に確認する。
@@ -154,6 +155,7 @@ recorderを再起動するときは、旧recorderの終了とWPR停止を確認�
 recorderと並行して起動する。基準と新版があるときは基準Legacy → 基準Hyperpath → 新版Legacy → 新版Hyperpathの順を記録する。
 
 ABBAを指定された場合は、A1（Legacy→Hyperpath）→B1（Legacy→Hyperpath）→B2（Legacy→Hyperpath）→A2（Legacy→Hyperpath）で各モードをA→B→B→Aにできる。
+A/Bで挙動を変えることが依頼で明示されている場合は、版間のcanonical差を採用拒否の理由にしない。A1とA2、B1とB2をそれぞれ同じモードで24項目完全一致か比較し、決定性を確認する。版間差分とvalidate対通常indexの比較は別項目として保存する。旧版を暗黙の基準に残した補助スクリプトを使わない。
 各ラウンドに別ルートと対応するexe/PDB・lang・WPA profileを置き、その下に新しい`legacy` / `hyperpath`を作らせると、既存のexport/summarizeをそのまま使える。固定入力は全8本で共用する。
 全採取が終わるまでexportを始めず、各版2本の平均・実測範囲・サンプル数と全8本の生値を保存する。ABBAは直線的な時間ドリフトを釣り合わせるだけで、ノイズや信頼区間を保証しない。
 `StepImpl`のselfを依頼された場合は`simulation_stack`のスタック末端で数え、inclusiveと混同しない。ワーカーへ移った処理は別スレッドとして集計する。

@@ -1,0 +1,583 @@
+{
+  "A_commit": "cdebb1a029f84938956c0040082269dff745c44d",
+  "B_commit": "88dc128ad35f9a69a3db0673c301ca3f9031d8ee",
+  "order": [
+    "01-A1/legacy",
+    "01-A1/hyperpath",
+    "02-B1/legacy",
+    "02-B1/hyperpath",
+    "03-B2/legacy",
+    "03-B2/hyperpath",
+    "04-A2/legacy",
+    "04-A2/hyperpath"
+  ],
+  "ticks_each": 2048,
+  "same_settings": {
+    "legacy": {
+      "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+      "requested_ticks": 2048,
+      "resume_settings": true,
+      "precomputed": true,
+      "hyperpath": false,
+      "hyperpath_filter_mode": "index",
+      "main_thread_affinity_mask": 1,
+      "warm_precomputed": true,
+      "cold_precomputed": false,
+      "rebuild_precomputed": false,
+      "full_rebuild_precomputed": false,
+      "validation_only": false
+    },
+    "hyperpath": {
+      "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+      "requested_ticks": 2048,
+      "resume_settings": true,
+      "precomputed": true,
+      "hyperpath": true,
+      "hyperpath_filter_mode": "index",
+      "main_thread_affinity_mask": 1,
+      "warm_precomputed": true,
+      "cold_precomputed": false,
+      "rebuild_precomputed": false,
+      "full_rebuild_precomputed": false,
+      "validation_only": false
+    }
+  },
+  "matched_clang_thinlto_conditions": true,
+  "untouched_correction_used": false,
+  "method": "Two fresh processes per version/mode in ABBA; inclusive CPU counts a frame once per StateGameLoop stack. Counters describe changed workload; cross-version canonical is not a gate.",
+  "limitations": "Two runs per version/mode; observed ranges are not confidence intervals. ABBA balances linear time drift, not all noise.",
+  "comparison": {
+    "legacy": {
+      "StateGameLoop": {
+        "A": {
+          "mean": 23.262750390625,
+          "minimum": 20.4915611328125,
+          "maximum": 26.0339396484375,
+          "values": [
+            26.0339396484375,
+            20.4915611328125
+          ],
+          "samples": 95276
+        },
+        "B": {
+          "mean": 20.942451782226563,
+          "minimum": 20.5188865234375,
+          "maximum": 21.366017041015624,
+          "values": [
+            21.366017041015624,
+            20.5188865234375
+          ],
+          "samples": 85772
+        },
+        "delta": -2.3202986083984385,
+        "raw_percent": -9.974309010913561
+      },
+      "RoutePassengerJourneys": {
+        "A": {
+          "mean": 1.0055258544921875,
+          "minimum": 0.9202099609375,
+          "maximum": 1.090841748046875,
+          "values": [
+            1.090841748046875,
+            0.9202099609375
+          ],
+          "samples": 4114
+        },
+        "B": {
+          "mean": 0.8987592529296875,
+          "minimum": 0.876191455078125,
+          "maximum": 0.92132705078125,
+          "values": [
+            0.92132705078125,
+            0.876191455078125
+          ],
+          "samples": 3677
+        },
+        "delta": -0.10676660156249995,
+        "raw_percent": -10.617986706708738
+      },
+      "RunPassengerWaitingEvents": {
+        "A": {
+          "mean": 0.9774571044921876,
+          "minimum": 0.89677041015625,
+          "maximum": 1.058143798828125,
+          "values": [
+            1.058143798828125,
+            0.89677041015625
+          ],
+          "samples": 3999
+        },
+        "B": {
+          "mean": 0.8755684814453125,
+          "minimum": 0.857147509765625,
+          "maximum": 0.893989453125,
+          "values": [
+            0.893989453125,
+            0.857147509765625
+          ],
+          "samples": 3582
+        },
+        "delta": -0.10188862304687507,
+        "raw_percent": -10.423845975298185
+      },
+      "generation_packets": {
+        "A": {
+          "mean": 29388,
+          "minimum": 29388,
+          "maximum": 29388,
+          "values": [
+            29388,
+            29388
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 29388,
+          "minimum": 29388,
+          "maximum": 29388,
+          "values": [
+            29388,
+            29388
+          ],
+          "samples": null
+        },
+        "delta": 0,
+        "raw_percent": 0.0
+      },
+      "generation_us": {
+        "A": {
+          "mean": 362670,
+          "minimum": 316136,
+          "maximum": 409204,
+          "values": [
+            409204,
+            316136
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 321542.5,
+          "minimum": 314139,
+          "maximum": 328946,
+          "values": [
+            328946,
+            314139
+          ],
+          "samples": null
+        },
+        "delta": -41127.5,
+        "raw_percent": -11.340199079052582
+      },
+      "generation_ms_per_tick": {
+        "A": {
+          "mean": 0.1770849609375,
+          "minimum": 0.15436328125,
+          "maximum": 0.199806640625,
+          "values": [
+            0.199806640625,
+            0.15436328125
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 0.157003173828125,
+          "minimum": 0.15338818359375,
+          "maximum": 0.1606181640625,
+          "values": [
+            0.1606181640625,
+            0.15338818359375
+          ],
+          "samples": null
+        },
+        "delta": -0.020081787109375,
+        "raw_percent": -11.340199079052582
+      },
+      "generation_us_per_packet": {
+        "A": {
+          "mean": 12.340751327072274,
+          "minimum": 10.757315911256295,
+          "maximum": 13.924186742888253,
+          "values": [
+            13.924186742888253,
+            10.757315911256295
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 10.941285558731455,
+          "minimum": 10.689363005308289,
+          "maximum": 11.19320811215462,
+          "values": [
+            11.19320811215462,
+            10.689363005308289
+          ],
+          "samples": null
+        },
+        "delta": -1.3994657683408196,
+        "raw_percent": -11.340199079052582
+      },
+      "simulation_wall_ms_per_tick": {
+        "A": {
+          "mean": 24.2573349609375,
+          "minimum": 21.17468310546875,
+          "maximum": 27.33998681640625,
+          "values": [
+            27.33998681640625,
+            21.17468310546875
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 21.70628173828125,
+          "minimum": 21.4702333984375,
+          "maximum": 21.942330078125,
+          "values": [
+            21.942330078125,
+            21.4702333984375
+          ],
+          "samples": null
+        },
+        "delta": -2.5510532226562503,
+        "raw_percent": -10.516626112325644
+      },
+      "sweeps_full": {
+        "A": {
+          "mean": null,
+          "minimum": null,
+          "maximum": null,
+          "values": [
+            null,
+            null
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 39153,
+          "minimum": 39153,
+          "maximum": 39153,
+          "values": [
+            39153,
+            39153
+          ],
+          "samples": null
+        },
+        "delta": null,
+        "raw_percent": null
+      },
+      "sweeps_row_limited": {
+        "A": {
+          "mean": null,
+          "minimum": null,
+          "maximum": null,
+          "values": [
+            null,
+            null
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "values": [
+            0,
+            0
+          ],
+          "samples": null
+        },
+        "delta": null,
+        "raw_percent": null
+      },
+      "sweeps_skipped_packets": {
+        "A": {
+          "mean": null,
+          "minimum": null,
+          "maximum": null,
+          "values": [
+            null,
+            null
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "values": [
+            0,
+            0
+          ],
+          "samples": null
+        },
+        "delta": null,
+        "raw_percent": null
+      }
+    },
+    "hyperpath": {
+      "StateGameLoop": {
+        "A": {
+          "mean": 18.769888159179686,
+          "minimum": 18.390794677734377,
+          "maximum": 19.148981640625,
+          "values": [
+            18.390794677734377,
+            19.148981640625
+          ],
+          "samples": 76869
+        },
+        "B": {
+          "mean": 23.402140307617188,
+          "minimum": 20.98229638671875,
+          "maximum": 25.821984228515625,
+          "values": [
+            20.98229638671875,
+            25.821984228515625
+          ],
+          "samples": 95842
+        },
+        "delta": 4.632252148437502,
+        "raw_percent": 24.679167553654445
+      },
+      "RoutePassengerJourneys": {
+        "A": {
+          "mean": 0.722119873046875,
+          "minimum": 0.702090576171875,
+          "maximum": 0.742149169921875,
+          "values": [
+            0.702090576171875,
+            0.742149169921875
+          ],
+          "samples": 2952
+        },
+        "B": {
+          "mean": 0.8857720703125,
+          "minimum": 0.794896875,
+          "maximum": 0.976647265625,
+          "values": [
+            0.794896875,
+            0.976647265625
+          ],
+          "samples": 3621
+        },
+        "delta": 0.16365219726562508,
+        "raw_percent": 22.662746639989216
+      },
+      "RunPassengerWaitingEvents": {
+        "A": {
+          "mean": 0.70112685546875,
+          "minimum": 0.681103271484375,
+          "maximum": 0.721150439453125,
+          "values": [
+            0.681103271484375,
+            0.721150439453125
+          ],
+          "samples": 2866
+        },
+        "B": {
+          "mean": 0.8591541748046875,
+          "minimum": 0.770964892578125,
+          "maximum": 0.94734345703125,
+          "values": [
+            0.770964892578125,
+            0.94734345703125
+          ],
+          "samples": 3512
+        },
+        "delta": 0.1580273193359375,
+        "raw_percent": 22.539048119941963
+      },
+      "generation_packets": {
+        "A": {
+          "mean": 23417,
+          "minimum": 23417,
+          "maximum": 23417,
+          "values": [
+            23417,
+            23417
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 5154,
+          "minimum": 5154,
+          "maximum": 5154,
+          "values": [
+            5154,
+            5154
+          ],
+          "samples": null
+        },
+        "delta": -18263,
+        "raw_percent": -77.99034889183072
+      },
+      "generation_us": {
+        "A": {
+          "mean": 234800,
+          "minimum": 229524,
+          "maximum": 240076,
+          "values": [
+            240076,
+            229524
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 73230,
+          "minimum": 63157,
+          "maximum": 83303,
+          "values": [
+            63157,
+            83303
+          ],
+          "samples": null
+        },
+        "delta": -161570,
+        "raw_percent": -68.81175468483815
+      },
+      "generation_ms_per_tick": {
+        "A": {
+          "mean": 0.1146484375,
+          "minimum": 0.112072265625,
+          "maximum": 0.117224609375,
+          "values": [
+            0.117224609375,
+            0.112072265625
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 0.035756835937499995,
+          "minimum": 0.03083837890625,
+          "maximum": 0.04067529296875,
+          "values": [
+            0.03083837890625,
+            0.04067529296875
+          ],
+          "samples": null
+        },
+        "delta": -0.07889160156250001,
+        "raw_percent": -68.81175468483816
+      },
+      "generation_us_per_packet": {
+        "A": {
+          "mean": 10.026903531622327,
+          "minimum": 9.801597130289961,
+          "maximum": 10.252209932954692,
+          "values": [
+            10.252209932954692,
+            9.801597130289961
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 14.208381839348078,
+          "minimum": 12.253977493209158,
+          "maximum": 16.162786185487,
+          "values": [
+            12.253977493209158,
+            16.162786185487
+          ],
+          "samples": null
+        },
+        "delta": 4.181478307725751,
+        "raw_percent": 41.702588386718006
+      },
+      "simulation_wall_ms_per_tick": {
+        "A": {
+          "mean": 19.434467041015623,
+          "minimum": 19.016017578125,
+          "maximum": 19.85291650390625,
+          "values": [
+            19.016017578125,
+            19.85291650390625
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 24.328170654296876,
+          "minimum": 21.64901416015625,
+          "maximum": 27.0073271484375,
+          "values": [
+            21.64901416015625,
+            27.0073271484375
+          ],
+          "samples": null
+        },
+        "delta": 4.893703613281254,
+        "raw_percent": 25.180539311694528
+      },
+      "sweeps_full": {
+        "A": {
+          "mean": null,
+          "minimum": null,
+          "maximum": null,
+          "values": [
+            null,
+            null
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 7979,
+          "minimum": 7979,
+          "maximum": 7979,
+          "values": [
+            7979,
+            7979
+          ],
+          "samples": null
+        },
+        "delta": null,
+        "raw_percent": null
+      },
+      "sweeps_row_limited": {
+        "A": {
+          "mean": null,
+          "minimum": null,
+          "maximum": null,
+          "values": [
+            null,
+            null
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 33736,
+          "minimum": 33736,
+          "maximum": 33736,
+          "values": [
+            33736,
+            33736
+          ],
+          "samples": null
+        },
+        "delta": null,
+        "raw_percent": null
+      },
+      "sweeps_skipped_packets": {
+        "A": {
+          "mean": null,
+          "minimum": null,
+          "maximum": null,
+          "values": [
+            null,
+            null
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 18935,
+          "minimum": 18935,
+          "maximum": 18935,
+          "values": [
+            18935,
+            18935
+          ],
+          "samples": null
+        },
+        "delta": null,
+        "raw_percent": null
+      }
+    }
+  }
+}

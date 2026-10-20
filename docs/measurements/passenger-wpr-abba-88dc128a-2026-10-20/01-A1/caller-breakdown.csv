@@ -1,0 +1,12 @@
+parent,child,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy::<lambda_0>::operator(),0.000000000,0.083003027,0.083003027
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,[self],0.014160156,0.073722705,0.059562549
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!PassengerJourneyLoadingContext::RetiredPlan,0.066900098,0.096683887,0.029783789
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!PassengerServiceDatabase::IsCurrent,0.000000000,0.028805225,0.028805225
+openttd.exe!RunPassengerWaitingEvents,[self],0.000488867,0.000985352,0.000496484
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,[self],0.000000000,0.000488232,0.000488232
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,KernelBase.dll!GetThreadTimes,0.000487939,0.000000000,-0.000487939
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,openttd.exe!`anonymous namespace'::PreparationTimer::~PreparationTimer,0.000488232,0.000000000,-0.000488232
+openttd.exe!RunPassengerWaitingEvents,openttd.exe!_Query_perf_counter,0.000489111,0.000000000,-0.000489111
+openttd.exe!RunPassengerWaitingEvents,openttd.exe!StationCargoList::RoutePassengerJourneys,1.057165820,0.680117920,-0.377047900
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,openttd.exe!PassengerPrecomputedTable::PrepareGraph,1.027837695,0.005864600,-1.021973096

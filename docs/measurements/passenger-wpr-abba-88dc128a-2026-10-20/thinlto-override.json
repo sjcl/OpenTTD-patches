@@ -1,0 +1,6 @@
+{
+  "detected_before_compile": "CMake generated -flto=full with OPTION_NO_LTO=OFF; preflight stopped before compilation/capture",
+  "resolution": "OPTION_NO_LTO=ON suppresses hardcoded Full LTO; Release C and C++ flags explicitly add -flto=thin",
+  "same_flags_both_versions": true,
+  "product_cmake_modified": false
+}

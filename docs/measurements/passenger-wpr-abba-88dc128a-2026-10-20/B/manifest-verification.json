@@ -1,0 +1,12 @@
+{
+  "openttd.exe": {
+    "source_sha256": "bbb1143e79bd6b5ee87e8a85a2032f8f671012fc3c0b690d9357e2b79b0e45af",
+    "extracted_sha256": "9e41c494aebaa417956586a8b411aaad78b6eb32438ba51cc0478c9e17ba38c5",
+    "verified": true
+  },
+  "openttd_test.exe": {
+    "source_sha256": "bbb1143e79bd6b5ee87e8a85a2032f8f671012fc3c0b690d9357e2b79b0e45af",
+    "extracted_sha256": "ff19a3ba2885a7f4a1c6fdc1ddda6b022ba6f05b2f8c9a3410a5c2b5aca4d0cc",
+    "verified": true
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "within_version": {
+    "A": {
+      "legacy": {
+        "equal": true,
+        "fields": 24,
+        "differences": {},
+        "runs": [
+          "01-A1",
+          "04-A2"
+        ]
+      },
+      "hyperpath": {
+        "equal": true,
+        "fields": 24,
+        "differences": {},
+        "runs": [
+          "01-A1",
+          "04-A2"
+        ]
+      }
+    },
+    "B": {
+      "legacy": {
+        "equal": true,
+        "fields": 24,
+        "differences": {},
+        "runs": [
+          "02-B1",
+          "03-B2"
+        ]
+      },
+      "hyperpath": {
+        "equal": true,
+        "fields": 24,
+        "differences": {},
+        "runs": [
+          "02-B1",
+          "03-B2"
+        ]
+      }
+    }
+  },
+  "cross_version": {
+    "legacy": {
+      "equal": true,
+      "differences": {},
+      "expected_difference": true,
+      "acceptance_gate": false
+    },
+    "hyperpath": {
+      "equal": false,
+      "differences": {
+        "ownership_digest": [
+          18287236032350111158,
+          9019666353729830161
+        ],
+        "packet_state_digest": [
+          18386933345802833244,
+          15686042824220489797
+        ]
+      },
+      "expected_difference": true,
+      "acceptance_gate": false
+    }
+  },
+  "validate_vs_index": {
+    "A": {
+      "counters_passed": true,
+      "validate_vs_normal_index_equal": true,
+      "differences": {}
+    },
+    "B": {
+      "counters_passed": true,
+      "validate_vs_normal_index_equal": true,
+      "differences": {}
+    }
+  }
+}

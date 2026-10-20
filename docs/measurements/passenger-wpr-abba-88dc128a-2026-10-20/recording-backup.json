@@ -1,0 +1,128 @@
+{
+  "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-recordings-abba-88dc128a-2026-10-20",
+  "files": {
+    "A/Release/openttd.exe": {
+      "bytes": 17026048,
+      "sha256": "3385facaa9bdff9b6ec96f3190b4fd212da78398472de5d8aa42ae383be5fac7",
+      "read_only": true
+    },
+    "A/Release/openttd.pdb": {
+      "bytes": 144687104,
+      "sha256": "84a8b74c1b852ab66e14822c3c7ceb94b52871f0226a08149652f23ca081bec4",
+      "read_only": true
+    },
+    "A/build-identity.json": {
+      "bytes": 1310,
+      "sha256": "d839421fc5e279f62a014ee4d1d36ee880628cbd9bcd909d7428db21f59f361b",
+      "read_only": true
+    },
+    "A/validate/result.sav": {
+      "bytes": 46790500,
+      "sha256": "7da61be2efb53f15acd1c6986c88338656aab7cb8f3cbe7e2202ac8b5f5904f8",
+      "read_only": true
+    },
+    "B/Release/openttd.exe": {
+      "bytes": 17026560,
+      "sha256": "19df18d4f3602be8f47f68fe3d2ffe7a13bc2a765207245515ef96cc91696aef",
+      "read_only": true
+    },
+    "B/Release/openttd.pdb": {
+      "bytes": 144683008,
+      "sha256": "88b0f8f3fa752d0f11ac827dbca25b9fac5735e0aebc45a046fb0d61cfc731d2",
+      "read_only": true
+    },
+    "B/build-identity.json": {
+      "bytes": 1310,
+      "sha256": "8fbe74c065c3ccbc426874c392a8e020618ac5ba4473c80d24017a5efe2813fe",
+      "read_only": true
+    },
+    "B/validate/result.sav": {
+      "bytes": 46801620,
+      "sha256": "5e387be2aafcf1f3c2d355080325b5fb888ff9b6b916f5770ad7eb971e92c486",
+      "read_only": true
+    },
+    "01-A1/legacy/cpu.etl": {
+      "bytes": 193986560,
+      "sha256": "846bdb09b64ff97cc6fcea1c2f2236ec8e12d1c5acafe47e46854012855ace9f",
+      "read_only": true
+    },
+    "01-A1/legacy/result.sav": {
+      "bytes": 46419884,
+      "sha256": "665f9b34864be2855180074aa9b9bc6ade3d2ecd02f9e88c2eca75bfc755714c",
+      "read_only": true
+    },
+    "01-A1/hyperpath/cpu.etl": {
+      "bytes": 96468992,
+      "sha256": "f41afa735e5fa80335091fee899f748d240db69a80162cf03239247e1663ef4b",
+      "read_only": true
+    },
+    "01-A1/hyperpath/result.sav": {
+      "bytes": 46790500,
+      "sha256": "7da61be2efb53f15acd1c6986c88338656aab7cb8f3cbe7e2202ac8b5f5904f8",
+      "read_only": true
+    },
+    "02-B1/legacy/cpu.etl": {
+      "bytes": 119537664,
+      "sha256": "5bb6b270d0c00a6a86eac526a6f5dd72c3aa6d3ca42666a1c833dc46e6d84393",
+      "read_only": true
+    },
+    "02-B1/legacy/result.sav": {
+      "bytes": 46421496,
+      "sha256": "0215e6af295e29fd8ee8343a615092387a5ac71d1b393bcf8b0e95918cd179f6",
+      "read_only": true
+    },
+    "02-B1/hyperpath/cpu.etl": {
+      "bytes": 125829120,
+      "sha256": "771be5fcb56f0c3453dd1609116f04d8a90757168ffa7c2a278498c5e6e698c8",
+      "read_only": true
+    },
+    "02-B1/hyperpath/result.sav": {
+      "bytes": 46801620,
+      "sha256": "5e387be2aafcf1f3c2d355080325b5fb888ff9b6b916f5770ad7eb971e92c486",
+      "read_only": true
+    },
+    "03-B2/legacy/cpu.etl": {
+      "bytes": 114294784,
+      "sha256": "b8411591a9b498a118f012c4b04d5f71524bf8ba523dfc484225a2889109e690",
+      "read_only": true
+    },
+    "03-B2/legacy/result.sav": {
+      "bytes": 46421496,
+      "sha256": "0215e6af295e29fd8ee8343a615092387a5ac71d1b393bcf8b0e95918cd179f6",
+      "read_only": true
+    },
+    "03-B2/hyperpath/cpu.etl": {
+      "bytes": 161480704,
+      "sha256": "c502d31cb03c16cb6aa0d1221e96a60bcaa40113d920818ceaa730f432233653",
+      "read_only": true
+    },
+    "03-B2/hyperpath/result.sav": {
+      "bytes": 46801620,
+      "sha256": "5e387be2aafcf1f3c2d355080325b5fb888ff9b6b916f5770ad7eb971e92c486",
+      "read_only": true
+    },
+    "04-A2/legacy/cpu.etl": {
+      "bytes": 114294784,
+      "sha256": "b98bf9d01b63689bffb3e5431e8306befa1b5f1bbeebb8d781dbc818c85621b4",
+      "read_only": true
+    },
+    "04-A2/legacy/result.sav": {
+      "bytes": 46419884,
+      "sha256": "665f9b34864be2855180074aa9b9bc6ade3d2ecd02f9e88c2eca75bfc755714c",
+      "read_only": true
+    },
+    "04-A2/hyperpath/cpu.etl": {
+      "bytes": 103809024,
+      "sha256": "7431b0a33cc5f94e53364dd6888c0b22cb5590398d82a2256c38f518fa64b362",
+      "read_only": true
+    },
+    "04-A2/hyperpath/result.sav": {
+      "bytes": 46790500,
+      "sha256": "7da61be2efb53f15acd1c6986c88338656aab7cb8f3cbe7e2202ac8b5f5904f8",
+      "read_only": true
+    }
+  },
+  "accepted_traces": 8,
+  "validate_runs": 2,
+  "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82"
+}

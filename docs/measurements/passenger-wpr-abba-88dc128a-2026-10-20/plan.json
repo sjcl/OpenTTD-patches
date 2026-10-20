@@ -1,0 +1,39 @@
+{
+  "versions": {
+    "A": "cdebb1a029f84938956c0040082269dff745c44d",
+    "B": "88dc128ad35f9a69a3db0673c301ca3f9031d8ee"
+  },
+  "initial_head": "d37dcb835a884424008975b09fe22fa34ebf47c4",
+  "input": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-clang-thin-2026-10-19\\input",
+  "ticks_each": 2048,
+  "order": [
+    "01-A1/legacy",
+    "01-A1/hyperpath",
+    "02-B1/legacy",
+    "02-B1/hyperpath",
+    "03-B2/legacy",
+    "03-B2/hyperpath",
+    "04-A2/legacy",
+    "04-A2/hyperpath"
+  ],
+  "validate": [
+    "A",
+    "B"
+  ],
+  "canonical": "Compare repeats within the same version and mode; A/B differences expected and recorded without failing",
+  "focus": [
+    "Passenger scheduler cause: cause=generation",
+    "Passenger generation sweeps",
+    "StationCargoList::RoutePassengerJourneys inclusive"
+  ],
+  "compiler": "ClangCL/LLD 23.1.3",
+  "asserts": false,
+  "pgo": false,
+  "lto": "thin",
+  "full_trees": {
+    "A": "b8d78638dafb629eb0b8c38ab4ff3756243f3a5c",
+    "B": "934e5aa9c90b0bda67dd52414760fe0b6c5316a1"
+  },
+  "A_tree_matches_9439af0e": true,
+  "A_includes_7b3f2c4b": true
+}

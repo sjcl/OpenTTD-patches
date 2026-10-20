@@ -1,0 +1,786 @@
+{
+  "01-A1/legacy": {
+    "round": "01-A1",
+    "label": "A",
+    "mode": "legacy",
+    "product_commit": "cdebb1a029f84938956c0040082269dff745c44d",
+    "command": [
+      "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+      "-B",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+      "run",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\01-A1\\Release\\openttd.exe",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-clang-thin-2026-10-19\\input",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\01-A1\\legacy",
+      "--ticks",
+      "2048",
+      "--timeout",
+      "2400",
+      "--measurement-wait",
+      "2400",
+      "--resume",
+      "--precomputed",
+      "--no-hyperpath",
+      "--warm-precomputed",
+      "--wait-background-ready",
+      "--hyperpath-filter-mode",
+      "index",
+      "--main-thread-affinity-mask",
+      "1",
+      "--lang",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\01-A1\\lang",
+      "--wpr-profile",
+      "--wait-saved-replay"
+    ],
+    "quality": {
+      "stats_exit": 0,
+      "directory": "01-A1/legacy",
+      "kind": "map",
+      "valid": true,
+      "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82",
+      "marks_exit": 0
+    },
+    "window_audit": {
+      "mode": "legacy",
+      "marker_begin_us": 1547786,
+      "marker_end_us": 60815448,
+      "game_pid": 55804,
+      "valid": true,
+      "overlapping_competing_processes": [],
+      "relevant_processes": [
+        {
+          "name": "openttd.exe",
+          "pid": 55804,
+          "start_us": null,
+          "end_us": null,
+          "own_game": true,
+          "overlaps_window": true
+        }
+      ],
+      "method": "Kernel process lifetimes in ETL; MIN/MAX denote trace boundaries. Match the runner build/test/game names, excluding only the measured openttd.exe PID. Units are microseconds."
+    },
+    "canonical": {
+      "same_version_same_mode": {
+        "equal": true,
+        "fields": 24,
+        "differences": {}
+      }
+    },
+    "first_reference": true,
+    "diagnostics": {
+      "memo": {
+        "hits": 218145,
+        "validated": 0,
+        "conservative": 0,
+        "violations": 0,
+        "lookup_duplicates": 0
+      },
+      "lookup": {
+        "rebuilds": 1752,
+        "indexed_groups": 81718,
+        "validated_groups": 0,
+        "violations": 0
+      },
+      "generation_cause": {
+        "packets": 29388,
+        "microseconds": 409204
+      },
+      "generation_sweeps": null,
+      "parallel_rows": [
+        "cargo=0; workers=3; cache_hits=54; serial_rows=1; finished_rows=0; finish_effects=0; throttles=0"
+      ]
+    },
+    "exact_ticks": 2048,
+    "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+    "binary_sha256": "3385facaa9bdff9b6ec96f3190b4fd212da78398472de5d8aa42ae383be5fac7",
+    "disk_free_bytes": 109046583296
+  },
+  "01-A1/hyperpath": {
+    "round": "01-A1",
+    "label": "A",
+    "mode": "hyperpath",
+    "product_commit": "cdebb1a029f84938956c0040082269dff745c44d",
+    "command": [
+      "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+      "-B",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+      "run",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\01-A1\\Release\\openttd.exe",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-clang-thin-2026-10-19\\input",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\01-A1\\hyperpath",
+      "--ticks",
+      "2048",
+      "--timeout",
+      "2400",
+      "--measurement-wait",
+      "2400",
+      "--resume",
+      "--precomputed",
+      "--hyperpath",
+      "--warm-precomputed",
+      "--wait-background-ready",
+      "--hyperpath-filter-mode",
+      "index",
+      "--main-thread-affinity-mask",
+      "1",
+      "--lang",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\01-A1\\lang",
+      "--wpr-profile",
+      "--wait-saved-replay"
+    ],
+    "quality": {
+      "stats_exit": 0,
+      "directory": "01-A1/hyperpath",
+      "kind": "map",
+      "valid": true,
+      "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82",
+      "marks_exit": 0
+    },
+    "window_audit": {
+      "mode": "hyperpath",
+      "marker_begin_us": 1463817,
+      "marker_end_us": 41246695,
+      "game_pid": 64300,
+      "valid": true,
+      "overlapping_competing_processes": [],
+      "relevant_processes": [
+        {
+          "name": "openttd.exe",
+          "pid": 64300,
+          "start_us": null,
+          "end_us": null,
+          "own_game": true,
+          "overlaps_window": true
+        }
+      ],
+      "method": "Kernel process lifetimes in ETL; MIN/MAX denote trace boundaries. Match the runner build/test/game names, excluding only the measured openttd.exe PID. Units are microseconds."
+    },
+    "canonical": {
+      "same_version_same_mode": {
+        "equal": true,
+        "fields": 24,
+        "differences": {}
+      }
+    },
+    "first_reference": true,
+    "diagnostics": {
+      "memo": {
+        "hits": 557449,
+        "validated": 0,
+        "conservative": 0,
+        "violations": 0,
+        "lookup_duplicates": 0
+      },
+      "lookup": {
+        "rebuilds": 4321,
+        "indexed_groups": 288104,
+        "validated_groups": 0,
+        "violations": 0
+      },
+      "generation_cause": {
+        "packets": 23417,
+        "microseconds": 240076
+      },
+      "generation_sweeps": null,
+      "parallel_rows": [
+        "cargo=0; workers=4; cache_hits=158; serial_rows=1; finished_rows=157; finish_effects=2506737; throttles=0"
+      ]
+    },
+    "exact_ticks": 2048,
+    "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+    "binary_sha256": "3385facaa9bdff9b6ec96f3190b4fd212da78398472de5d8aa42ae383be5fac7",
+    "disk_free_bytes": 108447502336
+  },
+  "02-B1/legacy": {
+    "round": "02-B1",
+    "label": "B",
+    "mode": "legacy",
+    "product_commit": "88dc128ad35f9a69a3db0673c301ca3f9031d8ee",
+    "command": [
+      "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+      "-B",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+      "run",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\02-B1\\Release\\openttd.exe",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-clang-thin-2026-10-19\\input",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\02-B1\\legacy",
+      "--ticks",
+      "2048",
+      "--timeout",
+      "2400",
+      "--measurement-wait",
+      "2400",
+      "--resume",
+      "--precomputed",
+      "--no-hyperpath",
+      "--warm-precomputed",
+      "--wait-background-ready",
+      "--hyperpath-filter-mode",
+      "index",
+      "--main-thread-affinity-mask",
+      "1",
+      "--lang",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\02-B1\\lang",
+      "--wpr-profile",
+      "--wait-saved-replay"
+    ],
+    "quality": {
+      "stats_exit": 0,
+      "directory": "02-B1/legacy",
+      "kind": "map",
+      "valid": true,
+      "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82",
+      "marks_exit": 0
+    },
+    "window_audit": {
+      "mode": "legacy",
+      "marker_begin_us": 1467430,
+      "marker_end_us": 49676412,
+      "game_pid": 66068,
+      "valid": true,
+      "overlapping_competing_processes": [],
+      "relevant_processes": [
+        {
+          "name": "openttd.exe",
+          "pid": 66068,
+          "start_us": null,
+          "end_us": null,
+          "own_game": true,
+          "overlaps_window": true
+        }
+      ],
+      "method": "Kernel process lifetimes in ETL; MIN/MAX denote trace boundaries. Match the runner build/test/game names, excluding only the measured openttd.exe PID. Units are microseconds."
+    },
+    "canonical": {
+      "same_version_same_mode": {
+        "equal": true,
+        "fields": 24,
+        "differences": {}
+      }
+    },
+    "first_reference": true,
+    "diagnostics": {
+      "memo": {
+        "hits": 218145,
+        "validated": 0,
+        "conservative": 0,
+        "violations": 0,
+        "lookup_duplicates": 0
+      },
+      "lookup": {
+        "rebuilds": 1752,
+        "indexed_groups": 81718,
+        "validated_groups": 0,
+        "violations": 0
+      },
+      "generation_cause": {
+        "packets": 29388,
+        "microseconds": 328946
+      },
+      "generation_sweeps": {
+        "full": 39153,
+        "row_limited": 0,
+        "skipped_packets": 0
+      },
+      "parallel_rows": [
+        "cargo=0; workers=3; cache_hits=54; serial_rows=1; finished_rows=0; finish_effects=0; throttles=0"
+      ]
+    },
+    "exact_ticks": 2048,
+    "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+    "binary_sha256": "19df18d4f3602be8f47f68fe3d2ffe7a13bc2a765207245515ef96cc91696aef",
+    "disk_free_bytes": 108047257600
+  },
+  "02-B1/hyperpath": {
+    "round": "02-B1",
+    "label": "B",
+    "mode": "hyperpath",
+    "product_commit": "88dc128ad35f9a69a3db0673c301ca3f9031d8ee",
+    "command": [
+      "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+      "-B",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+      "run",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\02-B1\\Release\\openttd.exe",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-clang-thin-2026-10-19\\input",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\02-B1\\hyperpath",
+      "--ticks",
+      "2048",
+      "--timeout",
+      "2400",
+      "--measurement-wait",
+      "2400",
+      "--resume",
+      "--precomputed",
+      "--hyperpath",
+      "--warm-precomputed",
+      "--wait-background-ready",
+      "--hyperpath-filter-mode",
+      "index",
+      "--main-thread-affinity-mask",
+      "1",
+      "--lang",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\02-B1\\lang",
+      "--wpr-profile",
+      "--wait-saved-replay"
+    ],
+    "quality": {
+      "stats_exit": 0,
+      "directory": "02-B1/hyperpath",
+      "kind": "map",
+      "valid": true,
+      "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82",
+      "marks_exit": 0
+    },
+    "window_audit": {
+      "mode": "hyperpath",
+      "marker_begin_us": 1445610,
+      "marker_end_us": 46695151,
+      "game_pid": 59968,
+      "valid": true,
+      "overlapping_competing_processes": [],
+      "relevant_processes": [
+        {
+          "name": "openttd.exe",
+          "pid": 59968,
+          "start_us": null,
+          "end_us": null,
+          "own_game": true,
+          "overlaps_window": true
+        }
+      ],
+      "method": "Kernel process lifetimes in ETL; MIN/MAX denote trace boundaries. Match the runner build/test/game names, excluding only the measured openttd.exe PID. Units are microseconds."
+    },
+    "canonical": {
+      "same_version_same_mode": {
+        "equal": true,
+        "fields": 24,
+        "differences": {}
+      }
+    },
+    "first_reference": true,
+    "diagnostics": {
+      "memo": {
+        "hits": 557459,
+        "validated": 0,
+        "conservative": 0,
+        "violations": 0,
+        "lookup_duplicates": 0
+      },
+      "lookup": {
+        "rebuilds": 4321,
+        "indexed_groups": 288104,
+        "validated_groups": 0,
+        "violations": 0
+      },
+      "generation_cause": {
+        "packets": 5154,
+        "microseconds": 63157
+      },
+      "generation_sweeps": {
+        "full": 7979,
+        "row_limited": 33736,
+        "skipped_packets": 18935
+      },
+      "parallel_rows": [
+        "cargo=0; workers=4; cache_hits=158; serial_rows=1; finished_rows=157; finish_effects=2506737; throttles=0"
+      ]
+    },
+    "exact_ticks": 2048,
+    "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+    "binary_sha256": "19df18d4f3602be8f47f68fe3d2ffe7a13bc2a765207245515ef96cc91696aef",
+    "disk_free_bytes": 107800285184
+  },
+  "03-B2/legacy": {
+    "round": "03-B2",
+    "label": "B",
+    "mode": "legacy",
+    "product_commit": "88dc128ad35f9a69a3db0673c301ca3f9031d8ee",
+    "command": [
+      "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+      "-B",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+      "run",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\03-B2\\Release\\openttd.exe",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-clang-thin-2026-10-19\\input",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\03-B2\\legacy",
+      "--ticks",
+      "2048",
+      "--timeout",
+      "2400",
+      "--measurement-wait",
+      "2400",
+      "--resume",
+      "--precomputed",
+      "--no-hyperpath",
+      "--warm-precomputed",
+      "--wait-background-ready",
+      "--hyperpath-filter-mode",
+      "index",
+      "--main-thread-affinity-mask",
+      "1",
+      "--lang",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\03-B2\\lang",
+      "--wpr-profile",
+      "--wait-saved-replay"
+    ],
+    "quality": {
+      "stats_exit": 0,
+      "directory": "03-B2/legacy",
+      "kind": "map",
+      "valid": true,
+      "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82",
+      "marks_exit": 0
+    },
+    "window_audit": {
+      "mode": "legacy",
+      "marker_begin_us": 1487500,
+      "marker_end_us": 48494830,
+      "game_pid": 53980,
+      "valid": true,
+      "overlapping_competing_processes": [],
+      "relevant_processes": [
+        {
+          "name": "openttd.exe",
+          "pid": 53980,
+          "start_us": null,
+          "end_us": null,
+          "own_game": true,
+          "overlaps_window": true
+        }
+      ],
+      "method": "Kernel process lifetimes in ETL; MIN/MAX denote trace boundaries. Match the runner build/test/game names, excluding only the measured openttd.exe PID. Units are microseconds."
+    },
+    "canonical": {
+      "same_version_same_mode": {
+        "equal": true,
+        "fields": 24,
+        "differences": {}
+      }
+    },
+    "first_reference": false,
+    "diagnostics": {
+      "memo": {
+        "hits": 218145,
+        "validated": 0,
+        "conservative": 0,
+        "violations": 0,
+        "lookup_duplicates": 0
+      },
+      "lookup": {
+        "rebuilds": 1752,
+        "indexed_groups": 81718,
+        "validated_groups": 0,
+        "violations": 0
+      },
+      "generation_cause": {
+        "packets": 29388,
+        "microseconds": 314139
+      },
+      "generation_sweeps": {
+        "full": 39153,
+        "row_limited": 0,
+        "skipped_packets": 0
+      },
+      "parallel_rows": [
+        "cargo=0; workers=3; cache_hits=54; serial_rows=1; finished_rows=0; finish_effects=0; throttles=0"
+      ]
+    },
+    "exact_ticks": 2048,
+    "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+    "binary_sha256": "19df18d4f3602be8f47f68fe3d2ffe7a13bc2a765207245515ef96cc91696aef",
+    "disk_free_bytes": 107572793344
+  },
+  "03-B2/hyperpath": {
+    "round": "03-B2",
+    "label": "B",
+    "mode": "hyperpath",
+    "product_commit": "88dc128ad35f9a69a3db0673c301ca3f9031d8ee",
+    "command": [
+      "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+      "-B",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+      "run",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\03-B2\\Release\\openttd.exe",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-clang-thin-2026-10-19\\input",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\03-B2\\hyperpath",
+      "--ticks",
+      "2048",
+      "--timeout",
+      "2400",
+      "--measurement-wait",
+      "2400",
+      "--resume",
+      "--precomputed",
+      "--hyperpath",
+      "--warm-precomputed",
+      "--wait-background-ready",
+      "--hyperpath-filter-mode",
+      "index",
+      "--main-thread-affinity-mask",
+      "1",
+      "--lang",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\03-B2\\lang",
+      "--wpr-profile",
+      "--wait-saved-replay"
+    ],
+    "quality": {
+      "stats_exit": 0,
+      "directory": "03-B2/hyperpath",
+      "kind": "map",
+      "valid": true,
+      "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82",
+      "marks_exit": 0
+    },
+    "window_audit": {
+      "mode": "hyperpath",
+      "marker_begin_us": 1519457,
+      "marker_end_us": 57941050,
+      "game_pid": 78224,
+      "valid": true,
+      "overlapping_competing_processes": [],
+      "relevant_processes": [
+        {
+          "name": "openttd.exe",
+          "pid": 78224,
+          "start_us": null,
+          "end_us": null,
+          "own_game": true,
+          "overlaps_window": true
+        }
+      ],
+      "method": "Kernel process lifetimes in ETL; MIN/MAX denote trace boundaries. Match the runner build/test/game names, excluding only the measured openttd.exe PID. Units are microseconds."
+    },
+    "canonical": {
+      "same_version_same_mode": {
+        "equal": true,
+        "fields": 24,
+        "differences": {}
+      }
+    },
+    "first_reference": false,
+    "diagnostics": {
+      "memo": {
+        "hits": 557459,
+        "validated": 0,
+        "conservative": 0,
+        "violations": 0,
+        "lookup_duplicates": 0
+      },
+      "lookup": {
+        "rebuilds": 4321,
+        "indexed_groups": 288104,
+        "validated_groups": 0,
+        "violations": 0
+      },
+      "generation_cause": {
+        "packets": 5154,
+        "microseconds": 83303
+      },
+      "generation_sweeps": {
+        "full": 7979,
+        "row_limited": 33736,
+        "skipped_packets": 18935
+      },
+      "parallel_rows": [
+        "cargo=0; workers=4; cache_hits=158; serial_rows=1; finished_rows=157; finish_effects=2506737; throttles=0"
+      ]
+    },
+    "exact_ticks": 2048,
+    "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+    "binary_sha256": "19df18d4f3602be8f47f68fe3d2ffe7a13bc2a765207245515ef96cc91696aef",
+    "disk_free_bytes": 106826973184
+  },
+  "04-A2/legacy": {
+    "round": "04-A2",
+    "label": "A",
+    "mode": "legacy",
+    "product_commit": "cdebb1a029f84938956c0040082269dff745c44d",
+    "command": [
+      "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+      "-B",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+      "run",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\04-A2\\Release\\openttd.exe",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-clang-thin-2026-10-19\\input",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\04-A2\\legacy",
+      "--ticks",
+      "2048",
+      "--timeout",
+      "2400",
+      "--measurement-wait",
+      "2400",
+      "--resume",
+      "--precomputed",
+      "--no-hyperpath",
+      "--warm-precomputed",
+      "--wait-background-ready",
+      "--hyperpath-filter-mode",
+      "index",
+      "--main-thread-affinity-mask",
+      "1",
+      "--lang",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\04-A2\\lang",
+      "--wpr-profile",
+      "--wait-saved-replay"
+    ],
+    "quality": {
+      "stats_exit": 0,
+      "directory": "04-A2/legacy",
+      "kind": "map",
+      "valid": true,
+      "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82",
+      "marks_exit": 0
+    },
+    "window_audit": {
+      "mode": "legacy",
+      "marker_begin_us": 1543324,
+      "marker_end_us": 48218214,
+      "game_pid": 36408,
+      "valid": true,
+      "overlapping_competing_processes": [],
+      "relevant_processes": [
+        {
+          "name": "openttd.exe",
+          "pid": 36408,
+          "start_us": null,
+          "end_us": null,
+          "own_game": true,
+          "overlaps_window": true
+        }
+      ],
+      "method": "Kernel process lifetimes in ETL; MIN/MAX denote trace boundaries. Match the runner build/test/game names, excluding only the measured openttd.exe PID. Units are microseconds."
+    },
+    "canonical": {
+      "same_version_same_mode": {
+        "equal": true,
+        "fields": 24,
+        "differences": {}
+      }
+    },
+    "first_reference": false,
+    "diagnostics": {
+      "memo": {
+        "hits": 218145,
+        "validated": 0,
+        "conservative": 0,
+        "violations": 0,
+        "lookup_duplicates": 0
+      },
+      "lookup": {
+        "rebuilds": 1752,
+        "indexed_groups": 81718,
+        "validated_groups": 0,
+        "violations": 0
+      },
+      "generation_cause": {
+        "packets": 29388,
+        "microseconds": 316136
+      },
+      "generation_sweeps": null,
+      "parallel_rows": [
+        "cargo=0; workers=3; cache_hits=54; serial_rows=1; finished_rows=0; finish_effects=0; throttles=0"
+      ]
+    },
+    "exact_ticks": 2048,
+    "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+    "binary_sha256": "3385facaa9bdff9b6ec96f3190b4fd212da78398472de5d8aa42ae383be5fac7",
+    "disk_free_bytes": 106557054976
+  },
+  "04-A2/hyperpath": {
+    "round": "04-A2",
+    "label": "A",
+    "mode": "hyperpath",
+    "product_commit": "cdebb1a029f84938956c0040082269dff745c44d",
+    "command": [
+      "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+      "-B",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+      "run",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\04-A2\\Release\\openttd.exe",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-clang-thin-2026-10-19\\input",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\04-A2\\hyperpath",
+      "--ticks",
+      "2048",
+      "--timeout",
+      "2400",
+      "--measurement-wait",
+      "2400",
+      "--resume",
+      "--precomputed",
+      "--hyperpath",
+      "--warm-precomputed",
+      "--wait-background-ready",
+      "--hyperpath-filter-mode",
+      "index",
+      "--main-thread-affinity-mask",
+      "1",
+      "--lang",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-88dc128a-2026-10-20\\04-A2\\lang",
+      "--wpr-profile",
+      "--wait-saved-replay"
+    ],
+    "quality": {
+      "stats_exit": 0,
+      "directory": "04-A2/hyperpath",
+      "kind": "map",
+      "valid": true,
+      "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82",
+      "marks_exit": 0
+    },
+    "window_audit": {
+      "mode": "hyperpath",
+      "marker_begin_us": 1590944,
+      "marker_end_us": 43122700,
+      "game_pid": 70588,
+      "valid": true,
+      "overlapping_competing_processes": [],
+      "relevant_processes": [
+        {
+          "name": "openttd.exe",
+          "pid": 70588,
+          "start_us": null,
+          "end_us": null,
+          "own_game": true,
+          "overlaps_window": true
+        }
+      ],
+      "method": "Kernel process lifetimes in ETL; MIN/MAX denote trace boundaries. Match the runner build/test/game names, excluding only the measured openttd.exe PID. Units are microseconds."
+    },
+    "canonical": {
+      "same_version_same_mode": {
+        "equal": true,
+        "fields": 24,
+        "differences": {}
+      }
+    },
+    "first_reference": false,
+    "diagnostics": {
+      "memo": {
+        "hits": 557449,
+        "validated": 0,
+        "conservative": 0,
+        "violations": 0,
+        "lookup_duplicates": 0
+      },
+      "lookup": {
+        "rebuilds": 4321,
+        "indexed_groups": 288104,
+        "validated_groups": 0,
+        "violations": 0
+      },
+      "generation_cause": {
+        "packets": 23417,
+        "microseconds": 229524
+      },
+      "generation_sweeps": null,
+      "parallel_rows": [
+        "cargo=0; workers=4; cache_hits=158; serial_rows=1; finished_rows=157; finish_effects=2506737; throttles=0"
+      ]
+    },
+    "exact_ticks": 2048,
+    "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+    "binary_sha256": "3385facaa9bdff9b6ec96f3190b4fd212da78398472de5d8aa42ae383be5fac7",
+    "disk_free_bytes": 106339627008
+  }
+}

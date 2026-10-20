@@ -1,0 +1,26 @@
+branch,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick,legacy_samples,hyperpath_samples
+[worker threads],0.571510791,1.231969385,0.660458594,1170,2522
+openttd.exe!BasePersistentStorageArray::SwitchMode,0.000000000,0.001470313,0.001470313,0,3
+openttd.exe!FlushDeferredAspectUpdates,0.008300732,0.009280225,0.000979492,17,19
+openttd.exe!_Query_perf_counter,0.000000000,0.000488818,0.000488818,0,1
+openttd.exe!UpdateLandscapingLimits,0.000000000,0.000488086,0.000488086,0,1
+openttd.exe!MoveToNextNewsItem,0.000488477,0.000976270,0.000487793,1,2
+openttd.exe!SimpleCountedObject::FinalRelease,0.000488428,0.000488623,0.000000195,1,1
+openttd.exe!OnTick_Companies,0.000974316,0.000489160,-0.000485156,2,1
+openttd.exe!Game::GameLoop,0.000488330,0.000000000,-0.000488330,1,0
+openttd.exe!CheckCaches,0.000488574,0.000000000,-0.000488574,1,0
+openttd.exe!NewsLoop,0.001465381,0.000488379,-0.000977002,3,1
+openttd.exe!AI::GameLoop,0.001468457,0.000487988,-0.000980469,3,1
+[StateGameLoop self],0.001950928,0.000488623,-0.001462305,4,1
+openttd.exe!PerformanceMeasurer::~PerformanceMeasurer,0.001463135,0.000000000,-0.001463135,3,0
+openttd.exe!LinkGraphSchedule::JoinNext,0.002931104,0.001465820,-0.001465283,6,3
+openttd.exe!TimerManager<TimerGameTick>::Elapsed,0.001954883,0.000488525,-0.001466357,4,1
+openttd.exe!BeginPassengerJourneyTick,0.004892090,0.002936426,-0.001955664,10,6
+openttd.exe!AnimateAnimatedTiles,0.006362598,0.001955811,-0.004406787,13,4
+openttd.exe!IncreaseDate,0.021982324,0.017132373,-0.004849951,45,35
+openttd.exe!CallLandscapeTick,0.374552344,0.344276318,-0.030276025,767,705
+openttd.exe!PassengerServiceDatabase::Tick,0.180571826,0.119637354,-0.060934473,369,244
+openttd.exe!RunPassengerWaitingEvents,0.896770410,0.721150439,-0.175619971,1834,1474
+openttd.exe!CallVehicleTicks,9.782616113,9.387157520,-0.395458594,20035,19225
+openttd.exe!RunTileLoop,9.201350684,8.537634570,-0.663716113,18843,17483
+[outside StateGameLoop],2.181784668,0.988904736,-1.192879932,4468,2025

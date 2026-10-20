@@ -1,0 +1,12 @@
+parent,child,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy::<lambda_0>::operator(),0.000000000,0.100566846,0.100566846
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,[self],0.011232178,0.071778271,0.060546094
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!PassengerJourneyLoadingContext::RetiredPlan,0.060057813,0.095683545,0.035625732
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!PassengerServiceDatabase::IsCurrent,0.000490088,0.033210352,0.032720264
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,ntoskrnl.exe!<PDB not found>,0.000000000,0.000488232,0.000488232
+openttd.exe!RunPassengerWaitingEvents,[self],0.000487500,0.000975146,0.000487646
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!PassengerJourneyLoadingContext::RefreshBoardingRevision,0.000486914,0.000000000,-0.000486914
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,[self],0.001956152,0.001466016,-0.000490137
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,openttd.exe!PassengerServiceDatabase::GetPrecomputedProgress,0.001461426,0.000000000,-0.001461426
+openttd.exe!RunPassengerWaitingEvents,openttd.exe!StationCargoList::RoutePassengerJourneys,0.896282910,0.720175293,-0.176107617
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,openttd.exe!PassengerPrecomputedTable::PrepareGraph,1.162111963,0.006352539,-1.155759424

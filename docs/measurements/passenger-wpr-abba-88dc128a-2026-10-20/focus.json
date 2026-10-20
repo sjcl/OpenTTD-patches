@@ -1,0 +1,1178 @@
+{
+  "runs": {
+    "01-A1/legacy": {
+      "round": "01-A1",
+      "label": "A",
+      "mode": "legacy",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 53317508400,
+          "samples": 53314,
+          "ms_per_tick": 26.0339396484375
+        },
+        "RoutePassengerJourneys": {
+          "ns": 2234043900,
+          "samples": 2232,
+          "ms_per_tick": 1.090841748046875
+        },
+        "RunPassengerWaitingEvents": {
+          "ns": 2167078500,
+          "samples": 2165,
+          "ms_per_tick": 1.058143798828125
+        }
+      },
+      "values": {
+        "StateGameLoop": 26.0339396484375,
+        "RoutePassengerJourneys": 1.090841748046875,
+        "RunPassengerWaitingEvents": 1.058143798828125,
+        "generation_packets": 29388,
+        "generation_us": 409204,
+        "generation_ms_per_tick": 0.199806640625,
+        "generation_us_per_packet": 13.924186742888253,
+        "simulation_wall_ms_per_tick": 27.33998681640625,
+        "sweeps_full": null,
+        "sweeps_row_limited": null,
+        "sweeps_skipped_packets": null
+      },
+      "diagnostics": {
+        "memo": {
+          "hits": 218145,
+          "validated": 0,
+          "conservative": 0,
+          "violations": 0,
+          "lookup_duplicates": 0
+        },
+        "lookup": {
+          "rebuilds": 1752,
+          "indexed_groups": 81718,
+          "validated_groups": 0,
+          "violations": 0
+        },
+        "generation_cause": {
+          "packets": 29388,
+          "microseconds": 409204
+        },
+        "generation_sweeps": null,
+        "parallel_rows": [
+          "cargo=0; workers=3; cache_hits=54; serial_rows=1; finished_rows=0; finish_effects=0; throttles=0"
+        ]
+      },
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 59908380200,
+          "stack_samples": 59904,
+          "exclusive_total_ns": 59908380200,
+          "exclusive_samples": 59904
+        },
+        "main": {
+          "stack_total_ns": 58563282600,
+          "stack_samples": 58560,
+          "exclusive_total_ns": 58563282600,
+          "exclusive_samples": 58560
+        },
+        "simulation_stack": {
+          "stack_total_ns": 53317508400,
+          "stack_samples": 53314,
+          "exclusive_total_ns": 53317508400,
+          "exclusive_samples": 53314
+        }
+      }
+    },
+    "01-A1/hyperpath": {
+      "round": "01-A1",
+      "label": "A",
+      "mode": "hyperpath",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 37664347500,
+          "samples": 37658,
+          "ms_per_tick": 18.390794677734377
+        },
+        "RoutePassengerJourneys": {
+          "ns": 1437881500,
+          "samples": 1435,
+          "ms_per_tick": 0.702090576171875
+        },
+        "RunPassengerWaitingEvents": {
+          "ns": 1394899500,
+          "samples": 1392,
+          "ms_per_tick": 0.681103271484375
+        }
+      },
+      "values": {
+        "StateGameLoop": 18.390794677734377,
+        "RoutePassengerJourneys": 0.702090576171875,
+        "RunPassengerWaitingEvents": 0.681103271484375,
+        "generation_packets": 23417,
+        "generation_us": 240076,
+        "generation_ms_per_tick": 0.117224609375,
+        "generation_us_per_packet": 10.252209932954692,
+        "simulation_wall_ms_per_tick": 19.016017578125,
+        "sweeps_full": null,
+        "sweeps_row_limited": null,
+        "sweeps_skipped_packets": null
+      },
+      "diagnostics": {
+        "memo": {
+          "hits": 557449,
+          "validated": 0,
+          "conservative": 0,
+          "violations": 0,
+          "lookup_duplicates": 0
+        },
+        "lookup": {
+          "rebuilds": 4321,
+          "indexed_groups": 288104,
+          "validated_groups": 0,
+          "violations": 0
+        },
+        "generation_cause": {
+          "packets": 23417,
+          "microseconds": 240076
+        },
+        "generation_sweeps": null,
+        "parallel_rows": [
+          "cargo=0; workers=4; cache_hits=158; serial_rows=1; finished_rows=157; finish_effects=2506737; throttles=0"
+        ]
+      },
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 42248823400,
+          "stack_samples": 42240,
+          "exclusive_total_ns": 42248823400,
+          "exclusive_samples": 42240
+        },
+        "main": {
+          "stack_total_ns": 39478938100,
+          "stack_samples": 39472,
+          "exclusive_total_ns": 39478938100,
+          "exclusive_samples": 39472
+        },
+        "simulation_stack": {
+          "stack_total_ns": 37664347500,
+          "stack_samples": 37658,
+          "exclusive_total_ns": 37664347500,
+          "exclusive_samples": 37658
+        }
+      }
+    },
+    "02-B1/legacy": {
+      "round": "02-B1",
+      "label": "B",
+      "mode": "legacy",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 43757602900,
+          "samples": 43754,
+          "ms_per_tick": 21.366017041015624
+        },
+        "RoutePassengerJourneys": {
+          "ns": 1886877800,
+          "samples": 1885,
+          "ms_per_tick": 0.92132705078125
+        },
+        "RunPassengerWaitingEvents": {
+          "ns": 1830890400,
+          "samples": 1829,
+          "ms_per_tick": 0.893989453125
+        }
+      },
+      "values": {
+        "StateGameLoop": 21.366017041015624,
+        "RoutePassengerJourneys": 0.92132705078125,
+        "RunPassengerWaitingEvents": 0.893989453125,
+        "generation_packets": 29388,
+        "generation_us": 328946,
+        "generation_ms_per_tick": 0.1606181640625,
+        "generation_us_per_packet": 11.19320811215462,
+        "simulation_wall_ms_per_tick": 21.942330078125,
+        "sweeps_full": 39153,
+        "sweeps_row_limited": 0,
+        "sweeps_skipped_packets": 0
+      },
+      "diagnostics": {
+        "memo": {
+          "hits": 218145,
+          "validated": 0,
+          "conservative": 0,
+          "violations": 0,
+          "lookup_duplicates": 0
+        },
+        "lookup": {
+          "rebuilds": 1752,
+          "indexed_groups": 81718,
+          "validated_groups": 0,
+          "violations": 0
+        },
+        "generation_cause": {
+          "packets": 29388,
+          "microseconds": 328946
+        },
+        "generation_sweeps": {
+          "full": 39153,
+          "row_limited": 0,
+          "skipped_packets": 0
+        },
+        "parallel_rows": [
+          "cargo=0; workers=3; cache_hits=54; serial_rows=1; finished_rows=0; finish_effects=0; throttles=0"
+        ]
+      },
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 49158696300,
+          "stack_samples": 49154,
+          "exclusive_total_ns": 49158696300,
+          "exclusive_samples": 49154
+        },
+        "main": {
+          "stack_total_ns": 47902896100,
+          "stack_samples": 47899,
+          "exclusive_total_ns": 47902896100,
+          "exclusive_samples": 47899
+        },
+        "simulation_stack": {
+          "stack_total_ns": 43757602900,
+          "stack_samples": 43754,
+          "exclusive_total_ns": 43757602900,
+          "exclusive_samples": 43754
+        }
+      }
+    },
+    "02-B1/hyperpath": {
+      "round": "02-B1",
+      "label": "B",
+      "mode": "hyperpath",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 42971743000,
+          "samples": 42966,
+          "ms_per_tick": 20.98229638671875
+        },
+        "RoutePassengerJourneys": {
+          "ns": 1627948800,
+          "samples": 1625,
+          "ms_per_tick": 0.794896875
+        },
+        "RunPassengerWaitingEvents": {
+          "ns": 1578936100,
+          "samples": 1576,
+          "ms_per_tick": 0.770964892578125
+        }
+      },
+      "values": {
+        "StateGameLoop": 20.98229638671875,
+        "RoutePassengerJourneys": 0.794896875,
+        "RunPassengerWaitingEvents": 0.770964892578125,
+        "generation_packets": 5154,
+        "generation_us": 63157,
+        "generation_ms_per_tick": 0.03083837890625,
+        "generation_us_per_packet": 12.253977493209158,
+        "simulation_wall_ms_per_tick": 21.64901416015625,
+        "sweeps_full": 7979,
+        "sweeps_row_limited": 33736,
+        "sweeps_skipped_packets": 18935
+      },
+      "diagnostics": {
+        "memo": {
+          "hits": 557459,
+          "validated": 0,
+          "conservative": 0,
+          "violations": 0,
+          "lookup_duplicates": 0
+        },
+        "lookup": {
+          "rebuilds": 4321,
+          "indexed_groups": 288104,
+          "validated_groups": 0,
+          "violations": 0
+        },
+        "generation_cause": {
+          "packets": 5154,
+          "microseconds": 63157
+        },
+        "generation_sweeps": {
+          "full": 7979,
+          "row_limited": 33736,
+          "skipped_packets": 18935
+        },
+        "parallel_rows": [
+          "cargo=0; workers=4; cache_hits=158; serial_rows=1; finished_rows=157; finish_effects=2506737; throttles=0"
+        ]
+      },
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 47662757700,
+          "stack_samples": 47657,
+          "exclusive_total_ns": 47662757700,
+          "exclusive_samples": 47657
+        },
+        "main": {
+          "stack_total_ns": 44944903900,
+          "stack_samples": 44939,
+          "exclusive_total_ns": 44944903900,
+          "exclusive_samples": 44939
+        },
+        "simulation_stack": {
+          "stack_total_ns": 42971743000,
+          "stack_samples": 42966,
+          "exclusive_total_ns": 42971743000,
+          "exclusive_samples": 42966
+        }
+      }
+    },
+    "03-B2/legacy": {
+      "round": "03-B2",
+      "label": "B",
+      "mode": "legacy",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 42022679600,
+          "samples": 42018,
+          "ms_per_tick": 20.5188865234375
+        },
+        "RoutePassengerJourneys": {
+          "ns": 1794440100,
+          "samples": 1792,
+          "ms_per_tick": 0.876191455078125
+        },
+        "RunPassengerWaitingEvents": {
+          "ns": 1755438100,
+          "samples": 1753,
+          "ms_per_tick": 0.857147509765625
+        }
+      },
+      "values": {
+        "StateGameLoop": 20.5188865234375,
+        "RoutePassengerJourneys": 0.876191455078125,
+        "RunPassengerWaitingEvents": 0.857147509765625,
+        "generation_packets": 29388,
+        "generation_us": 314139,
+        "generation_ms_per_tick": 0.15338818359375,
+        "generation_us_per_packet": 10.689363005308289,
+        "simulation_wall_ms_per_tick": 21.4702333984375,
+        "sweeps_full": 39153,
+        "sweeps_row_limited": 0,
+        "sweeps_skipped_packets": 0
+      },
+      "diagnostics": {
+        "memo": {
+          "hits": 218145,
+          "validated": 0,
+          "conservative": 0,
+          "violations": 0,
+          "lookup_duplicates": 0
+        },
+        "lookup": {
+          "rebuilds": 1752,
+          "indexed_groups": 81718,
+          "validated_groups": 0,
+          "violations": 0
+        },
+        "generation_cause": {
+          "packets": 29388,
+          "microseconds": 314139
+        },
+        "generation_sweeps": {
+          "full": 39153,
+          "row_limited": 0,
+          "skipped_packets": 0
+        },
+        "parallel_rows": [
+          "cargo=0; workers=3; cache_hits=54; serial_rows=1; finished_rows=0; finish_effects=0; throttles=0"
+        ]
+      },
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 47769459600,
+          "stack_samples": 47764,
+          "exclusive_total_ns": 47769459600,
+          "exclusive_samples": 47764
+        },
+        "main": {
+          "stack_total_ns": 46693782300,
+          "stack_samples": 46689,
+          "exclusive_total_ns": 46693782300,
+          "exclusive_samples": 46689
+        },
+        "simulation_stack": {
+          "stack_total_ns": 42022679600,
+          "stack_samples": 42018,
+          "exclusive_total_ns": 42022679600,
+          "exclusive_samples": 42018
+        }
+      }
+    },
+    "03-B2/hyperpath": {
+      "round": "03-B2",
+      "label": "B",
+      "mode": "hyperpath",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 52883423700,
+          "samples": 52876,
+          "ms_per_tick": 25.821984228515625
+        },
+        "RoutePassengerJourneys": {
+          "ns": 2000173600,
+          "samples": 1996,
+          "ms_per_tick": 0.976647265625
+        },
+        "RunPassengerWaitingEvents": {
+          "ns": 1940159400,
+          "samples": 1936,
+          "ms_per_tick": 0.94734345703125
+        }
+      },
+      "values": {
+        "StateGameLoop": 25.821984228515625,
+        "RoutePassengerJourneys": 0.976647265625,
+        "RunPassengerWaitingEvents": 0.94734345703125,
+        "generation_packets": 5154,
+        "generation_us": 83303,
+        "generation_ms_per_tick": 0.04067529296875,
+        "generation_us_per_packet": 16.162786185487,
+        "simulation_wall_ms_per_tick": 27.0073271484375,
+        "sweeps_full": 7979,
+        "sweeps_row_limited": 33736,
+        "sweeps_skipped_packets": 18935
+      },
+      "diagnostics": {
+        "memo": {
+          "hits": 557459,
+          "validated": 0,
+          "conservative": 0,
+          "violations": 0,
+          "lookup_duplicates": 0
+        },
+        "lookup": {
+          "rebuilds": 4321,
+          "indexed_groups": 288104,
+          "validated_groups": 0,
+          "violations": 0
+        },
+        "generation_cause": {
+          "packets": 5154,
+          "microseconds": 83303
+        },
+        "generation_sweeps": {
+          "full": 7979,
+          "row_limited": 33736,
+          "skipped_packets": 18935
+        },
+        "parallel_rows": [
+          "cargo=0; workers=4; cache_hits=158; serial_rows=1; finished_rows=157; finish_effects=2506737; throttles=0"
+        ]
+      },
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 58785530800,
+          "stack_samples": 58776,
+          "exclusive_total_ns": 58785530800,
+          "exclusive_samples": 58776
+        },
+        "main": {
+          "stack_total_ns": 55711802000,
+          "stack_samples": 55704,
+          "exclusive_total_ns": 55711802000,
+          "exclusive_samples": 55704
+        },
+        "simulation_stack": {
+          "stack_total_ns": 52883423700,
+          "stack_samples": 52876,
+          "exclusive_total_ns": 52883423700,
+          "exclusive_samples": 52876
+        }
+      }
+    },
+    "04-A2/legacy": {
+      "round": "04-A2",
+      "label": "A",
+      "mode": "legacy",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 41966717200,
+          "samples": 41962,
+          "ms_per_tick": 20.4915611328125
+        },
+        "RoutePassengerJourneys": {
+          "ns": 1884590000,
+          "samples": 1882,
+          "ms_per_tick": 0.9202099609375
+        },
+        "RunPassengerWaitingEvents": {
+          "ns": 1836585800,
+          "samples": 1834,
+          "ms_per_tick": 0.89677041015625
+        }
+      },
+      "values": {
+        "StateGameLoop": 20.4915611328125,
+        "RoutePassengerJourneys": 0.9202099609375,
+        "RunPassengerWaitingEvents": 0.89677041015625,
+        "generation_packets": 29388,
+        "generation_us": 316136,
+        "generation_ms_per_tick": 0.15436328125,
+        "generation_us_per_packet": 10.757315911256295,
+        "simulation_wall_ms_per_tick": 21.17468310546875,
+        "sweeps_full": null,
+        "sweeps_row_limited": null,
+        "sweeps_skipped_packets": null
+      },
+      "diagnostics": {
+        "memo": {
+          "hits": 218145,
+          "validated": 0,
+          "conservative": 0,
+          "violations": 0,
+          "lookup_duplicates": 0
+        },
+        "lookup": {
+          "rebuilds": 1752,
+          "indexed_groups": 81718,
+          "validated_groups": 0,
+          "violations": 0
+        },
+        "generation_cause": {
+          "packets": 29388,
+          "microseconds": 316136
+        },
+        "generation_sweeps": null,
+        "parallel_rows": [
+          "cargo=0; workers=3; cache_hits=54; serial_rows=1; finished_rows=0; finish_effects=0; throttles=0"
+        ]
+      },
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 47605466300,
+          "stack_samples": 47600,
+          "exclusive_total_ns": 47605466300,
+          "exclusive_samples": 47600
+        },
+        "main": {
+          "stack_total_ns": 46435012200,
+          "stack_samples": 46430,
+          "exclusive_total_ns": 46435012200,
+          "exclusive_samples": 46430
+        },
+        "simulation_stack": {
+          "stack_total_ns": 41966717200,
+          "stack_samples": 41962,
+          "exclusive_total_ns": 41966717200,
+          "exclusive_samples": 41962
+        }
+      }
+    },
+    "04-A2/hyperpath": {
+      "round": "04-A2",
+      "label": "A",
+      "mode": "hyperpath",
+      "focus": {
+        "StateGameLoop": {
+          "ns": 39217114400,
+          "samples": 39211,
+          "ms_per_tick": 19.148981640625
+        },
+        "RoutePassengerJourneys": {
+          "ns": 1519921500,
+          "samples": 1517,
+          "ms_per_tick": 0.742149169921875
+        },
+        "RunPassengerWaitingEvents": {
+          "ns": 1476916100,
+          "samples": 1474,
+          "ms_per_tick": 0.721150439453125
+        }
+      },
+      "values": {
+        "StateGameLoop": 19.148981640625,
+        "RoutePassengerJourneys": 0.742149169921875,
+        "RunPassengerWaitingEvents": 0.721150439453125,
+        "generation_packets": 23417,
+        "generation_us": 229524,
+        "generation_ms_per_tick": 0.112072265625,
+        "generation_us_per_packet": 9.801597130289961,
+        "simulation_wall_ms_per_tick": 19.85291650390625,
+        "sweeps_full": null,
+        "sweeps_row_limited": null,
+        "sweeps_skipped_packets": null
+      },
+      "diagnostics": {
+        "memo": {
+          "hits": 557449,
+          "validated": 0,
+          "conservative": 0,
+          "violations": 0,
+          "lookup_duplicates": 0
+        },
+        "lookup": {
+          "rebuilds": 4321,
+          "indexed_groups": 288104,
+          "validated_groups": 0,
+          "violations": 0
+        },
+        "generation_cause": {
+          "packets": 23417,
+          "microseconds": 229524
+        },
+        "generation_sweeps": null,
+        "parallel_rows": [
+          "cargo=0; workers=4; cache_hits=158; serial_rows=1; finished_rows=157; finish_effects=2506737; throttles=0"
+        ]
+      },
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 43765464600,
+          "stack_samples": 43758,
+          "exclusive_total_ns": 43765464600,
+          "exclusive_samples": 43758
+        },
+        "main": {
+          "stack_total_ns": 41242391300,
+          "stack_samples": 41236,
+          "exclusive_total_ns": 41242391300,
+          "exclusive_samples": 41236
+        },
+        "simulation_stack": {
+          "stack_total_ns": 39217114400,
+          "stack_samples": 39211,
+          "exclusive_total_ns": 39217114400,
+          "exclusive_samples": 39211
+        }
+      }
+    }
+  },
+  "comparison": {
+    "legacy": {
+      "StateGameLoop": {
+        "A": {
+          "mean": 23.262750390625,
+          "minimum": 20.4915611328125,
+          "maximum": 26.0339396484375,
+          "values": [
+            26.0339396484375,
+            20.4915611328125
+          ],
+          "samples": 95276
+        },
+        "B": {
+          "mean": 20.942451782226563,
+          "minimum": 20.5188865234375,
+          "maximum": 21.366017041015624,
+          "values": [
+            21.366017041015624,
+            20.5188865234375
+          ],
+          "samples": 85772
+        },
+        "delta": -2.3202986083984385,
+        "raw_percent": -9.974309010913561
+      },
+      "RoutePassengerJourneys": {
+        "A": {
+          "mean": 1.0055258544921875,
+          "minimum": 0.9202099609375,
+          "maximum": 1.090841748046875,
+          "values": [
+            1.090841748046875,
+            0.9202099609375
+          ],
+          "samples": 4114
+        },
+        "B": {
+          "mean": 0.8987592529296875,
+          "minimum": 0.876191455078125,
+          "maximum": 0.92132705078125,
+          "values": [
+            0.92132705078125,
+            0.876191455078125
+          ],
+          "samples": 3677
+        },
+        "delta": -0.10676660156249995,
+        "raw_percent": -10.617986706708738
+      },
+      "RunPassengerWaitingEvents": {
+        "A": {
+          "mean": 0.9774571044921876,
+          "minimum": 0.89677041015625,
+          "maximum": 1.058143798828125,
+          "values": [
+            1.058143798828125,
+            0.89677041015625
+          ],
+          "samples": 3999
+        },
+        "B": {
+          "mean": 0.8755684814453125,
+          "minimum": 0.857147509765625,
+          "maximum": 0.893989453125,
+          "values": [
+            0.893989453125,
+            0.857147509765625
+          ],
+          "samples": 3582
+        },
+        "delta": -0.10188862304687507,
+        "raw_percent": -10.423845975298185
+      },
+      "generation_packets": {
+        "A": {
+          "mean": 29388,
+          "minimum": 29388,
+          "maximum": 29388,
+          "values": [
+            29388,
+            29388
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 29388,
+          "minimum": 29388,
+          "maximum": 29388,
+          "values": [
+            29388,
+            29388
+          ],
+          "samples": null
+        },
+        "delta": 0,
+        "raw_percent": 0.0
+      },
+      "generation_us": {
+        "A": {
+          "mean": 362670,
+          "minimum": 316136,
+          "maximum": 409204,
+          "values": [
+            409204,
+            316136
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 321542.5,
+          "minimum": 314139,
+          "maximum": 328946,
+          "values": [
+            328946,
+            314139
+          ],
+          "samples": null
+        },
+        "delta": -41127.5,
+        "raw_percent": -11.340199079052582
+      },
+      "generation_ms_per_tick": {
+        "A": {
+          "mean": 0.1770849609375,
+          "minimum": 0.15436328125,
+          "maximum": 0.199806640625,
+          "values": [
+            0.199806640625,
+            0.15436328125
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 0.157003173828125,
+          "minimum": 0.15338818359375,
+          "maximum": 0.1606181640625,
+          "values": [
+            0.1606181640625,
+            0.15338818359375
+          ],
+          "samples": null
+        },
+        "delta": -0.020081787109375,
+        "raw_percent": -11.340199079052582
+      },
+      "generation_us_per_packet": {
+        "A": {
+          "mean": 12.340751327072274,
+          "minimum": 10.757315911256295,
+          "maximum": 13.924186742888253,
+          "values": [
+            13.924186742888253,
+            10.757315911256295
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 10.941285558731455,
+          "minimum": 10.689363005308289,
+          "maximum": 11.19320811215462,
+          "values": [
+            11.19320811215462,
+            10.689363005308289
+          ],
+          "samples": null
+        },
+        "delta": -1.3994657683408196,
+        "raw_percent": -11.340199079052582
+      },
+      "simulation_wall_ms_per_tick": {
+        "A": {
+          "mean": 24.2573349609375,
+          "minimum": 21.17468310546875,
+          "maximum": 27.33998681640625,
+          "values": [
+            27.33998681640625,
+            21.17468310546875
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 21.70628173828125,
+          "minimum": 21.4702333984375,
+          "maximum": 21.942330078125,
+          "values": [
+            21.942330078125,
+            21.4702333984375
+          ],
+          "samples": null
+        },
+        "delta": -2.5510532226562503,
+        "raw_percent": -10.516626112325644
+      },
+      "sweeps_full": {
+        "A": {
+          "mean": null,
+          "minimum": null,
+          "maximum": null,
+          "values": [
+            null,
+            null
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 39153,
+          "minimum": 39153,
+          "maximum": 39153,
+          "values": [
+            39153,
+            39153
+          ],
+          "samples": null
+        },
+        "delta": null,
+        "raw_percent": null
+      },
+      "sweeps_row_limited": {
+        "A": {
+          "mean": null,
+          "minimum": null,
+          "maximum": null,
+          "values": [
+            null,
+            null
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "values": [
+            0,
+            0
+          ],
+          "samples": null
+        },
+        "delta": null,
+        "raw_percent": null
+      },
+      "sweeps_skipped_packets": {
+        "A": {
+          "mean": null,
+          "minimum": null,
+          "maximum": null,
+          "values": [
+            null,
+            null
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "values": [
+            0,
+            0
+          ],
+          "samples": null
+        },
+        "delta": null,
+        "raw_percent": null
+      }
+    },
+    "hyperpath": {
+      "StateGameLoop": {
+        "A": {
+          "mean": 18.769888159179686,
+          "minimum": 18.390794677734377,
+          "maximum": 19.148981640625,
+          "values": [
+            18.390794677734377,
+            19.148981640625
+          ],
+          "samples": 76869
+        },
+        "B": {
+          "mean": 23.402140307617188,
+          "minimum": 20.98229638671875,
+          "maximum": 25.821984228515625,
+          "values": [
+            20.98229638671875,
+            25.821984228515625
+          ],
+          "samples": 95842
+        },
+        "delta": 4.632252148437502,
+        "raw_percent": 24.679167553654445
+      },
+      "RoutePassengerJourneys": {
+        "A": {
+          "mean": 0.722119873046875,
+          "minimum": 0.702090576171875,
+          "maximum": 0.742149169921875,
+          "values": [
+            0.702090576171875,
+            0.742149169921875
+          ],
+          "samples": 2952
+        },
+        "B": {
+          "mean": 0.8857720703125,
+          "minimum": 0.794896875,
+          "maximum": 0.976647265625,
+          "values": [
+            0.794896875,
+            0.976647265625
+          ],
+          "samples": 3621
+        },
+        "delta": 0.16365219726562508,
+        "raw_percent": 22.662746639989216
+      },
+      "RunPassengerWaitingEvents": {
+        "A": {
+          "mean": 0.70112685546875,
+          "minimum": 0.681103271484375,
+          "maximum": 0.721150439453125,
+          "values": [
+            0.681103271484375,
+            0.721150439453125
+          ],
+          "samples": 2866
+        },
+        "B": {
+          "mean": 0.8591541748046875,
+          "minimum": 0.770964892578125,
+          "maximum": 0.94734345703125,
+          "values": [
+            0.770964892578125,
+            0.94734345703125
+          ],
+          "samples": 3512
+        },
+        "delta": 0.1580273193359375,
+        "raw_percent": 22.539048119941963
+      },
+      "generation_packets": {
+        "A": {
+          "mean": 23417,
+          "minimum": 23417,
+          "maximum": 23417,
+          "values": [
+            23417,
+            23417
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 5154,
+          "minimum": 5154,
+          "maximum": 5154,
+          "values": [
+            5154,
+            5154
+          ],
+          "samples": null
+        },
+        "delta": -18263,
+        "raw_percent": -77.99034889183072
+      },
+      "generation_us": {
+        "A": {
+          "mean": 234800,
+          "minimum": 229524,
+          "maximum": 240076,
+          "values": [
+            240076,
+            229524
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 73230,
+          "minimum": 63157,
+          "maximum": 83303,
+          "values": [
+            63157,
+            83303
+          ],
+          "samples": null
+        },
+        "delta": -161570,
+        "raw_percent": -68.81175468483815
+      },
+      "generation_ms_per_tick": {
+        "A": {
+          "mean": 0.1146484375,
+          "minimum": 0.112072265625,
+          "maximum": 0.117224609375,
+          "values": [
+            0.117224609375,
+            0.112072265625
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 0.035756835937499995,
+          "minimum": 0.03083837890625,
+          "maximum": 0.04067529296875,
+          "values": [
+            0.03083837890625,
+            0.04067529296875
+          ],
+          "samples": null
+        },
+        "delta": -0.07889160156250001,
+        "raw_percent": -68.81175468483816
+      },
+      "generation_us_per_packet": {
+        "A": {
+          "mean": 10.026903531622327,
+          "minimum": 9.801597130289961,
+          "maximum": 10.252209932954692,
+          "values": [
+            10.252209932954692,
+            9.801597130289961
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 14.208381839348078,
+          "minimum": 12.253977493209158,
+          "maximum": 16.162786185487,
+          "values": [
+            12.253977493209158,
+            16.162786185487
+          ],
+          "samples": null
+        },
+        "delta": 4.181478307725751,
+        "raw_percent": 41.702588386718006
+      },
+      "simulation_wall_ms_per_tick": {
+        "A": {
+          "mean": 19.434467041015623,
+          "minimum": 19.016017578125,
+          "maximum": 19.85291650390625,
+          "values": [
+            19.016017578125,
+            19.85291650390625
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 24.328170654296876,
+          "minimum": 21.64901416015625,
+          "maximum": 27.0073271484375,
+          "values": [
+            21.64901416015625,
+            27.0073271484375
+          ],
+          "samples": null
+        },
+        "delta": 4.893703613281254,
+        "raw_percent": 25.180539311694528
+      },
+      "sweeps_full": {
+        "A": {
+          "mean": null,
+          "minimum": null,
+          "maximum": null,
+          "values": [
+            null,
+            null
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 7979,
+          "minimum": 7979,
+          "maximum": 7979,
+          "values": [
+            7979,
+            7979
+          ],
+          "samples": null
+        },
+        "delta": null,
+        "raw_percent": null
+      },
+      "sweeps_row_limited": {
+        "A": {
+          "mean": null,
+          "minimum": null,
+          "maximum": null,
+          "values": [
+            null,
+            null
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 33736,
+          "minimum": 33736,
+          "maximum": 33736,
+          "values": [
+            33736,
+            33736
+          ],
+          "samples": null
+        },
+        "delta": null,
+        "raw_percent": null
+      },
+      "sweeps_skipped_packets": {
+        "A": {
+          "mean": null,
+          "minimum": null,
+          "maximum": null,
+          "values": [
+            null,
+            null
+          ],
+          "samples": null
+        },
+        "B": {
+          "mean": 18935,
+          "minimum": 18935,
+          "maximum": 18935,
+          "values": [
+            18935,
+            18935
+          ],
+          "samples": null
+        },
+        "delta": null,
+        "raw_percent": null
+      }
+    }
+  }
+}

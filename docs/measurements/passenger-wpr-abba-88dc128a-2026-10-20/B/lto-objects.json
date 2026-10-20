@@ -1,0 +1,45 @@
+{
+  "openttd_lib": {
+    "total_objects": 608,
+    "bitcode_objects": 608,
+    "examples": [
+      "openttd_lib.dir/Release/32bpp_anim.obj",
+      "openttd_lib.dir/Release/32bpp_anim_sse2.obj",
+      "openttd_lib.dir/Release/32bpp_anim_sse4.obj",
+      "openttd_lib.dir/Release/32bpp_base.obj",
+      "openttd_lib.dir/Release/32bpp_optimized.obj",
+      "openttd_lib.dir/Release/32bpp_simple.obj",
+      "openttd_lib.dir/Release/32bpp_sse2.obj",
+      "openttd_lib.dir/Release/32bpp_sse4.obj",
+      "openttd_lib.dir/Release/32bpp_ssse3.obj",
+      "openttd_lib.dir/Release/40bpp_anim.obj",
+      "openttd_lib.dir/Release/8bpp_base.obj",
+      "openttd_lib.dir/Release/8bpp_optimized.obj"
+    ]
+  },
+  "openttd": {
+    "total_objects": 1,
+    "bitcode_objects": 1,
+    "examples": [
+      "openttd.dir/Release/win32_main.obj"
+    ]
+  },
+  "openttd_test": {
+    "total_objects": 39,
+    "bitcode_objects": 39,
+    "examples": [
+      "openttd_test.dir/Release/alternating_iterator.obj",
+      "openttd_test.dir/Release/arena_alloc.obj",
+      "openttd_test.dir/Release/bitmath_func.obj",
+      "openttd_test.dir/Release/command.obj",
+      "openttd_test.dir/Release/enum_over_optimisation.obj",
+      "openttd_test.dir/Release/flatset_type.obj",
+      "openttd_test.dir/Release/format_target.obj",
+      "openttd_test.dir/Release/history_func.obj",
+      "openttd_test.dir/Release/landscape_partial_pixel_z.obj",
+      "openttd_test.dir/Release/linkgraph_route_penalties.obj",
+      "openttd_test.dir/Release/math_func.obj",
+      "openttd_test.dir/Release/mock_spritecache.obj"
+    ]
+  }
+}
