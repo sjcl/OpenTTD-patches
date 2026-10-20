@@ -150,7 +150,7 @@ struct StationPassengerServiceCache::Impl {
 	std::map<StationID, uint64_t> destination_revisions;
 	StationPassengerServiceDiagnostics diagnostic;
 	std::array<size_t, 4> states{};
-	uint64_t now = 0, serial = 0, lookup_epoch = 0, changes = 0, policy_epoch = 1, version = 0;
+	uint64_t now = 0, serial = 0, reset_epoch = 0, changes = 0, policy_epoch = 1, version = 0;
 	size_t credit = MAX_WORK;
 	uint64_t fractional_credit = 0;
 
@@ -296,15 +296,17 @@ struct StationPassengerServiceCache::Impl {
 	void Synchronize()
 	{
 		const auto &db = GetPassengerServiceDatabase();
-		const uint64_t epoch = db.HyperpathLookupEpoch(), latest = db.HyperpathDestinationChanges();
-		if (epoch == this->lookup_epoch && latest == this->changes) return;
-		if (epoch != this->lookup_epoch || latest - this->changes > PassengerServiceDatabase::HYPERPATH_DESTINATION_LOG) {
+		const uint64_t epoch = db.HyperpathDisplayResetEpoch(), latest = db.HyperpathDestinationChanges();
+		if (epoch == this->reset_epoch && latest == this->changes) return;
+		// A table moving to retained preserves its policy generation and contents. Only
+		// lost content/history invalidates every result; row retirement is checked per intent.
+		if (epoch != this->reset_epoch || latest - this->changes > PassengerServiceDatabase::HYPERPATH_DESTINATION_LOG) {
 			++this->policy_epoch; this->destination_revisions.clear();
 		} else {
 			for (uint64_t n = this->changes; n < latest; ++n) this->destination_revisions[db.HyperpathChangedDestination(n)] = n + 1;
 			if (this->destination_revisions.size() > MAX_ENTRIES * 2) { ++this->policy_epoch; this->destination_revisions.clear(); }
 		}
-		this->lookup_epoch = epoch; this->changes = latest;
+		this->reset_epoch = epoch; this->changes = latest;
 	}
 
 	void Restart(Fleet &entry)

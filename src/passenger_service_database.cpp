@@ -1004,6 +1004,7 @@ bool PassengerServiceDatabase::UpdateAircraftCosts()
 void PassengerServiceDatabase::DiscardPrecomputed()
 {
 	++this->hyperpath_lookup_epoch;
+	++this->hyperpath_display_reset_epoch;
 	this->preparation_capture = {};
 	++this->boarding_revision;
 	this->ClearRetainedPrecomputed();
@@ -2484,6 +2485,7 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 	restored.hyperpath_boarding_filter = this->hyperpath_boarding_filter;
 	restored.hyperpath_lookup_epoch = this->hyperpath_lookup_epoch + 1; restored.hyperpath_destination_changes = this->hyperpath_destination_changes + 1;
 	restored.hyperpath_display_source_revision = this->hyperpath_display_source_revision + 1;
+	restored.hyperpath_display_reset_epoch = this->hyperpath_display_reset_epoch + 1;
 	*this = std::move(restored);
 	return true;
 }
@@ -2543,6 +2545,7 @@ PassengerServiceDatabase::LoadState PassengerServiceDatabase::StepLoad(size_t al
 	PreparationTimer observation{*this, this->preparation_diagnostic, this->precomputed_preparation_nanoseconds, this->GetPrecomputedProgress().phase};
 	allowance = std::min<size_t>(allowance, 4096); // Local slice bound; the saved operation position is unchanged.
 	++this->hyperpath_lookup_epoch; // Replay publishes rows in both tables without per-row notifications.
+	++this->hyperpath_display_reset_epoch;
 	if (!this->load_graph_refreshed) {
 		auto prepare = [&](PassengerPrecomputedTable &table) {
 			if (!table.IsPreparingGraph()) return true;
