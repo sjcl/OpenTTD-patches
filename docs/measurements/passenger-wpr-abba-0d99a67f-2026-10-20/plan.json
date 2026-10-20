@@ -1,0 +1,24 @@
+{
+  "A": "6c11c67fd08115ce370fbfb182cdc952f37d75fd",
+  "B": "0d99a67f800bbc13d8e2c0b8a48be07d3e25dd13",
+  "order": [
+    "A1-Legacy",
+    "A1-Hyperpath",
+    "B1-Legacy",
+    "B1-Hyperpath",
+    "B2-Legacy",
+    "B2-Hyperpath",
+    "A2-Legacy",
+    "A2-Hyperpath"
+  ],
+  "ticks": 2048,
+  "start_tick": 3197276448,
+  "end_tick": 3197278496,
+  "validate": "one B Hyperpath validation-only after captures",
+  "targets": [
+    "MayUseHyperpathPolicy",
+    "ResolveHyperpath/Board",
+    "SharedHyperpathPlan self"
+  ],
+  "external_backup": "C:/Users/bebe/.codex/visualizations/2026/10/19/01a15484-1ab3-7172-aee8-1a55c6d1c3b4/passenger-wpr-recordings-abba-0d99a67f-2026-10-20"
+}

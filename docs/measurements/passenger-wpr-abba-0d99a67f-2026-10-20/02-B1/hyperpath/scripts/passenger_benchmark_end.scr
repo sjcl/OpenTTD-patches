@@ -1,0 +1,8 @@
+script C:/Users/bebe/.codex/worktrees/3abe/OpenTTD-patches/build-wpr-abba-0d99a67f-2026-10-20/02-B1/hyperpath/on-1-console.txt
+getfulldate
+passenger_journey_stats inventory
+passenger_journey_stats total
+fps
+passenger_journey_stats save_integrity
+save C:/Users/bebe/.codex/worktrees/3abe/OpenTTD-patches/build-wpr-abba-0d99a67f-2026-10-20/02-B1/hyperpath/result
+script

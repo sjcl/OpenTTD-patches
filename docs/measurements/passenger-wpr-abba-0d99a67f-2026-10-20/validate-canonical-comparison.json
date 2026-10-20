@@ -1,0 +1,47 @@
+{
+  "diagnostic_counters_passed": true,
+  "canonical_matches_A": false,
+  "canonical_matches_B_index": false,
+  "B_index_vs_validate_differences": {
+    "journey_packets": [
+      456992,
+      457157
+    ],
+    "known_od_units": [
+      468008,
+      468168
+    ],
+    "cargo_units": [
+      546082,
+      546230
+    ],
+    "company_deliveries": [
+      13647,
+      13665
+    ],
+    "database_digest": [
+      5555598662768065810,
+      13628481927781099768
+    ],
+    "packets": [
+      469581,
+      469694
+    ],
+    "payment_digest": [
+      2424413008291368806,
+      12423382329216331998
+    ],
+    "packet_state_digest": [
+      3411611219648325321,
+      7175063568840262956
+    ],
+    "ownership_digest": [
+      6636989440178595733,
+      1245049033224824192
+    ],
+    "loading_digest": [
+      13110572373424954604,
+      9267037949524039485
+    ]
+  }
+}

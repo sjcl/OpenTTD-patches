@@ -1,0 +1,40 @@
+{
+  "commands": [
+    [
+      "C:\\Program Files\\LLVM\\bin\\llvm-pdbutil.exe",
+      "dump",
+      "--symbols",
+      "C:\\Users\\bebe\\.codex\\worktrees\\3abe\\OpenTTD-patches\\build-wpr-abba-0d99a67f-2026-10-20\\Release\\openttd.pdb"
+    ]
+  ],
+  "matches": {
+    "StateGameLoop": [
+      " 74524 | S_GPROC32 [size = 76] `StateGameLoop_LinkGraphPauseControl`",
+      "176560 | S_GPROC32 [size = 56] `StateGameLoop`"
+    ],
+    "CanBoard": [
+      "257584 | S_GPROC32 [size = 80] `PassengerJourneyLoadingContext::CanBoard`",
+      "287368 | S_LPROC32 [size = 88] `PassengerJourneyLoadingContext::CanBoardUncached`",
+      "         inlinee: 0x17620 (CanBoard)"
+    ],
+    "MayUseHyperpathPolicy": [
+      "341196 | S_GPROC32 [size = 96] `PassengerJourneyLoadingContext::MayUseHyperpathPolicy`",
+      "343788 | S_UDT [size = 76] `PassengerJourneyLoadingContext::MayUseHyperpathPolicy::<lambda_0>`",
+      "343868 | S_LPROC32 [size = 120] `PassengerJourneyLoadingContext::MayUseHyperpathPolicy::<lambda_0>::operator()`"
+    ],
+    "PlanPrecomputed": [
+      "261148 | S_GPROC32 [size = 84] `PassengerServiceDatabase::PlanPrecomputed`"
+    ],
+    "StepImpl": [
+      "253388 | S_GPROC32 [size = 76] `PassengerPrecomputedTable::StepImpl`"
+    ],
+    "RetiredPlan": [
+      "333260 | S_LPROC32 [size = 84] `PassengerJourneyLoadingContext::RetiredPlan`"
+    ],
+    "HyperpathLookupCandidates": [
+      "295808 | S_GPROC32 [size = 92] `PassengerServiceDatabase::HyperpathLookupCandidates`"
+    ]
+  },
+  "all_required_names_present": true,
+  "method": "Native llvm-pdbutil module symbols and, when needed, inlinee IDs; no DIA registry dependency or forced noinline."
+}

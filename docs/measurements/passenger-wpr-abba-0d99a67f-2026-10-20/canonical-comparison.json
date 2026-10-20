@@ -1,0 +1,130 @@
+{
+  "01-A1/legacy": {
+    "previous_6c11c67f": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    }
+  },
+  "01-A1/hyperpath": {
+    "previous_6c11c67f": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    }
+  },
+  "02-B1/legacy": {
+    "previous_6c11c67f": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    },
+    "first_A_this_series": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    }
+  },
+  "02-B1/hyperpath": {
+    "previous_6c11c67f": {
+      "equal": false,
+      "fields": 24,
+      "differences": {
+        "cargo_units": [
+          546198,
+          546082
+        ],
+        "company_deliveries": [
+          13595,
+          13647
+        ],
+        "database_digest": [
+          16064563056932437984,
+          5555598662768065810
+        ],
+        "journey_packets": [
+          456954,
+          456992
+        ],
+        "known_od_units": [
+          467965,
+          468008
+        ],
+        "loading_digest": [
+          5759760310152142397,
+          13110572373424954604
+        ],
+        "ownership_digest": [
+          5786729106522441514,
+          6636989440178595733
+        ],
+        "packet_state_digest": [
+          12763629749201381160,
+          3411611219648325321
+        ],
+        "packets": [
+          469547,
+          469581
+        ],
+        "payment_digest": [
+          13774651420232285578,
+          2424413008291368806
+        ],
+        "published_revision": [
+          1777,
+          1776
+        ]
+      }
+    },
+    "first_A_this_series": {
+      "equal": false,
+      "fields": 24,
+      "differences": {
+        "cargo_units": [
+          546198,
+          546082
+        ],
+        "company_deliveries": [
+          13595,
+          13647
+        ],
+        "database_digest": [
+          16064563056932437984,
+          5555598662768065810
+        ],
+        "journey_packets": [
+          456954,
+          456992
+        ],
+        "known_od_units": [
+          467965,
+          468008
+        ],
+        "loading_digest": [
+          5759760310152142397,
+          13110572373424954604
+        ],
+        "ownership_digest": [
+          5786729106522441514,
+          6636989440178595733
+        ],
+        "packet_state_digest": [
+          12763629749201381160,
+          3411611219648325321
+        ],
+        "packets": [
+          469547,
+          469581
+        ],
+        "payment_digest": [
+          13774651420232285578,
+          2424413008291368806
+        ],
+        "published_revision": [
+          1777,
+          1776
+        ]
+      }
+    }
+  }
+}
