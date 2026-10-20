@@ -1998,6 +1998,13 @@ std::span<const uint32_t> PassengerPrecomputedTable::Candidates(StationID origin
 	return this->RowCandidates(*row, destination, state);
 }
 
+std::optional<uint64_t> PassengerPrecomputedTable::DisplayServiceGeneration(OrderListID service, uint64_t incarnation) const
+{
+	const auto *member = this->FindMember(service);
+	if (!this->graph->hyperpath || member == nullptr || member->incarnation != incarnation) return std::nullopt;
+	return member->generation;
+}
+
 PassengerPrecomputedTable::DisplayRead PassengerPrecomputedTable::NextDisplayCandidate(StationID origin, StationID destination,
 		OrderListID previous, OrderListID failed, DisplayCursor &cursor, DisplayCandidate &out, size_t &work) const
 {

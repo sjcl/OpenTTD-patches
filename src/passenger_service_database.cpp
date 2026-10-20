@@ -513,6 +513,7 @@ void PassengerServiceDatabase::Invalidate(OrderListID id)
 	 * can be deleted or its order vector changed. Network commands stay queued. */
 	this->preparation_capture = {};
 	++this->boarding_revision;
+	++this->hyperpath_display_source_revision;
 	RequestPassengerWaitingGeneration();
 	++this->diagnostic.invalidations;
 	if (id == OrderListID::Invalid()) {
@@ -1335,6 +1336,18 @@ bool PassengerServiceDatabase::HyperpathDisplayCandidates(CargoType cargo, const
 	return table.DisplayCandidates(intent.boarding, intent.alighting, previous, failed, out, work);
 }
 
+std::optional<uint64_t> PassengerServiceDatabase::HyperpathDisplayServiceGeneration(CargoType cargo,
+		const PassengerJourneyExecution &intent, OrderListID service, uint64_t incarnation) const
+{
+	if (cargo >= NUM_CARGO || intent.kind != PassengerRideKind::HyperpathIntent || intent.signature != uint64_t(cargo) + 1 || !this->IsCurrent(intent)) return std::nullopt;
+	const auto &table = intent.generation == this->precomputed_policy_generation ? this->precomputed[cargo] : this->retained_precomputed[cargo];
+	auto generation = table.DisplayServiceGeneration(service, incarnation);
+	if (!generation) return std::nullopt;
+	PassengerJourneyExecution ride; ride.kind = PassengerRideKind::EstimatedServiceIntent;
+	ride.service = service; ride.signature = incarnation; ride.generation = *generation;
+	return this->IsCurrent(ride) ? generation : std::nullopt;
+}
+
 PassengerPrecomputedPlan PassengerServiceDatabase::BoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo,
 		OrderListID service, VehicleOrderID boarding, OrderListID previous, OrderListID failed) const
 {
@@ -1414,7 +1427,10 @@ void PassengerServiceDatabase::Publish(size_t &allowance)
 		}
 		++this->diagnostic.published_wait_samples;
 		this->building_bytes -= staged_bytes;
-		this->unsafe.erase(id); this->staged_since.erase(id); this->building.erase(it);
+		// Publishing a previously unsafe service can change an aggregate even if its
+		// representative belongs to another service, or the capture itself is unchanged.
+		if (this->unsafe.erase(id) != 0) ++this->hyperpath_display_source_revision;
+		this->staged_since.erase(id); this->building.erase(it);
 		this->unsafe_lookup.reset(id.base());
 	}
 	if (changed) ++this->diagnostic.publications;
@@ -2467,6 +2483,7 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 	restored.timed_scratch_enabled = this->timed_scratch_enabled;
 	restored.hyperpath_boarding_filter = this->hyperpath_boarding_filter;
 	restored.hyperpath_lookup_epoch = this->hyperpath_lookup_epoch + 1; restored.hyperpath_destination_changes = this->hyperpath_destination_changes + 1;
+	restored.hyperpath_display_source_revision = this->hyperpath_display_source_revision + 1;
 	*this = std::move(restored);
 	return true;
 }

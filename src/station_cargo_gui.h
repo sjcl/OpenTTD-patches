@@ -29,6 +29,7 @@ struct StationPassengerServiceDiagnostics {
 	uint64_t search_releases = 0, capacity_regressions = 0;
 	uint64_t result_evictions = 0, capacity_waits = 0, periodic_revalidations = 0, policy_revalidations = 0;
 	uint64_t representative_lost = 0, display_regressions = 0, resolved = 0, validation_work = 0;
+	uint64_t generation_reuses = 0;
 	size_t results = 0, searches = 0, result_capacity = 0, estimated_bytes = 0, waiting_work = 0;
 	size_t pending = 0, partial = 0, complete = 0, unavailable = 0, entries = 0;
 };

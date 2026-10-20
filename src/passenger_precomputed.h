@@ -137,6 +137,8 @@ public:
 	static constexpr uint64_t MAX_BOARDING_MASK_BYTES = uint64_t{64} * 1024 * 1024; ///< Larger maps keep the complete scan.
 	std::span<const uint32_t> Candidates(StationID origin, StationID destination, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
 	struct DisplayCandidate { OrderListID service; uint64_t incarnation, generation; VehicleOrderID order; };
+	/** Binding only; the caller must already know membership in an unchanged display policy. */
+	std::optional<uint64_t> DisplayServiceGeneration(OrderListID service, uint64_t incarnation) const;
 	enum class DisplayRead : uint8_t { Candidate, Partial, Complete, Unavailable };
 	/** Indices only. The database binds this cursor to a policy generation/publication. */
 	struct DisplayCursor {
