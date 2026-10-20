@@ -1376,7 +1376,9 @@ PassengerPrecomputedPlan PassengerServiceDatabase::BoardHyperpath(const Passenge
 		if (intent.generation != (retained ? this->retained_precomputed_policy_generation : this->precomputed_policy_generation)) continue;
 		const auto &table = (retained ? this->retained_precomputed : this->precomputed)[cargo];
 		PassengerPrecomputedPlan plan;
-		if (this->RevisionAffectsWaitingPlans()) {
+		/* A failed carrier's Board builds (or refreshes) the table's bounded local policy, which
+		 * cached membership and the display read; a shared answer must not skip that. */
+		if (failed != OrderListID::Invalid() || this->RevisionAffectsWaitingPlans()) {
 			plan = table.Board(intent.boarding, intent.alighting, intent.not_before, service, boarding, previous, failed);
 		} else {
 			/* The table's answer depends on its rows, its graph and its live member bindings (the
@@ -1384,7 +1386,7 @@ PassengerPrecomputedPlan PassengerServiceDatabase::BoardHyperpath(const Passenge
 			 * The ride's service currency is checked below on every call. */
 			static_assert(sizeof(VehicleOrderID) <= 2);
 			const std::array<uint64_t, 2> key{(uint64_t{cargo} << 56) | (uint64_t{retained} << 48) | (uint64_t{intent.boarding.base()} << 32) | (uint64_t{intent.alighting.base()} << 16) | service.base(),
-					(uint64_t{boarding} << 32) | (uint64_t{previous.base()} << 16) | failed.base()};
+					(uint64_t{boarding} << 32) | previous.base()};
 			bool valid; auto &slot = this->RowSlot(this->shared_hyperpath_boards, ROW_PLAN_SLOTS, key, intent.alighting, valid);
 			if (!valid || slot.refreshes != table.MemberRefreshes()) {
 				slot.plan = table.Board(intent.boarding, intent.alighting, intent.not_before, service, boarding, previous, failed);
