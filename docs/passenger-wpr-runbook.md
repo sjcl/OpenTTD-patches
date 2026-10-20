@@ -216,6 +216,9 @@ WPRの性能測定には通常の `index` モードを使う。validate / altern
 validateだけを依頼され、時間を性能比較に使わない場合は `--validation-only` を指定できる。WPRとそのpilotは不要で、他プロセスを記録しつつ正確なtick数・準備完了・診断値・canonicalを確認する。
 この指定では `simulation_timing_valid=false` が意図した値になるため、上の性能測定用採用条件とは区別する。既存のゲームやPGO処理を止めるための確認待ちを増やさず、性能の比較・要約には流用しない。
 
+canonical不一致を修正した版でvalidateも依頼された場合は、同じ入力と既存基準のcanonicalを使ったvalidateを先に1本実行できる。カウンター条件とcanonicalの両方を確認してから長いABBAへ進む。
+先行validateの時間は性能比較へ含めず、WPR各本でも改めて通常indexのcanonical一致を確認する。指定されたcommitの既存計測がある場合は、証跡と対象版を先に確認し、同じ不一致を消すための再採取をしない。
+
 - validate: 通常runnerから `--wpr-profile` を外し、`--hyperpath-filter-mode validate` にする。ログのlookup行とmemo行を別々に保存し、該当するvalidatedが正でviolations=0であることを確認する。
 - alternate: `--hyperpath-filter-mode alternate` または対応版の `--hyperpath-filter-alternate` を使う。ほかのfilter指定とは併用しない。
   現行の比較は索引対マスク。`indexed_us / indexed_walks` と `filtered_us / filtered_walks` を比べる。旧版のマスク対全走査と混同しない。
@@ -223,6 +226,9 @@ validateだけを依頼され、時間を性能比較に使わない場合は `-
 0b8a21c0では終了canonicalは一致した一方、**memo validated=13,769,660 / violations=13,655で検証不合格**だった。lookupのviolations=0やnativeテスト成功でmemoの失敗を打ち消さない。
 0b8a21c0のmemoカウンターはuniqueグループ重複と再計算値不一致の2か所で増えるため、集計だけから全件の原因を断定しない。以後の版では検証対象やカウンターが変わり得るので、対象版の実装とログ項目を確認する。
 検証不合格は結果として報告・保存し、同じ条件の再実行を繰り返して合格を待たない。製品修正は依頼範囲を確認する。
+
+0d99a67fではmemo・lookupのviolationsとlookup_duplicatesが0でも、Hyperpathのcanonicalが24項目中11項目ずれたためABBAを停止した。
+修正版55f1cfe0は、同じ固定入力で先行validateとABBA8本のcanonicalが一致し、validateの違反カウンターも0だった。[55f1cfe0の計測](passenger-wpr-abba-55f1cfe0-2026-10-20.md)を参照し、immutableな対象版の既存記録を先に確認する。
 
 ## 7. 採取完了後にexport・集計する
 
@@ -285,6 +291,7 @@ buildディレクトリを消しても復元・再集計できる状態にする
 Gitにはレポート、関数別inclusive/exclusive CSV、圧縮生CSV、tick・canonical・validate・品質・区間監査JSON、入力manifest、ビルド/採取/exportレシピとハッシュを含める。
 当日の補助スクリプトも再現資料として保存し、採用したスクリプトと不採用資料を明記する。`.etl` / `.sav` / `.exe` / `.pdb` はコミットしない。
 stage後にblobのハッシュとmanifestの対応、および `git diff --cached --check` を確認する。
+文書には`checks/`等のディレクトリへのリンクもあるため、リンク検査はファイルだけでなくディレクトリの存在も認める。検証ツールの誤判定では実マップを取り直さず、検査側を直して再実行する。
 WindowsのPythonでハッシュ対象のレポートを生成する場合は `write_text(..., newline='\n')` と対応する `eol=lf` 属性等で改行を固定する。作業ファイルだけでなくstage済みblobを照合し、検査が非0で終わったらcommit・pushへ進まない。
 報告は結果、同一性・検証の成否、時間の生値と比較条件、ばらつき、失敗の理由を明記する。
 この比較系列のpush先は `sjcl` の `merge/hyperpath-with-table-build`。現在のremote/branchを確認し、force pushせず、push後にremoteのcommit IDを照合する。

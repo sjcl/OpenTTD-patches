@@ -1,0 +1,67 @@
+{
+  "exit_code": 0,
+  "canonical_equal": true,
+  "canonical_fields": 24,
+  "differences": {},
+  "diagnostics": {
+    "memo": {
+      "hits": 0,
+      "validated": 13783197,
+      "conservative": 9088,
+      "violations": 0,
+      "lookup_duplicates": 0
+    },
+    "lookup": {
+      "rebuilds": 2714,
+      "indexed_groups": 203870,
+      "validated_groups": 1038407,
+      "violations": 0
+    }
+  },
+  "exact_ticks": true,
+  "saved_replay": {
+    "ready": true,
+    "elapsed_us": 60113826
+  },
+  "warm_complete": true,
+  "background_ready": {
+    "completed": true,
+    "initial": 0,
+    "total": 13,
+    "elapsed_us": 13,
+    "tick_before": 3197276448,
+    "tick_after": 3197276448
+  },
+  "validation_only": true,
+  "simulation_timing_valid": false,
+  "command": [
+    "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+    "-B",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+    "run",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-55f1cfe0-2026-10-20\\Release\\openttd.exe",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-clang-thin-2026-10-19\\input",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-55f1cfe0-2026-10-20\\validate",
+    "--ticks",
+    "2048",
+    "--timeout",
+    "2400",
+    "--measurement-wait",
+    "2400",
+    "--resume",
+    "--precomputed",
+    "--hyperpath",
+    "--warm-precomputed",
+    "--wait-background-ready",
+    "--hyperpath-filter-mode",
+    "validate",
+    "--main-thread-affinity-mask",
+    "1",
+    "--lang",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-abba-55f1cfe0-2026-10-20\\lang",
+    "--wait-saved-replay",
+    "--validation-only"
+  ],
+  "counters_passed": true,
+  "passed": true
+}

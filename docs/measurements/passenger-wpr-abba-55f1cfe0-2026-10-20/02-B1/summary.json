@@ -1,0 +1,273 @@
+{
+  "legacy": {
+    "pid": 81460,
+    "main_thread_id": 76600,
+    "start_tick": 3197276448,
+    "end_tick": 3197278496,
+    "ticks": 2048,
+    "etl_sha256": "657e2801a61682c8b37fd842b7992d74554fbf04e5fb5f845ecac6a6c8d777a5",
+    "etl_bytes": 116391936,
+    "lost_events": 0,
+    "lost_buffers": 0,
+    "product_function_samples": 36446,
+    "unresolved_product_functions": {},
+    "wpa_invalid_event_warning": [
+      "Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:\n         Event#: 692005   (T#0:#692005)\n         TimeStamp:   45539181, Process: 52508, Thread: 53636, Cpu:  30\n         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}\n         ClassicEventDescriptor: 0x0c  0x00 0x0002\n         MofLength: 112"
+    ],
+    "driver_loops": 2308,
+    "simulation_wall_ms_per_tick": 17.4774599609375,
+    "journey_wall_ms_per_tick": 0.81663330078125,
+    "sampled_cpu_ms_per_tick": {
+      "all": 19.1828931640625,
+      "main": 18.448264306640624,
+      "simulation_stack": 16.667455322265624
+    },
+    "unavailable_stack": {},
+    "conservation_checks": {
+      "all": {
+        "stack_total_ns": 39286565200,
+        "stack_samples": 39284,
+        "exclusive_total_ns": 39286565200,
+        "exclusive_samples": 39284
+      },
+      "main": {
+        "stack_total_ns": 37782045300,
+        "stack_samples": 37780,
+        "exclusive_total_ns": 37782045300,
+        "exclusive_samples": 37780
+      },
+      "simulation_stack": {
+        "stack_total_ns": 34134948500,
+        "stack_samples": 34133,
+        "exclusive_total_ns": 34134948500,
+        "exclusive_samples": 34133
+      }
+    },
+    "warnings": 22403,
+    "payments_valid": true
+  },
+  "hyperpath": {
+    "pid": 33584,
+    "main_thread_id": 72716,
+    "start_tick": 3197276448,
+    "end_tick": 3197278496,
+    "ticks": 2048,
+    "etl_sha256": "271326196a8d3217318a1f94ebb9f7b7daf7594649a952eff25002206b3619a3",
+    "etl_bytes": 93323264,
+    "lost_events": 0,
+    "lost_buffers": 0,
+    "product_function_samples": 33759,
+    "unresolved_product_functions": {},
+    "wpa_invalid_event_warning": [
+      "Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:\n         Event#: 427695   (T#0:#427695)\n         TimeStamp:   34488097, Process: 39236, Thread: 13412, Cpu:   8\n         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}\n         ClassicEventDescriptor: 0x0c  0x00 0x0002\n         MofLength: 112"
+    ],
+    "driver_loops": 2049,
+    "simulation_wall_ms_per_tick": 15.67685595703125,
+    "journey_wall_ms_per_tick": 0.85384521484375,
+    "sampled_cpu_ms_per_tick": {
+      "all": 17.798458349609376,
+      "main": 15.82702001953125,
+      "simulation_stack": 15.537370068359374
+    },
+    "unavailable_stack": {
+      "all": {
+        "ns": 1000000,
+        "samples": 1
+      }
+    },
+    "conservation_checks": {
+      "all": {
+        "stack_total_ns": 36451242700,
+        "stack_samples": 36442,
+        "exclusive_total_ns": 36451242700,
+        "exclusive_samples": 36442
+      },
+      "main": {
+        "stack_total_ns": 32413737000,
+        "stack_samples": 32406,
+        "exclusive_total_ns": 32413737000,
+        "exclusive_samples": 32406
+      },
+      "simulation_stack": {
+        "stack_total_ns": 31820533900,
+        "stack_samples": 31813,
+        "exclusive_total_ns": 31820533900,
+        "exclusive_samples": 31813
+      }
+    },
+    "warnings": 22403,
+    "payments_valid": true
+  },
+  "branches": [
+    {
+      "branch": "[worker threads]",
+      "legacy_ms_per_tick": "0.734628857",
+      "hyperpath_ms_per_tick": "1.971438330",
+      "delta_ms_per_tick": "1.236809473",
+      "legacy_samples": 1504,
+      "hyperpath_samples": 4036
+    },
+    {
+      "branch": "openttd.exe!RunPassengerWaitingEvents",
+      "legacy_ms_per_tick": "0.557090332",
+      "hyperpath_ms_per_tick": "0.597423926",
+      "delta_ms_per_tick": "0.040333594",
+      "legacy_samples": 1140,
+      "hyperpath_samples": 1222
+    },
+    {
+      "branch": "[StateGameLoop self]",
+      "legacy_ms_per_tick": "0.000487549",
+      "hyperpath_ms_per_tick": "0.003421582",
+      "delta_ms_per_tick": "0.002934033",
+      "legacy_samples": 1,
+      "hyperpath_samples": 7
+    },
+    {
+      "branch": "openttd.exe!BeginPassengerJourneyTick",
+      "legacy_ms_per_tick": "0.004401416",
+      "hyperpath_ms_per_tick": "0.007328809",
+      "delta_ms_per_tick": "0.002927393",
+      "legacy_samples": 9,
+      "hyperpath_samples": 15
+    },
+    {
+      "branch": "openttd.exe!UpdateLandscapingLimits",
+      "legacy_ms_per_tick": "0.000000000",
+      "hyperpath_ms_per_tick": "0.000490088",
+      "delta_ms_per_tick": "0.000490088",
+      "legacy_samples": 0,
+      "hyperpath_samples": 1
+    },
+    {
+      "branch": "openttd.exe!LinkGraphSchedule::JoinNext",
+      "legacy_ms_per_tick": "0.001464160",
+      "hyperpath_ms_per_tick": "0.001952686",
+      "delta_ms_per_tick": "0.000488525",
+      "legacy_samples": 3,
+      "hyperpath_samples": 4
+    },
+    {
+      "branch": "openttd.exe!_Query_perf_counter",
+      "legacy_ms_per_tick": "0.000000000",
+      "hyperpath_ms_per_tick": "0.000488379",
+      "delta_ms_per_tick": "0.000488379",
+      "legacy_samples": 0,
+      "hyperpath_samples": 1
+    },
+    {
+      "branch": "openttd.exe!CheckCaches",
+      "legacy_ms_per_tick": "0.000487939",
+      "hyperpath_ms_per_tick": "0.000494824",
+      "delta_ms_per_tick": "0.000006885",
+      "legacy_samples": 1,
+      "hyperpath_samples": 1
+    },
+    {
+      "branch": "openttd.exe!NewsLoop",
+      "legacy_ms_per_tick": "0.003416553",
+      "hyperpath_ms_per_tick": "0.002935303",
+      "delta_ms_per_tick": "-0.000481250",
+      "legacy_samples": 7,
+      "hyperpath_samples": 6
+    },
+    {
+      "branch": "openttd.exe!OnTick_Companies",
+      "legacy_ms_per_tick": "0.000488818",
+      "hyperpath_ms_per_tick": "0.000000000",
+      "delta_ms_per_tick": "-0.000488818",
+      "legacy_samples": 1,
+      "hyperpath_samples": 0
+    },
+    {
+      "branch": "openttd.exe!PerformanceMeasurer::~PerformanceMeasurer",
+      "legacy_ms_per_tick": "0.000489063",
+      "hyperpath_ms_per_tick": "0.000000000",
+      "delta_ms_per_tick": "-0.000489063",
+      "legacy_samples": 1,
+      "hyperpath_samples": 0
+    },
+    {
+      "branch": "openttd.exe!TimerManager<TimerGameTick>::Elapsed",
+      "legacy_ms_per_tick": "0.000489258",
+      "hyperpath_ms_per_tick": "0.000000000",
+      "delta_ms_per_tick": "-0.000489258",
+      "legacy_samples": 1,
+      "hyperpath_samples": 0
+    },
+    {
+      "branch": "openttd.exe!BasePersistentStorageArray::SwitchMode",
+      "legacy_ms_per_tick": "0.000976465",
+      "hyperpath_ms_per_tick": "0.000000000",
+      "delta_ms_per_tick": "-0.000976465",
+      "legacy_samples": 2,
+      "hyperpath_samples": 0
+    },
+    {
+      "branch": "openttd.exe!AnimateAnimatedTiles",
+      "legacy_ms_per_tick": "0.002440283",
+      "hyperpath_ms_per_tick": "0.000976709",
+      "delta_ms_per_tick": "-0.001463574",
+      "legacy_samples": 5,
+      "hyperpath_samples": 2
+    },
+    {
+      "branch": "openttd.exe!FlushDeferredAspectUpdates",
+      "legacy_ms_per_tick": "0.008305029",
+      "hyperpath_ms_per_tick": "0.006838086",
+      "delta_ms_per_tick": "-0.001466943",
+      "legacy_samples": 17,
+      "hyperpath_samples": 14
+    },
+    {
+      "branch": "openttd.exe!IncreaseDate",
+      "legacy_ms_per_tick": "0.017094336",
+      "hyperpath_ms_per_tick": "0.015139746",
+      "delta_ms_per_tick": "-0.001954590",
+      "legacy_samples": 35,
+      "hyperpath_samples": 31
+    },
+    {
+      "branch": "openttd.exe!CallLandscapeTick",
+      "legacy_ms_per_tick": "0.275921143",
+      "hyperpath_ms_per_tick": "0.246645361",
+      "delta_ms_per_tick": "-0.029275781",
+      "legacy_samples": 565,
+      "hyperpath_samples": 505
+    },
+    {
+      "branch": "openttd.exe!PassengerServiceDatabase::Tick",
+      "legacy_ms_per_tick": "0.163740430",
+      "hyperpath_ms_per_tick": "0.102277295",
+      "delta_ms_per_tick": "-0.061463135",
+      "legacy_samples": 335,
+      "hyperpath_samples": 209
+    },
+    {
+      "branch": "openttd.exe!RunTileLoop",
+      "legacy_ms_per_tick": "7.188854053",
+      "hyperpath_ms_per_tick": "7.041467285",
+      "delta_ms_per_tick": "-0.147386768",
+      "legacy_samples": 14722,
+      "hyperpath_samples": 14418
+    },
+    {
+      "branch": "openttd.exe!CallVehicleTicks",
+      "legacy_ms_per_tick": "8.441308496",
+      "hyperpath_ms_per_tick": "7.509489990",
+      "delta_ms_per_tick": "-0.931818506",
+      "legacy_samples": 17288,
+      "hyperpath_samples": 15377
+    },
+    {
+      "branch": "[outside StateGameLoop]",
+      "legacy_ms_per_tick": "1.780808984",
+      "hyperpath_ms_per_tick": "0.289649951",
+      "delta_ms_per_tick": "-1.491159033",
+      "legacy_samples": 3647,
+      "hyperpath_samples": 593
+    }
+  ],
+  "delta_simulation_wall_ms_per_tick": -1.8006040039062512,
+  "method": "Inclusive: union of functions per sampled stack. Whole-thread exclusive: WPA Function column. simulation_stack exclusive: stack leaf. All times are sampled CPU except explicit wall timers."
+}

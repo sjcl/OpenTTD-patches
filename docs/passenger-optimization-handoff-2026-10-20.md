@@ -19,7 +19,7 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
 
 ## 2. 現在の状態と最優先タスク
 
-### 0d99a67f の canonical 不一致と、その修正 55f1cfe0（未検証）
+### 0d99a67f の canonical 不一致と、その修正 55f1cfe0（実マップ確認済み）
 
 - **何が起きたか**: [0d99a67f の ABBA](passenger-wpr-abba-0d99a67f-2026-10-20.md) で、Hyperpath の canonical が 24 項目中 11 項目ずれた。Legacy は一致していた。validate のカウンター（memo・lookup の violations、lookup_duplicates）はすべて 0 だった。
 - **特定した原因**: a968222f で入れた「表の `Board` 結果の共有キャッシュ」。
@@ -28,13 +28,15 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
   - そのためキャッシュに残った ride が古い generation を持ったままになり、`IsCurrent` の判定が変わった。
   - Legacy で一致したことは、この経路が Hyperpath の表だけで共有されることと整合する。
 - **修正（55f1cfe0）**: 表に binding 更新の回数 `member_refreshes`（`MemberRefreshes()`）を持たせた。`Board` キャッシュの slot はこの回数も照合する。古い意図の計画の共有（`SharedHyperpathPlan`）も同じ回数に追従させた。再現テスト「Cached Hyperpath boarding follows a refreshed carrier binding」を追加し、回数照合を外すとこのテストが失敗することも確認した。
-- **次にやること**:
-  1. ユーザーに依頼して、6c11c67f と 55f1cfe0 を ABBA で計測し、validate も 1 本採る。**最初の判定は canonical が 6c11c67f と一致するか。**
-  2. まだずれる場合は、a968222f と 0d99a67f を個別にビルドして二分探索する。疑う順は次のとおり。
+- **実マップ確認（2026-10-20）**: [6c11c67f / 55f1cfe0のABBA・validate](passenger-wpr-abba-55f1cfe0-2026-10-20.md)を取得済み。通常indexのABBA8本と先行validate1本のcanonical 24項目は、すべて6c11c67fの同じモードと完全一致した。validateはmemo 13,783,197件・lookup 1,038,407件で両方のviolations=0、lookup_duplicates=0。旧0d99a67fを再測定せず、修正版の新しい記録を使う。
+- **修正版の性能**: Hyperpathの`MayUseHyperpathPolicy` inclusiveは0.553363→0.258497 ms/tick（−53.29%）、`SharedHyperpathPlan` selfは0.051745→0.002442（−95.28%）。`ResolveHyperpath`/`Board` unionは0.230685→0.220423（−4.45%）で実測範囲が重なり、明確な短縮は未確認。全体CPUの生値はHyperpath −9.45%・Legacy −10.20%だが、同じAの変動が大きいため最適化単独の効果とは断定しない。
+- **次に進む際の確認**:
+  1. 性能の判断には上の55f1cfe0のABBA・関数別CSVを使う。下記の0d99a67f単発値は、挙動が異なる版の診断用として区別する。
+  2. 今後別の入力・変更で再びずれる場合は、a968222f と 0d99a67f を個別にビルドして二分探索する。疑う順は次のとおり。
      - 表の可変状態のうち、行・epoch 以外のもの（`refreshed_members` のほかにもないか）。
      - `CachedHyperpathMembership` の行キャッシュ。
      - `MayUseHyperpathPolicy` から context memo を外したこと。
-  3. 一致したら、性能を評価する。0d99a67f の B1（1 本だけで、canonical もずれている）では、次のように大きく下がっていた。修正後の ABBA で確定させる。
+  3. 0d99a67f の B1（1 本だけで、canonical もずれている）では、次のように下がっていた。これは修正版ABBAの結果ではない。
      - `MayUseHyperpathPolicy`: 0.52 → 0.27 ms/tick
      - `SharedHyperpathPlan` の self: 0.053 → 0.003 ms/tick
 
@@ -100,7 +102,7 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
 
 | commit | 内容 | 実マップの結果 |
 | --- | --- | --- |
-| 55f1cfe0 | `Board`/plan キャッシュを binding 更新に追従させる修正 | 未計測 |
+| 55f1cfe0 | `Board`/plan キャッシュを binding 更新に追従させる修正 | [ABBA8本・validate1本](passenger-wpr-abba-55f1cfe0-2026-10-20.md)でcanonical一致、違反カウンター0 |
 | 0d99a67f | 乗り継ぎグループの保存済み判定を、DB の直接写像キャッシュで tick 間共有。context memo は廃止 | canonical 不一致（原因は a968222f 側。上記） |
 | a968222f | 共有キャッシュを固定サイズの直接写像に変更し、表の `Board` 結果も共有 | 同上 |
 | 6c11c67f / b5bab2fd / c1e30771 | 行の仕上げを worker に移し、Work 位置で再生。古い意図の計画の同一性を共有 | `StepImpl` self −95%、主スレッドの `TickPrecomputed` −0.29 ms/tick（[ABBA](passenger-wpr-abba-6c11c67f-2026-10-19.md)） |
