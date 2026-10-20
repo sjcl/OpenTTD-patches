@@ -67,11 +67,13 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
 - **実マップ（2026-10-20）**: [cdebb1a0 / 88dc128a の ThinLTO ABBA・各版validate](passenger-wpr-abba-88dc128a-2026-10-20.md)を取得済み。8本すべて採用、同じ版・同じモードのcanonical 24項目は4組すべて一致。A/B間はLegacy一致、Hyperpathはpacket_state_digest・ownership_digestの2項目が異なる。両版のvalidateはmemo・lookupのviolations=0、lookup_duplicates=0で、各版の通常indexともcanonical一致した。Aは7b3f2c4bを含み、9439af0eと全treeが同一。
 - **generationの削減は再現**: Hyperpathは23,417→5,154 packets（−77.99%）、原因別タイマー平均234,800→73,230 µs / 2,048 tick（−68.81%）。Bのsweepsは両方ともfull=7,979、row_limited=33,736、skipped_packets=18,935。Legacyは両版29,388 packets、Bはfull=39,153でrow_limited/skipped_packets=0。
 - **時間の判断は保留**: RoutePassengerJourneys inclusiveの生平均はHyperpath 0.722120→0.885772 ms/tick（＋22.66%、実測範囲非重複）、Legacy 1.005526→0.898759（−10.62%、範囲は重なる）。HyperpathではRunTileLoop・CallVehicleTicksも広く増え、StateGameLoopは18.769888→23.402140 ms/tick。この各2本だけで今回のsweep変更単独の回帰・高速化とは断定せず、generation件数の削減と区別する。再採取で都合のよい値に置き換えていない。
+- **補正した結果（[補遺](measurements/passenger-wpr-abba-88dc128a-2026-10-20/analysis/README.md)）: 改善していない。** expiry・failure の packet 数は A/B で同じなので、そのタイマーで各本の CPU の速さを補正した（補正後の expiry・failure は 4 本で ±0.3% に揃う）。
+  - generation が減った分（−18,263 packet）は、ほぼそのまま `cause=new` に移った（+15,681 packet）。sweep が、着いたばかりの packet を自分の event より先に計画していたためと考えられる。初回の計画はどのみち必要な仕事だった。
+  - new + generation は 43,995 → 41,413 packet（−5.9%）。補正後の時間は 408.0／411.2 → 430.2／440.8 ms / 2,048 tick（+0.011〜0.016 ms/tick）。
+  - B の生の CPU 時間の増加は `RunTileLoop` や列車の処理にも一様に出ており、計測機の状態によるものと判断した。
 - **次回のビルド**: merge後CMakeはFull LTO既定。ThinLTO比較はOPTION_NO_LTO=ONで自動指定を抑え、C/C++ Release flagsへ-flto=thinを明示し、実tlogも照合する。[手順書](passenger-wpr-runbook.md)と今回のレシピを使う。
 
-- **次にやること**: ユーザーに次の計測を依頼する。A = cdebb1a0（jgrpp-ya merge 後。9439af0e とツリーは同じ）、B = 88dc128a。
-  - ABBA（Legacy・Hyperpath）。canonical は一致しない見込みなので、各版の 2 本どうしで一致すること（決定性）を確かめる。
-  - validate を各版 1 本ずつ（B は必須）。
+- **次にやること**: 88dc128a を revert するかどうかをユーザーが決める（推奨は revert。保存フィールドを 3 つ増やしたのに効果がない。jgrpp-ya には未投入）。
 
 ## 3. 計測の基準（2026-10-19 から）
 
@@ -135,9 +137,8 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
 
 | commit | 内容 | 実マップの結果 |
 | --- | --- | --- |
-| 88dc128a | generation sweep を、新しく公開された行の目的地に絞る（挙動が変わる） | 未計測 |
-| 7b3f2c4b | jgrpp-ya merge 後、failed carrier の `Board` は共有キャッシュを通さない | 全テスト合格。実マップは未計測 |
-| 88dc128a | 新しい公開行の目的地だけをgeneration sweep | 上記ABBAでgeneration −78%、Route inclusiveの短縮は未確認 |
+| 88dc128a | generation sweep を、新しく公開された行の目的地に絞る（挙動が変わる） | [ABBA](passenger-wpr-abba-88dc128a-2026-10-20.md)で generation −78%。ただし同じ分が new に移り、補正後の合計は +0.01 ms/tick（[補遺](measurements/passenger-wpr-abba-88dc128a-2026-10-20/analysis/README.md)） |
+| 7b3f2c4b | jgrpp-ya merge 後、failed carrier の `Board` は共有キャッシュを通さない | 上記 ABBA の A に含む。validate で違反 0 |
 | 55f1cfe0 | `Board`/plan キャッシュを binding 更新に追従させる修正 | [ABBA8本・validate1本](passenger-wpr-abba-55f1cfe0-2026-10-20.md)でcanonical一致、違反カウンター0 |
 | 0d99a67f | 乗り継ぎグループの保存済み判定を、DB の直接写像キャッシュで tick 間共有。context memo は廃止 | canonical 不一致（原因は a968222f 側。上記） |
 | a968222f | 共有キャッシュを固定サイズの直接写像に変更し、表の `Board` 結果も共有 | 同上 |
@@ -170,7 +171,7 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
 
 ## 7. 未着手の案
 
-- （88dc128a で実装）行の公開に合わせて、その目的地の待機 packet だけを再計画する。
+- （88dc128a で実装、効果なし）行の公開に合わせて、その目的地の待機 packet だけを再計画する。generation の大半は初回の計画で、件数は減らせない。減らすなら 1 件あたりのコスト（new の event 経路は 1 件 8〜10 µs）。
 - 失敗（failure）と期限切れ（expiry）の再計画。55f1cfe0 の B1 では failure 134,017 packet・0.22 ms/tick、expiry 197,808 packet・0.11 ms/tick で、generation より大きい。
 - 待機索引のノード系コンテナを pool 化する。
 - 原因別タイマーをサンプリングにする（診断値の意味が変わる）。

@@ -1,0 +1,258 @@
+{
+ "01-A1/legacy": {
+  "scale_vs_01-A1": 1.0,
+  "causes": {
+   "new": {
+    "packets": 27621,
+    "us": 374338,
+    "us_normalised": 374338.0
+   },
+   "expiry": {
+    "packets": 267790,
+    "us": 725882,
+    "us_normalised": 725882.0
+   },
+   "failure": {
+    "packets": 90310,
+    "us": 440397,
+    "us_normalised": 440397.0
+   },
+   "migration": {
+    "packets": 0,
+    "us": 0,
+    "us_normalised": 0.0
+   },
+   "generation": {
+    "packets": 29388,
+    "us": 409204,
+    "us_normalised": 409204.0
+   }
+  },
+  "new_plus_generation_packets": 57009,
+  "new_plus_generation_us_normalised": 783542.0
+ },
+ "02-B1/legacy": {
+  "scale_vs_01-A1": 0.8688418465907386,
+  "causes": {
+   "new": {
+    "packets": 27621,
+    "us": 296683,
+    "us_normalised": 341469.5104341012
+   },
+   "expiry": {
+    "packets": 267790,
+    "us": 619220,
+    "us_normalised": 712695.8748934187
+   },
+   "failure": {
+    "packets": 90310,
+    "us": 394092,
+    "us_normalised": 453583.1251065812
+   },
+   "migration": {
+    "packets": 0,
+    "us": 0,
+    "us_normalised": 0.0
+   },
+   "generation": {
+    "packets": 29388,
+    "us": 328946,
+    "us_normalised": 378602.8507843586
+   }
+  },
+  "new_plus_generation_packets": 57009,
+  "new_plus_generation_us_normalised": 720072.3612184599
+ },
+ "03-B2/legacy": {
+  "scale_vs_01-A1": 0.8433239387830871,
+  "causes": {
+   "new": {
+    "packets": 27621,
+    "us": 311793,
+    "us_normalised": 369719.13835378137
+   },
+   "expiry": {
+    "packets": 267790,
+    "us": 599845,
+    "us_normalised": 711286.5797045603
+   },
+   "failure": {
+    "packets": 90310,
+    "us": 383706,
+    "us_normalised": 454992.42029543966
+   },
+   "migration": {
+    "packets": 0,
+    "us": 0,
+    "us_normalised": 0.0
+   },
+   "generation": {
+    "packets": 29388,
+    "us": 314139,
+    "us_normalised": 372500.98752479535
+   }
+  },
+  "new_plus_generation_packets": 57009,
+  "new_plus_generation_us_normalised": 742220.1258785767
+ },
+ "04-A2/legacy": {
+  "scale_vs_01-A1": 0.8547337300937425,
+  "causes": {
+   "new": {
+    "packets": 27621,
+    "us": 306796,
+    "us_normalised": 358937.51375220943
+   },
+   "expiry": {
+    "packets": 267790,
+    "us": 605030,
+    "us_normalised": 707857.8728063576
+   },
+   "failure": {
+    "packets": 90310,
+    "us": 391828,
+    "us_normalised": 458421.12719364243
+   },
+   "migration": {
+    "packets": 0,
+    "us": 0,
+    "us_normalised": 0.0
+   },
+   "generation": {
+    "packets": 29388,
+    "us": 316136,
+    "us_normalised": 369864.8934391859
+   }
+  },
+  "new_plus_generation_packets": 57009,
+  "new_plus_generation_us_normalised": 728802.4071913954
+ },
+ "01-A1/hyperpath": {
+  "scale_vs_01-A1": 1.0,
+  "causes": {
+   "new": {
+    "packets": 20578,
+    "us": 167915,
+    "us_normalised": 167915.0
+   },
+   "expiry": {
+    "packets": 202283,
+    "us": 273808,
+    "us_normalised": 273808.0
+   },
+   "failure": {
+    "packets": 185185,
+    "us": 621343,
+    "us_normalised": 621343.0
+   },
+   "migration": {
+    "packets": 0,
+    "us": 0,
+    "us_normalised": 0.0
+   },
+   "generation": {
+    "packets": 23417,
+    "us": 240076,
+    "us_normalised": 240076.0
+   }
+  },
+  "new_plus_generation_packets": 43995,
+  "new_plus_generation_us_normalised": 407991.0
+ },
+ "02-B1/hyperpath": {
+  "scale_vs_01-A1": 1.0665195034133905,
+  "causes": {
+   "new": {
+    "packets": 36259,
+    "us": 395622,
+    "us_normalised": 370946.80287966016
+   },
+   "expiry": {
+    "packets": 202283,
+    "us": 291582,
+    "us_normalised": 273395.84420799924
+   },
+   "failure": {
+    "packets": 185185,
+    "us": 663114,
+    "us_normalised": 621755.1557920008
+   },
+   "migration": {
+    "packets": 0,
+    "us": 0,
+    "us_normalised": 0.0
+   },
+   "generation": {
+    "packets": 5154,
+    "us": 63157,
+    "us_normalised": 59217.857524279985
+   }
+  },
+  "new_plus_generation_packets": 41413,
+  "new_plus_generation_us_normalised": 430164.6604039401
+ },
+ "03-B2/hyperpath": {
+  "scale_vs_01-A1": 1.2803817456496167,
+  "causes": {
+   "new": {
+    "packets": 36259,
+    "us": 481035,
+    "us_normalised": 375696.5464670392
+   },
+   "expiry": {
+    "packets": 202283,
+    "us": 349848,
+    "us_normalised": 273237.2600505176
+   },
+   "failure": {
+    "packets": 185185,
+    "us": 796287,
+    "us_normalised": 621913.7399494824
+   },
+   "migration": {
+    "packets": 0,
+    "us": 0,
+    "us_normalised": 0.0
+   },
+   "generation": {
+    "packets": 5154,
+    "us": 83303,
+    "us_normalised": 65061.06501677376
+   }
+  },
+  "new_plus_generation_packets": 41413,
+  "new_plus_generation_us_normalised": 440757.611483813
+ },
+ "04-A2/hyperpath": {
+  "scale_vs_01-A1": 1.0130279695827855,
+  "causes": {
+   "new": {
+    "packets": 20578,
+    "us": 186986,
+    "us_normalised": 184581.280689624
+   },
+   "expiry": {
+    "packets": 202283,
+    "us": 277527,
+    "us_normalised": 273957.88500716246
+   },
+   "failure": {
+    "packets": 185185,
+    "us": 629286,
+    "us_normalised": 621193.1149928375
+   },
+   "migration": {
+    "packets": 0,
+    "us": 0,
+    "us_normalised": 0.0
+   },
+   "generation": {
+    "packets": 23417,
+    "us": 229524,
+    "us_normalised": 226572.22395797147
+   }
+  },
+  "new_plus_generation_packets": 43995,
+  "new_plus_generation_us_normalised": 411153.50464759546
+ }
+}
