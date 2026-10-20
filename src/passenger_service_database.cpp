@@ -1150,8 +1150,11 @@ const PassengerPrecomputedPlan *PassengerServiceDatabase::SharedHyperpathPlan(Ca
 	static_assert(sizeof(StationID) <= 2 && sizeof(OrderListID) <= 2 && sizeof(CargoType) <= 1);
 	const std::array<uint64_t, 2> key{(uint64_t{cargo} << 48) | (uint64_t{origin.base()} << 32) | (uint64_t{destination.base()} << 16) | previous.base(), 0};
 	bool valid; auto &slot = this->RowSlot(this->shared_hyperpath_plans, ROW_PLAN_SLOTS, key, destination, valid);
-	if (!valid) {
+	/* The intent itself never carries a member binding; follow refreshes anyway, they are rare. */
+	const uint64_t refreshes = this->precomputed[cargo].MemberRefreshes() + this->retained_precomputed[cargo].MemberRefreshes();
+	if (!valid || slot.refreshes != refreshes) {
 		slot.plan = this->PlanPrecomputed(cargo, origin, destination, _state_ticks, previous);
+		slot.refreshes = refreshes;
 	} else if (slot.plan.ride) {
 		/* The only time-dependent fields: exactly what planning now would set. */
 		slot.plan.ride->not_before = slot.plan.ride->planned_at = _state_ticks;
@@ -1267,13 +1270,17 @@ PassengerPrecomputedPlan PassengerServiceDatabase::BoardHyperpath(const Passenge
 		if (this->RevisionAffectsWaitingPlans()) {
 			plan = table.Board(intent.boarding, intent.alighting, intent.not_before, service, boarding, previous, failed);
 		} else {
-			/* The table's answer depends only on its rows and graph; the ready time only sets
-			 * not_before/planned_at. The ride's service currency is checked below on every call. */
+			/* The table's answer depends on its rows, its graph and its live member bindings (the
+			 * selected carrier's generation); the ready time only sets not_before/planned_at.
+			 * The ride's service currency is checked below on every call. */
 			static_assert(sizeof(VehicleOrderID) <= 2);
 			const std::array<uint64_t, 2> key{(uint64_t{cargo} << 56) | (uint64_t{retained} << 48) | (uint64_t{intent.boarding.base()} << 32) | (uint64_t{intent.alighting.base()} << 16) | service.base(),
 					(uint64_t{boarding} << 32) | (uint64_t{previous.base()} << 16) | failed.base()};
 			bool valid; auto &slot = this->RowSlot(this->shared_hyperpath_boards, ROW_PLAN_SLOTS, key, intent.alighting, valid);
-			if (!valid) slot.plan = table.Board(intent.boarding, intent.alighting, intent.not_before, service, boarding, previous, failed);
+			if (!valid || slot.refreshes != table.MemberRefreshes()) {
+				slot.plan = table.Board(intent.boarding, intent.alighting, intent.not_before, service, boarding, previous, failed);
+				slot.refreshes = table.MemberRefreshes();
+			}
 			plan = slot.plan;
 			if (plan.ride) plan.ride->not_before = plan.ride->planned_at = intent.not_before;
 		}

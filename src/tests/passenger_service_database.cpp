@@ -559,6 +559,31 @@ TEST_CASE("Shared Hyperpath plan identities follow every row publication and gen
 	check();
 }
 
+TEST_CASE("Cached Hyperpath boarding follows a refreshed carrier binding", "[passenger][hyperpath][precomputed][periodic]")
+{
+	/* A timetable-only republication refreshes the table's member binding (the carrier's generation)
+	 * without a new graph, row or lookup epoch: a cached boarding ride must follow it. */
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *first = f.Train({Stop(A), Stop(B), Stop(C)}); f.Train({Stop(A, 150), Stop(C)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	const auto plan = db.PlanPrecomputed(PAX, A, C, _state_ticks); REQUIRE(plan.ride); REQUIRE(plan.ride->kind == PassengerRideKind::HyperpathIntent);
+	const auto intent = *plan.ride;
+	auto cached = [&]() { return db.BoardHyperpath(intent, PAX, first->orders->index, 0); };
+	auto uncached = [&]() { return PassengerServiceDatabaseTestAccess::UncachedBoardHyperpath(db, intent, PAX, first->orders->index, 0, OrderListID::Invalid(), OrderListID::Invalid()); };
+	REQUIRE(uncached().ride); CHECK(cached().ride == uncached().ride); CHECK(cached().ride == uncached().ride);
+	auto &table = PassengerServiceDatabaseTestAccess::Table(db, PAX);
+	auto service = *db.Get(first->orders->index); ++service.generation;
+	const auto refreshes = table.MemberRefreshes();
+	REQUIRE(PassengerPrecomputedTestAccess::RefreshService(table, service));
+	CHECK(table.MemberRefreshes() > refreshes);
+	const auto expected = uncached();
+	CHECK(cached().state == expected.state); CHECK(cached().ride == expected.ride);
+	/* The shared retired-plan identity follows refreshes as well. */
+	const auto *shared = db.SharedHyperpathPlan(PAX, A, C, OrderListID::Invalid());
+	REQUIRE(shared != nullptr); REQUIRE(shared->ride);
+	CHECK(*shared->ride == *db.PlanPrecomputed(PAX, A, C, _state_ticks).ride);
+}
+
 TEST_CASE("Shared prefix carriers stay aboard only for a safe competitive continuation", "[passenger][precomputed][estimated][sections][boarding]")
 {
 	bool estimated = false, forced = false, no_unload = false, faster_transfer = false, incompatible = false, split = false;

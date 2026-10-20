@@ -45,6 +45,7 @@ struct PassengerPrecomputedTestAccess {
 	static bool Idle(const PassengerPrecomputedTable &table) { return table.ParallelIdle(); }
 	static bool Serial(const PassengerPrecomputedTable &table) { return table.serial_destination == table.destination; }
 	static bool Pending(const PassengerPrecomputedTable &table) { return table.parallel_credit != 0; }
+	static bool RefreshService(PassengerPrecomputedTable &table, const PassengerPeriodicService &service) { return table.RefreshService(service); }
 	/** Rotating eviction of every failed-carrier local policy, as a full cache would do. */
 	static void EvictLocalPolicies(const PassengerPrecomputedTable &table)
 	{

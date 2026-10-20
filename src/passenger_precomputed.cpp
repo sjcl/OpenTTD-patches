@@ -205,7 +205,7 @@ bool PassengerPrecomputedTable::RefreshService(const PassengerPeriodicService &s
 				old.alight != ((stop.alight & mask) != 0) || old.forced != ((stop.forced & mask) != 0) || old.continues != stop.continues) return false;
 	}
 	auto binding = *member; binding.generation = service.generation; binding.estimated = service.timetable.period == 0;
-	this->refreshed_members[service.id] = binding;
+	this->refreshed_members[service.id] = binding; ++this->member_refreshes;
 	return true;
 }
 

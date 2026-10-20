@@ -415,7 +415,7 @@ private:
 	}
 	/* Derived direct-mapped caches of plans that depend only on Hyperpath rows, never saved. A slot is
 	 * valid for its key while the lookup epoch is unchanged and its destination did not change since. */
-	struct RowPlanSlot { std::array<uint64_t, 2> key{}; uint64_t epoch = 0, changes = 0; PassengerPrecomputedPlan plan; };
+	struct RowPlanSlot { std::array<uint64_t, 2> key{}; uint64_t epoch = 0, changes = 0, refreshes = 0; PassengerPrecomputedPlan plan; };
 	struct RowMembershipSlot { std::array<uint64_t, 2> key{}; uint64_t epoch = 0, changes = 0; bool member = false; };
 	static constexpr size_t ROW_PLAN_SLOTS = size_t{1} << 14, ROW_MEMBERSHIP_SLOTS = size_t{1} << 15;
 	mutable std::vector<RowPlanSlot> shared_hyperpath_plans, shared_hyperpath_boards;
