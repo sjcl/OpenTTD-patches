@@ -1,0 +1,249 @@
+{
+  "baseline_commit": "0b8a21c0f3dc9a24ca0d9d3581c19fb9c207e684",
+  "current_commit": "8f829b8c3d5f35cb420c2a16812716ef24e38939",
+  "same_settings": {
+    "legacy": {
+      "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+      "requested_ticks": 2048,
+      "resume_settings": true,
+      "precomputed": true,
+      "hyperpath": false,
+      "hyperpath_filter_mode": "index",
+      "main_thread_affinity_mask": 1,
+      "warm_precomputed": true,
+      "cold_precomputed": false,
+      "rebuild_precomputed": false,
+      "full_rebuild_precomputed": false,
+      "validation_only": false
+    },
+    "hyperpath": {
+      "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+      "requested_ticks": 2048,
+      "resume_settings": true,
+      "precomputed": true,
+      "hyperpath": true,
+      "hyperpath_filter_mode": "index",
+      "main_thread_affinity_mask": 1,
+      "warm_precomputed": true,
+      "cold_precomputed": false,
+      "rebuild_precomputed": false,
+      "full_rebuild_precomputed": false,
+      "validation_only": false
+    }
+  },
+  "matched_cpu_only_profile": true,
+  "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82",
+  "profile_hashes": {
+    "cpu-minimal.wprp": {
+      "old": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82",
+      "new": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82"
+    },
+    "cpu-sampled.wpaProfile": {
+      "old": "5092304c54ce1f2d1e34f73cc09c6d8b91513a7aba76e6c16fd1f4403067682c",
+      "new": "5092304c54ce1f2d1e34f73cc09c6d8b91513a7aba76e6c16fd1f4403067682c"
+    }
+  },
+  "reference_files": {
+    "docs/measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/legacy/save-integrity.json": "0499f5b19ca1f5522674574c48ee8e4d15c338346dc62b674747ef12c6ca2417",
+    "docs/measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/legacy/process.json": "c9589161d6b97d1d6e0069151ef9a6bf25c180b7a819e09a9ee1639dcc95ec23",
+    "docs/measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/legacy-functions.csv": "6cc1bae04c8a2b97f2e643d973fc4260892394ddc9666e1d0890a3a89089052b",
+    "docs/measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/legacy/CPU_Usage_(Sampled)_Stacks.csv.gz": "4d99672b8c93cf64257553e16a6548b7abb07adc404ca50c70474ce17e979526",
+    "docs/measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/hyperpath/save-integrity.json": "4c1fa2a8ef91d6b1493078e629723cfa705cc99f286cbf5e9e771c74defbbcd6",
+    "docs/measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/hyperpath/process.json": "4f53e4aa7380ce341bede0c3a51ea0ae77c733a2be631b6bfa354040503f8f5e",
+    "docs/measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/hyperpath-functions.csv": "1b43a0c35179f653b4e48a45e988f3d7022432990d81c47466df7bb2f0971364",
+    "docs/measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/hyperpath/CPU_Usage_(Sampled)_Stacks.csv.gz": "e33802e37bdc71985000907c46318ef3a3204b64994567181bc78cab828eda7b"
+  },
+  "capture_results": {
+    "legacy": {
+      "command": [
+        "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        "-B",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+        "run",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-8f829b8c\\Release\\openttd.exe",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-8f829b8c\\input",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-8f829b8c\\legacy",
+        "--ticks",
+        "2048",
+        "--timeout",
+        "2400",
+        "--measurement-wait",
+        "2400",
+        "--resume",
+        "--precomputed",
+        "--no-hyperpath",
+        "--warm-precomputed",
+        "--wait-background-ready",
+        "--hyperpath-filter-mode",
+        "index",
+        "--main-thread-affinity-mask",
+        "1",
+        "--lang",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-8f829b8c\\lang",
+        "--wpr-profile",
+        "--wait-saved-replay"
+      ],
+      "quality": {
+        "stats_exit": 0,
+        "directory": "legacy",
+        "kind": "map",
+        "valid": true,
+        "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82",
+        "marks_exit": 0
+      },
+      "window_audit": {
+        "mode": "legacy",
+        "marker_begin_us": 1951332,
+        "marker_end_us": 65682958,
+        "game_pid": 23156,
+        "valid": true,
+        "overlapping_competing_processes": [],
+        "relevant_processes": [
+          {
+            "name": "openttd.exe",
+            "pid": 23156,
+            "start_us": null,
+            "end_us": null,
+            "own_game": true,
+            "overlaps_window": true
+          }
+        ],
+        "method": "Kernel process lifetimes in ETL; MIN/MAX denote trace boundaries. Match the runner build/test/game names, excluding only the measured openttd.exe PID. Units are microseconds."
+      },
+      "canonical": {
+        "97cdc0ad": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        },
+        "0b8a21c0": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        }
+      },
+      "diagnostics": {
+        "memo": {
+          "hits": 4046826,
+          "validated": 0,
+          "conservative": 0,
+          "violations": 0,
+          "lookup_duplicates": 0
+        },
+        "lookup": {
+          "rebuilds": 2709,
+          "indexed_groups": 195099,
+          "validated_groups": 0,
+          "violations": 0
+        }
+      },
+      "exact_ticks": 2048,
+      "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+      "binary_sha256": "934465f5e8417132054bc3b38b36dca45d67108023dad15d919c9b16773a28f7",
+      "baseline_memo": {
+        "hits": 4028203,
+        "validated": 0,
+        "violations": 0
+      }
+    },
+    "hyperpath": {
+      "command": [
+        "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        "-B",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+        "run",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-8f829b8c\\Release\\openttd.exe",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-8f829b8c\\input",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-8f829b8c\\hyperpath",
+        "--ticks",
+        "2048",
+        "--timeout",
+        "2400",
+        "--measurement-wait",
+        "2400",
+        "--resume",
+        "--precomputed",
+        "--hyperpath",
+        "--warm-precomputed",
+        "--wait-background-ready",
+        "--hyperpath-filter-mode",
+        "index",
+        "--main-thread-affinity-mask",
+        "1",
+        "--lang",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-8f829b8c\\lang",
+        "--wpr-profile",
+        "--wait-saved-replay"
+      ],
+      "quality": {
+        "stats_exit": 0,
+        "directory": "hyperpath",
+        "kind": "map",
+        "valid": true,
+        "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82",
+        "marks_exit": 0
+      },
+      "window_audit": {
+        "mode": "hyperpath",
+        "marker_begin_us": 1910959,
+        "marker_end_us": 48649368,
+        "game_pid": 20520,
+        "valid": true,
+        "overlapping_competing_processes": [],
+        "relevant_processes": [
+          {
+            "name": "openttd.exe",
+            "pid": 20520,
+            "start_us": null,
+            "end_us": null,
+            "own_game": true,
+            "overlaps_window": true
+          }
+        ],
+        "method": "Kernel process lifetimes in ETL; MIN/MAX denote trace boundaries. Match the runner build/test/game names, excluding only the measured openttd.exe PID. Units are microseconds."
+      },
+      "canonical": {
+        "97cdc0ad": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        },
+        "0b8a21c0": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        },
+        "6aeaff68_validate": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        }
+      },
+      "diagnostics": {
+        "memo": {
+          "hits": 598504,
+          "validated": 0,
+          "conservative": 0,
+          "violations": 0,
+          "lookup_duplicates": 0
+        },
+        "lookup": {
+          "rebuilds": 2714,
+          "indexed_groups": 203870,
+          "validated_groups": 0,
+          "violations": 0
+        }
+      },
+      "exact_ticks": 2048,
+      "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+      "binary_sha256": "934465f5e8417132054bc3b38b36dca45d67108023dad15d919c9b16773a28f7",
+      "baseline_memo": {
+        "hits": 568955,
+        "validated": 0,
+        "violations": 0
+      }
+    }
+  },
+  "correction_is_estimate": true,
+  "method": "Main-thread StateGameLoop samples; exact function frames, ordered parent/descendant paths, stack union counted once. All focus values are inclusive CPU time."
+}

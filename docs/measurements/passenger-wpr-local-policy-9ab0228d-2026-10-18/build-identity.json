@@ -1,0 +1,20 @@
+{
+  "product_commit": "9ab0228db17178ef931de961305ebec544162f6a",
+  "src_tree": "be6f7627ea52287894a16a0b3927ed86e08bc178",
+  "files": {
+    "Release/openttd.exe": {
+      "bytes": 14234624,
+      "sha256": "4f0bcaa3de4834275aab59ee48e26926fd19b40a431c2868d03d5b1326b821c8"
+    },
+    "Release/openttd.pdb": {
+      "bytes": 150695936,
+      "sha256": "df53d3ab89e7f4e405c5f47647b1faa72da9d73b93ad75ee234f7b32d296e98e"
+    },
+    "Release/openttd_test.exe": {
+      "bytes": 19701248,
+      "sha256": "80851fc891b547b274f93ebdc61a75166203df0e23a12f5313036deedb127aca"
+    }
+  },
+  "instrumentation": "same existing copied-TU exact-tick/WPR helpers; product routing is unchanged",
+  "compiled_from": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-merge-jgrpp-ya-20261018"
+}

@@ -1,0 +1,68 @@
+{
+  "rejected-missing-begin-marker": {
+    "bytes": 5053087744,
+    "raw_string_matches": {
+      "utf-16-le": [
+        {
+          "label": "hyperpath-end",
+          "byte_offset": 4878031228
+        },
+        {
+          "label": "hyperpath-end",
+          "byte_offset": 4878202564
+        }
+      ],
+      "utf-8": [
+        {
+          "label": "hyperpath-end",
+          "byte_offset": 4878189464
+        }
+      ]
+    },
+    "note": "String presence alone does not establish a valid event or timestamp; the exact-window audit remains mandatory"
+  },
+  "rejected-missing-begin-marker-2": {
+    "bytes": 5042601984,
+    "raw_string_matches": {
+      "utf-16-le": [
+        {
+          "label": "hyperpath-end",
+          "byte_offset": 4864260692
+        },
+        {
+          "label": "hyperpath-end",
+          "byte_offset": 4873162812
+        }
+      ],
+      "utf-8": [
+        {
+          "label": "hyperpath-end",
+          "byte_offset": 4873148936
+        }
+      ]
+    },
+    "note": "String presence alone does not establish a valid event or timestamp; the exact-window audit remains mandatory"
+  },
+  "rejected-missing-begin-marker-3": {
+    "bytes": 5232394240,
+    "raw_string_matches": {
+      "utf-16-le": [
+        {
+          "label": "hyperpath-end",
+          "byte_offset": 4827315684
+        },
+        {
+          "label": "hyperpath-end",
+          "byte_offset": 4858115964
+        }
+      ],
+      "utf-8": [
+        {
+          "label": "hyperpath-end",
+          "byte_offset": 4858102000
+        }
+      ]
+    },
+    "note": "String presence alone does not establish a valid event or timestamp; the exact-window audit remains mandatory"
+  }
+}

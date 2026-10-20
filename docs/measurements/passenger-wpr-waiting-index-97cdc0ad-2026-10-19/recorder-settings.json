@@ -1,0 +1,39 @@
+{
+  "legacy": {
+    "old": "Memory",
+    "new": "Memory"
+  },
+  "hyperpath": {
+    "old": "File",
+    "new": "File"
+  },
+  "profiles": {
+    "memory": {
+      "same_profile_settings_ignoring_element_order": true,
+      "command": [
+        "wpr",
+        "-exportprofile",
+        "CPU",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-97cdc0ad\\cpu-memory.wprp"
+      ],
+      "system_buffers": 4781,
+      "event_buffers": 20
+    },
+    "file": {
+      "same_profile_settings_ignoring_element_order": true,
+      "command": [
+        "wpr",
+        "-exportprofile",
+        "CPU",
+        "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-97cdc0ad\\cpu-file.wprp",
+        "-filemode"
+      ],
+      "system_buffers": 20,
+      "event_buffers": 20
+    }
+  },
+  "baseline": "9ab0228d",
+  "same_recorder_configuration_per_mode": true,
+  "hyperpath_preflight": "Same one-second paused preflight and ready marker before begin",
+  "legacy_preflight": "Same direct begin marker after recorder start"
+}

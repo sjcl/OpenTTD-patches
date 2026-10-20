@@ -1,0 +1,27 @@
+{
+  "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-hyperpath-validate-6aeaff68-2026-10-19",
+  "files": {
+    "Release/openttd.exe": {
+      "bytes": 14253056,
+      "sha256": "41fb4fd5834c98f0d298d5fcc2f11a1c3d1f663bfc326b35a58700400d12e8c2",
+      "read_only": true
+    },
+    "Release/openttd.pdb": {
+      "bytes": 150704128,
+      "sha256": "275ec778760b894dddaebc35c3c59276eeee781bdd6fdffff86cb079b8b0d829",
+      "read_only": true
+    },
+    "build-identity.json": {
+      "bytes": 817,
+      "sha256": "1c07aa4b43da5611713e52b35f464a6ce5a224e22783826ff15404c624b4c196",
+      "read_only": true
+    },
+    "validate/result.sav": {
+      "bytes": 46700872,
+      "sha256": "0e1d7a70626bde69adb8c3154e4945c244504f601458b2a9c83593de61de7d77",
+      "read_only": true
+    }
+  },
+  "wpr": false,
+  "run_count": 1
+}

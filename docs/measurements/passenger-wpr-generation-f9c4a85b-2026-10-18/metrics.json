@@ -1,0 +1,159 @@
+{
+  "product_commit": "f9c4a85b721073bbf86747f4a4cec7ac5ccd2f89",
+  "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+  "same_input_between_modes": true,
+  "input_changed_since_previous": true,
+  "previous_is_reference_only": true,
+  "canonical_equality_checked": false,
+  "runs": {
+    "legacy": {
+      "current": {
+        "events": {
+          "pending": 189490,
+          "overdue": 27,
+          "oldest_ticks": 0,
+          "maximum_station_backlog": 26442,
+          "on_time": 136821,
+          "packets": 378748,
+          "groups": 214339,
+          "scheduler_us": 2406809,
+          "arrival_candidates": 140192,
+          "arrival_passengers": 143221,
+          "unresolved_missed_estimate": 211
+        },
+        "generation": {
+          "packets": 37589,
+          "microseconds": 490875,
+          "packets_per_tick": 18.35400390625,
+          "diagnostic_wall_ms_per_tick": 0.23968505859375
+        },
+        "unchanged_generation_packets": 0,
+        "RunPassengerWaitingEvents": {
+          "inclusive_ms_per_tick": 1.140802832,
+          "exclusive_ms_per_tick": 0.000488379,
+          "inclusive_samples": 2333,
+          "exclusive_samples": 1
+        }
+      },
+      "initial_zero_tick_events": {
+        "pending": 192512,
+        "overdue": 43,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 25663,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      },
+      "overdue_cleared_at_end": false,
+      "oldest_ticks_zero_at_end": true,
+      "previous_8ff4834d_reference": {
+        "events": {
+          "pending": 87035,
+          "overdue": 87035,
+          "oldest_ticks": 588,
+          "maximum_station_backlog": 3564,
+          "on_time": 296,
+          "packets": 15947357,
+          "groups": 898694,
+          "scheduler_us": 36244730,
+          "arrival_candidates": 1025743,
+          "arrival_passengers": 1458520,
+          "unresolved_missed_estimate": 0
+        },
+        "generation": {
+          "packets": 15778297,
+          "microseconds": 30720418,
+          "packets_per_tick": 7704.24658203125,
+          "diagnostic_wall_ms_per_tick": 15.0002041015625
+        },
+        "unchanged_generation_packets": 0,
+        "RunPassengerWaitingEvents": {
+          "inclusive_cpu_ms_per_tick": 16.226173145,
+          "inclusive_samples": 33231
+        }
+      },
+      "previous_input_sha256": "de7d27c10998a09da118d7448d654c40bde1df4c64c7219cab6e9637136815c0",
+      "input_matches_previous": false
+    },
+    "hyperpath": {
+      "current": {
+        "events": {
+          "pending": 190051,
+          "overdue": 31,
+          "oldest_ticks": 0,
+          "maximum_station_backlog": 26441,
+          "on_time": 143862,
+          "packets": 417305,
+          "groups": 239673,
+          "scheduler_us": 2805148,
+          "arrival_candidates": 157439,
+          "arrival_passengers": 160708,
+          "unresolved_missed_estimate": 0
+        },
+        "generation": {
+          "packets": 43211,
+          "microseconds": 554907,
+          "packets_per_tick": 21.09912109375,
+          "diagnostic_wall_ms_per_tick": 0.27095068359375
+        },
+        "unchanged_generation_packets": 5040,
+        "RunPassengerWaitingEvents": {
+          "inclusive_ms_per_tick": 1.321827686,
+          "exclusive_ms_per_tick": 0.000488086,
+          "inclusive_samples": 2703,
+          "exclusive_samples": 1
+        }
+      },
+      "initial_zero_tick_events": {
+        "pending": 192512,
+        "overdue": 87,
+        "oldest_ticks": 0,
+        "maximum_station_backlog": 25663,
+        "on_time": 0,
+        "packets": 0,
+        "groups": 0,
+        "scheduler_us": 0,
+        "arrival_candidates": 0,
+        "arrival_passengers": 0,
+        "unresolved_missed_estimate": 0
+      },
+      "overdue_cleared_at_end": false,
+      "oldest_ticks_zero_at_end": true,
+      "previous_8ff4834d_reference": {
+        "events": {
+          "pending": 116391,
+          "overdue": 5954,
+          "oldest_ticks": 42,
+          "maximum_station_backlog": 3351,
+          "on_time": 20359,
+          "packets": 6014268,
+          "groups": 451515,
+          "scheduler_us": 8098481,
+          "arrival_candidates": 116204,
+          "arrival_passengers": 131086,
+          "unresolved_missed_estimate": 0
+        },
+        "generation": {
+          "packets": 5825854,
+          "microseconds": 4352659,
+          "packets_per_tick": 2844.6552734375,
+          "diagnostic_wall_ms_per_tick": 2.12532177734375
+        },
+        "unchanged_generation_packets": 5812177,
+        "RunPassengerWaitingEvents": {
+          "inclusive_cpu_ms_per_tick": 3.655130469,
+          "inclusive_samples": 7486
+        }
+      },
+      "previous_input_sha256": "413a8b765d2b70b4920d30538b2a4ec34b2e89b702804c4c6b1ffe11f148711a",
+      "input_matches_previous": false
+    }
+  },
+  "reference_files": {
+    "docs\\measurements\\passenger-wpr-generation-8ff4834d-2026-10-18\\comparison.json": "42c3c2f5c8963e223a83849dd26a280ee950c556031008e203cc9c0f43063767"
+  }
+}

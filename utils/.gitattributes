@@ -1,0 +1,2 @@
+# Preserve the verified WPR profile bytes and its documented SHA-256.
+passenger_wpr_cpu.wprp -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

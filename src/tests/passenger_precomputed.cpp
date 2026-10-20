@@ -22,6 +22,7 @@
 #include "passenger_benchmark_cpu.h"
 #include "../settings_type.h"
 #include "../date_func.h"
+#include "../core/backup_type.hpp"
 
 namespace {
 	constexpr CargoType PAX{0};
@@ -96,6 +97,76 @@ TEST_CASE("Hyperpath fixed point preserves single waits and exact acceptance", "
 	CHECK(PassengerWide::Multiply(UINT64_MAX, UINT64_MAX) == PassengerWide{UINT64_MAX - 1, 1});
 }
 
+TEST_CASE("Aircraft table costs preserve physical metadata and separate identical train patterns", "[passenger][aircraft_cost][precomputed][hyperpath]")
+{
+	std::array services{Service(0, {A, D}), Service(1, {A, D})};
+	services[0].vehicles.front().type = VehicleType::Aircraft;
+	std::array records{&services[0], &services[1]};
+	for (bool hyperpath : {false, true}) for (bool optimized : {false, true}) for (bool flat : {false, true}) {
+		CAPTURE(hyperpath, optimized, flat);
+		PassengerPrecomputedTable table;
+		table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, optimized, true, hyperpath, true, true, flat, {100, 1000});
+		while (!table.Finished()) table.Step(7);
+		CHECK(table.GetDiagnostic().patterns == 2);
+		auto plan = table.Plan(A, D, StateTicks{}); REQUIRE(plan.ride);
+		CHECK(plan.riding == 100); CHECK(plan.waiting == 110);
+		if (hyperpath) {
+			size_t work = 10000; auto routes = table.InspectRoutes(A, D, OrderListID::Invalid(), OrderListID::Invalid(), work);
+			REQUIRE(routes.candidates.size() == 1); CHECK(routes.candidates.front().ride.service == services[1].id);
+		} else CHECK(plan.ride->service == services[1].id);
+	}
+	std::array one{&services[0]};
+	for (bool hyperpath : {false, true}) {
+		int64_t base = 0;
+		for (auto cost : {PassengerAircraftCost{}, PassengerAircraftCost{50, 74}, PassengerAircraftCost{300, 0}}) {
+			PassengerPrecomputedTable table;
+			table.Begin(one, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, hyperpath, true, true, true, cost);
+			while (!table.Finished()) table.Step(65536);
+			auto plan = table.Plan(A, D, StateTicks{}); REQUIRE(plan.ride);
+			if (cost.IsDefault()) base = plan.cost;
+			CHECK(plan.cost == base + cost.Adjustment(100));
+			CHECK(plan.riding == 100); CHECK(plan.waiting == 110);
+		}
+	}
+}
+
+TEST_CASE("Aircraft preference arithmetic saturates without overflowing its ratio", "[passenger][aircraft_cost]")
+{
+	CHECK(PassengerAircraftCost{}.Cost(INT64_MAX) == INT64_MAX);
+	CHECK(PassengerAircraftCost{50, 0}.Cost(INT64_MAX) == INT64_MAX / 2);
+	CHECK(PassengerAircraftCost{65535, UINT32_MAX}.Cost(INT64_MAX) == INT64_MAX);
+	CHECK(PassengerAircraftCost{10, 0}.Cost(1) == 0);
+	CHECK(PassengerAircraftCost{50, 74}.Cost(101) == 124);
+}
+
+TEST_CASE("Aircraft settings are frozen across cooperative graphs and asymmetric worker timing", "[passenger][aircraft_cost][parallel][network]")
+{
+	AutoRestoreBackup settings{_settings_game.linkgraph, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup days{DateDetail::_effective_day_length, uint8_t{1}};
+	std::array services{Service(0, {A, B, A, D}), Service(1, {A, C, D}, 120), Service(2, {B, C}, 70)};
+	services[0].vehicles.front().type = VehicleType::Aircraft;
+	std::array records{&services[0], &services[1], &services[2]};
+	for (bool preparation : {false, true}) for (bool hyperpath : {false, true}) for (auto cost : {PassengerAircraftCost{50, 0}, PassengerAircraftCost{300, 74}}) {
+		CAPTURE(preparation, hyperpath, cost.scale, cost.addition);
+		PassengerPrecomputedTable serial, parallel;
+		serial.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, true, {}, true, true, true, hyperpath, true, true, true, cost);
+		_settings_game.linkgraph.aircraft_link_scale = cost.scale;
+		_settings_game.linkgraph.aircraft_link_add = cost.addition == 74 ? 1 : 0;
+		parallel.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, true, {}, true, true, true, hyperpath);
+		// Both graph preparation and workers must ignore subsequent global edits.
+		_settings_game.linkgraph.aircraft_link_scale = 700; _settings_game.linkgraph.aircraft_link_add = 365;
+		for (auto *table : {&serial, &parallel}) while (!table->PrepareGraph(7)) {}
+		if (!preparation) PrimePassengerWorkers(parallel, 4);
+		for (size_t slice = 0; !parallel.Finished(); ++slice) {
+			REQUIRE(slice < 100000);
+			const size_t used = preparation ? parallel.StepPreparation(7, 4) : parallel.StepParallel(7, 4);
+			REQUIRE(serial.Step(used) == used);
+			REQUIRE(PassengerPrecomputedTestAccess::Published(serial) == PassengerPrecomputedTestAccess::Published(parallel));
+		}
+		CHECK(serial.Finished());
+	}
+}
+
 TEST_CASE("Parallel passenger searches preserve every publication boundary and stored field", "[passenger][precomputed][parallel][save][network]")
 {
 	std::array services{Service(0, {A, B, C}), Service(1, {B, D}), Service(2, {A, C, D}, 170), Service(3, {A, B, A, D}, 73)};
@@ -128,6 +199,11 @@ TEST_CASE("Parallel passenger searches preserve every publication boundary and s
 		}
 		CHECK(parallel.GetDiagnostic().board_events == serial.GetDiagnostic().board_events);
 		CHECK(parallel.GetDiagnostic().heap_pops == serial.GetDiagnostic().heap_pops);
+		/* A row finished by a worker merges its policy statistics at publication. */
+		CHECK(parallel.GetDiagnostic().policy_count == serial.GetDiagnostic().policy_count);
+		CHECK(parallel.GetDiagnostic().candidate_count == serial.GetDiagnostic().candidate_count);
+		CHECK(parallel.GetDiagnostic().candidate_histogram == serial.GetDiagnostic().candidate_histogram);
+		CHECK(parallel.GetDiagnostic().base_policy_bytes == serial.GetDiagnostic().base_policy_bytes);
 		CHECK(parallel.GetParallelDiagnostic().peak_pending <= workers * 2);
 	}
 }
@@ -201,6 +277,33 @@ TEST_CASE("Stopped passenger preparation yields to delayed workers and survives 
 		WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Idle(parallel); });
 		if (scenario == 1 || scenario == 2) CHECK(parallel.GetParallelDiagnostic().fallbacks == 1);
 		if (scenario == 2) CHECK(parallel.GetParallelDiagnostic().wait_timeouts == 1);
+	}
+}
+
+TEST_CASE("Worker-finished Hyperpath rows apply every table effect at the serial Work boundary", "[passenger][precomputed][parallel][hyperpath][network]")
+{
+	/* Every lookahead row is ready before each slice, so rows are finished by workers and
+	 * replayed; small slices stop inside the label and policy phases of those rows. */
+	std::array services{Service(0, {A, B, C}), Service(1, {B, D}), Service(2, {A, C, D}, 170), Service(3, {A, B, A, D}, 73)};
+	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+	for (bool flat : {false, true}) {
+		CAPTURE(flat);
+		PassengerPrecomputedTable serial, parallel;
+		for (auto *table : {&serial, &parallel}) table->Begin(records, PAX, 20, PassengerPrecomputedTable::MAX_HYPERPATH_BYTES, true, false, {}, true, true, true, true, true, true, flat);
+		std::vector<StationID> expected, actual;
+		size_t step = 0;
+		while (!serial.Finished()) {
+			if (PassengerPrecomputedTestAccess::Prime(parallel, 4)) WaitForPassengerWorkers([&]() { return PassengerPrecomputedTestAccess::Ready(parallel); });
+			const size_t chunk = std::array<size_t, 5>{1, 3, 7, 31, 97}[step++ % 5];
+			REQUIRE(parallel.StepParallel(chunk, 4, [&](StationID d) { actual.push_back(d); }) == serial.Step(chunk, false, [&](StationID d) { expected.push_back(d); }));
+			REQUIRE(actual == expected);
+			REQUIRE(PassengerPrecomputedTestAccess::Published(parallel) == PassengerPrecomputedTestAccess::Published(serial));
+		}
+		CHECK(parallel.Finished());
+		CHECK(parallel.GetParallelDiagnostic().finished_rows > 0);
+		CHECK(parallel.GetParallelDiagnostic().finish_effects > 0);
+		CHECK(parallel.GetDiagnostic().candidate_histogram == serial.GetDiagnostic().candidate_histogram);
+		CHECK(parallel.GetDiagnostic().policy_count == serial.GetDiagnostic().policy_count);
 	}
 }
 
@@ -1619,22 +1722,31 @@ TEST_CASE("Hyperpath table build CPU on a national-scale synthetic network", "[.
 		uint64_t digest = 0xcbf29ce484222325ULL;
 		auto mix = [&](uint64_t value) { digest = (digest ^ value) * 0x100000001b3ULL; };
 		std::vector<uint32_t> stored;
+		const auto queried = std::chrono::steady_clock::now();
 		for (uint16_t origin = 0; origin < 24 * 24; ++origin) for (uint16_t destination = 0; destination < 24 * 24; ++destination) {
 			const StationID from{origin}, to{destination};
 			mix(static_cast<uint64_t>(table.RouteCost(from, to).value_or(-1)));
 			const auto plan = table.Plan(from, to, StateTicks{});
 			mix(static_cast<uint64_t>(plan.state)); mix(static_cast<uint64_t>(plan.cost)); mix(static_cast<uint64_t>(plan.riding)); mix(static_cast<uint64_t>(plan.waiting));
 			mix(plan.distance); mix(plan.transfers); mix(plan.ride ? static_cast<uint64_t>(plan.ride->estimated_wait) : 0);
+			OrderListID earlier = OrderListID::Invalid();
 			for (const auto &service : services) {
 				if (std::none_of(service.timetable.stops.begin(), service.timetable.stops.end(), [&](const auto &stop) { return stop.station == from; })) continue;
 				stored.clear(); table.StoredCandidates(from, to, service.id, stored);
 				for (uint32_t occurrence : stored) mix(occurrence);
 				mix(UINT64_MAX);
+				if (!hyperpath || (origin + destination) % 3 != 0) continue; // Local (failed-carrier) policies, sampled.
+				for (uint32_t occurrence : table.Candidates(from, to, OrderListID::Invalid(), service.id)) mix(occurrence);
+				if (earlier != OrderListID::Invalid()) for (uint32_t occurrence : table.Candidates(from, to, earlier, service.id)) mix(occurrence);
+				const auto local = table.Plan(from, to, StateTicks{}, earlier, 0, service.id);
+				mix(static_cast<uint64_t>(local.state)); mix(static_cast<uint64_t>(local.cost)); mix(local.ride ? static_cast<uint64_t>(local.ride->estimated_wait) : 0);
+				earlier = service.id;
 			}
 			for (const auto &candidate : table.Inspect(from, to)) { mix(candidate.occurrence); mix(static_cast<uint64_t>(candidate.cost)); mix(static_cast<uint64_t>(candidate.wait)); }
 		}
 		std::cout << (hyperpath ? "hyperpath" : "legacy") << "_build_digest,destinations=" << table.GetDiagnostic().destinations << ",operations=" << table.GetDiagnostic().operations
-				<< ",ms=" << ms << ",digest=" << std::hex << digest << std::dec << std::endl;
+				<< ",ms=" << ms << ",query_ms=" << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - queried).count()
+				<< ",digest=" << std::hex << digest << std::dec << std::endl;
 	}
 	const char *env_ops = getenv("OPENTTD_HYPERPATH_BUILD_OPS");
 	const uint64_t ops = env_ops != nullptr ? std::strtoull(env_ops, nullptr, 10) : uint64_t{64} * 65536;
@@ -1869,8 +1981,8 @@ TEST_CASE("Passenger asynchronous replacement TickPrecomputed benchmark", "[.pas
 
 TEST_CASE("Optimized destination queue pops exactly the binary heap order", "[passenger][precomputed][queue]")
 {
-	/* Monotone pushes with ties, same-cost pushes after pops, near ring slots and far jumps
-	 * beyond the ring (including exactly RING ahead): the exact (cost, kind, id) order. */
+	/* Monotone pushes with ties, same-cost pushes after pops, short and long jumps across
+	 * radix buckets: the exact (cost, kind, id) order of a binary heap. */
 	using Item = std::tuple<int64_t, uint32_t, uint32_t>;
 	for (uint32_t seed : {1U, 0x9e3779b9U, 0x2545f491U, 0xdeadbeefU}) {
 		auto rnd = [&](uint32_t n) { seed = seed * 1664525U + 1013904223U; return (seed >> 8) % n; };

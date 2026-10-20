@@ -1,0 +1,10 @@
+{
+  "original": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_estimated_prepare.py",
+  "original_sha256": "77cc792aad71ae0feace516a1d9db83a630f87501385dc8684f8f7684167e48c",
+  "measurement_copy": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-8f829b8c\\estimated_prepare_compat.py",
+  "copy_sha256": "02ffc3969159d86f68e15ccb0a4e6db457d7c0519d51665b6cdacfc0be46e9f8",
+  "before": "    anchor = '        const auto started = std::chrono::steady_clock::now();'",
+  "after": "    anchor = '        bool ready = false;\\n        const auto started = std::chrono::steady_clock::now();'",
+  "reason": "Select the build_precomputed timer after wait_saved_replay added another timer.",
+  "product_sources_unchanged": true
+}

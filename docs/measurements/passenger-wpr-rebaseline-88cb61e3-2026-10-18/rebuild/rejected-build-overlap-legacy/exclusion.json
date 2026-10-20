@@ -1,0 +1,6 @@
+{
+  "accepted": false,
+  "reason": "Competing cmake/ninja/cl lifetimes overlap the WPR marker interval",
+  "exact_ticks": 2048,
+  "simulation_timing_valid": false
+}

@@ -1,0 +1,348 @@
+{
+  "legacy": {
+    "StationCargoList::Load": {
+      "old": {
+        "ns": 4592939000,
+        "samples": 4593,
+        "ms_per_tick": 2.24264599609375
+      },
+      "new": {
+        "ns": 4499155200,
+        "samples": 4499,
+        "ms_per_tick": 2.196853125
+      },
+      "raw_percent": -2.0419125967055085
+    },
+    "Load -> _malloc_base": {
+      "old": {
+        "ns": 291005400,
+        "samples": 291,
+        "ms_per_tick": 0.14209248046875
+      },
+      "new": {
+        "ns": 289856700,
+        "samples": 290,
+        "ms_per_tick": 0.141531591796875
+      },
+      "raw_percent": -0.39473494306292434
+    },
+    "Load -> RtlFreeHeap": {
+      "old": {
+        "ns": 204971700,
+        "samples": 205,
+        "ms_per_tick": 0.100083837890625
+      },
+      "new": {
+        "ns": 197965500,
+        "samples": 198,
+        "ms_per_tick": 0.096662841796875
+      },
+      "raw_percent": -3.418130405319375
+    },
+    "LoadingContext constructor": {
+      "old": {
+        "ns": 55039200,
+        "samples": 55,
+        "ms_per_tick": 0.026874609375
+      },
+      "new": {
+        "ns": 51120000,
+        "samples": 51,
+        "ms_per_tick": 0.0249609375
+      },
+      "raw_percent": -7.120743034055732
+    },
+    "LoadingContext destructor": {
+      "old": {
+        "ns": 150084700,
+        "samples": 150,
+        "ms_per_tick": 0.073283544921875
+      },
+      "new": {
+        "ns": 136097100,
+        "samples": 136,
+        "ms_per_tick": 0.066453662109375
+      },
+      "raw_percent": -9.31980408396058
+    },
+    "Load -> LoadingContext constructor": {
+      "old": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "new": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "raw_percent": null
+    },
+    "Load -> LoadingContext destructor": {
+      "old": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "new": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "raw_percent": null
+    },
+    "MayUseHyperpathPolicy": {
+      "old": {
+        "ns": 2254943500,
+        "samples": 2255,
+        "ms_per_tick": 1.101046630859375
+      },
+      "new": {
+        "ns": 2328876500,
+        "samples": 2329,
+        "ms_per_tick": 1.137146728515625
+      },
+      "raw_percent": 3.278707426594063
+    },
+    "MayUseHyperpathPolicy -> PlanPrecomputed": {
+      "old": {
+        "ns": 707988500,
+        "samples": 708,
+        "ms_per_tick": 0.345697509765625
+      },
+      "new": {
+        "ns": 690148700,
+        "samples": 690,
+        "ms_per_tick": 0.336986669921875
+      },
+      "raw_percent": -2.5197866914505096
+    },
+    "CanUseHyperpathPolicy -> PlanPrecomputed": {
+      "old": {
+        "ns": 27016000,
+        "samples": 27,
+        "ms_per_tick": 0.01319140625
+      },
+      "new": {
+        "ns": 22930100,
+        "samples": 23,
+        "ms_per_tick": 0.011196337890625
+      },
+      "raw_percent": -15.124000592241627
+    },
+    "PlanPrecomputed": {
+      "old": {
+        "ns": 1034242600,
+        "samples": 1034,
+        "ms_per_tick": 0.50500126953125
+      },
+      "new": {
+        "ns": 995979000,
+        "samples": 996,
+        "ms_per_tick": 0.48631787109375
+      },
+      "raw_percent": -3.699673558215455
+    },
+    "RetiredPlan": {
+      "old": {
+        "ns": 990033800,
+        "samples": 990,
+        "ms_per_tick": 0.48341494140625
+      },
+      "new": {
+        "ns": 869126100,
+        "samples": 869,
+        "ms_per_tick": 0.424377978515625
+      },
+      "raw_percent": -12.212482038492023
+    },
+    "loading walk": {
+      "old": {
+        "ns": 4585956200,
+        "samples": 4586,
+        "ms_per_tick": 2.23923642578125
+      },
+      "new": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "raw_percent": null,
+      "comparable": false,
+      "reason": "Clang inlined the visitor template body; remaining source-position lambda symbols do not provide the old CargoLoad body boundary."
+    }
+  },
+  "hyperpath": {
+    "StationCargoList::Load": {
+      "old": {
+        "ns": 2993988800,
+        "samples": 2994,
+        "ms_per_tick": 1.46190859375
+      },
+      "new": {
+        "ns": 3332761000,
+        "samples": 3332,
+        "ms_per_tick": 1.62732470703125
+      },
+      "raw_percent": 11.315079067764033
+    },
+    "Load -> _malloc_base": {
+      "old": {
+        "ns": 216050400,
+        "samples": 216,
+        "ms_per_tick": 0.105493359375
+      },
+      "new": {
+        "ns": 294663300,
+        "samples": 295,
+        "ms_per_tick": 0.143878564453125
+      },
+      "raw_percent": 36.38637095788759
+    },
+    "Load -> RtlFreeHeap": {
+      "old": {
+        "ns": 177925200,
+        "samples": 178,
+        "ms_per_tick": 0.0868775390625
+      },
+      "new": {
+        "ns": 206105000,
+        "samples": 206,
+        "ms_per_tick": 0.10063720703125
+      },
+      "raw_percent": 15.838003835319569
+    },
+    "LoadingContext constructor": {
+      "old": {
+        "ns": 51055900,
+        "samples": 51,
+        "ms_per_tick": 0.024929638671875
+      },
+      "new": {
+        "ns": 50994100,
+        "samples": 51,
+        "ms_per_tick": 0.024899462890625
+      },
+      "raw_percent": -0.12104379709299007
+    },
+    "LoadingContext destructor": {
+      "old": {
+        "ns": 62995000,
+        "samples": 63,
+        "ms_per_tick": 0.03075927734375
+      },
+      "new": {
+        "ns": 91962000,
+        "samples": 92,
+        "ms_per_tick": 0.0449033203125
+      },
+      "raw_percent": 45.983014524962314
+    },
+    "Load -> LoadingContext constructor": {
+      "old": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "new": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "raw_percent": null
+    },
+    "Load -> LoadingContext destructor": {
+      "old": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "new": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "raw_percent": null
+    },
+    "MayUseHyperpathPolicy": {
+      "old": {
+        "ns": 1202933500,
+        "samples": 1203,
+        "ms_per_tick": 0.587369873046875
+      },
+      "new": {
+        "ns": 1329345500,
+        "samples": 1329,
+        "ms_per_tick": 0.649094482421875
+      },
+      "raw_percent": 10.508644077166341
+    },
+    "MayUseHyperpathPolicy -> PlanPrecomputed": {
+      "old": {
+        "ns": 180015100,
+        "samples": 180,
+        "ms_per_tick": 0.087897998046875
+      },
+      "new": {
+        "ns": 209101100,
+        "samples": 209,
+        "ms_per_tick": 0.102100146484375
+      },
+      "raw_percent": 16.157533451360486
+    },
+    "CanUseHyperpathPolicy -> PlanPrecomputed": {
+      "old": {
+        "ns": 15001400,
+        "samples": 15,
+        "ms_per_tick": 0.00732490234375
+      },
+      "new": {
+        "ns": 16994100,
+        "samples": 17,
+        "ms_per_tick": 0.008297900390625
+      },
+      "raw_percent": 13.283426880157844
+    },
+    "PlanPrecomputed": {
+      "old": {
+        "ns": 548430100,
+        "samples": 548,
+        "ms_per_tick": 0.267788134765625
+      },
+      "new": {
+        "ns": 628080500,
+        "samples": 628,
+        "ms_per_tick": 0.306679931640625
+      },
+      "raw_percent": 14.52334581927579
+    },
+    "RetiredPlan": {
+      "old": {
+        "ns": 286013900,
+        "samples": 286,
+        "ms_per_tick": 0.139655224609375
+      },
+      "new": {
+        "ns": 260087200,
+        "samples": 260,
+        "ms_per_tick": 0.126995703125
+      },
+      "raw_percent": -9.064839156418614
+    },
+    "loading walk": {
+      "old": {
+        "ns": 2990993900,
+        "samples": 2991,
+        "ms_per_tick": 1.460446240234375
+      },
+      "new": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "raw_percent": null,
+      "comparable": false,
+      "reason": "Clang inlined the visitor template body; remaining source-position lambda symbols do not provide the old CargoLoad body boundary."
+    }
+  }
+}

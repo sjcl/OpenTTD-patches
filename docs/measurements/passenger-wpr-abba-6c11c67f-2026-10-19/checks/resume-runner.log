@@ -1,0 +1,38 @@
+Waiting for idle host: cmake:114364, ninja:41164, cmake:120888
+Waiting for idle host: cmake:114364, ninja:41164
+Waiting for idle host: quiet interval (60s)
+
+Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:
+         Event#: 2369891  (T#0:#2369891)
+         TimeStamp:   56311419, Process: 16928, Thread: 116556, Cpu:   0
+         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}
+         ClassicEventDescriptor: 0x0c  0x00 0x0002
+         MofLength: 112
+03-B2/legacy: exact ticks, zero losses, valid window, canonical=True
+Waiting for idle host: quiet interval (60s)
+
+Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:
+         Event#: 2006985  (T#0:#2006985)
+         TimeStamp:   53881883, Process: 108188, Thread: 107308, Cpu:   0
+         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}
+         ClassicEventDescriptor: 0x0c  0x00 0x0002
+         MofLength: 112
+03-B2/hyperpath: exact ticks, zero losses, valid window, canonical=True
+Waiting for idle host: quiet interval (60s)
+
+Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:
+         Event#: 2173783  (T#0:#2173783)
+         TimeStamp:   58386822, Process: 96476, Thread: 47668, Cpu:  12
+         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}
+         ClassicEventDescriptor: 0x0c  0x00 0x0002
+         MofLength: 112
+04-A2/legacy: exact ticks, zero losses, valid window, canonical=True
+Waiting for idle host: quiet interval (60s)
+
+Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:
+         Event#: 1900370  (T#0:#1900370)
+         TimeStamp:   52854966, Process: 76212, Thread: 137192, Cpu:  10
+         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}
+         ClassicEventDescriptor: 0x0c  0x00 0x0002
+         MofLength: 112
+04-A2/hyperpath: exact ticks, zero losses, valid window, canonical=True

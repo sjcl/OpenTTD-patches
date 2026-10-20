@@ -1,0 +1,15 @@
+{
+  "source": "C:\\Users\\bebe\\OneDrive\\ドキュメント\\OpenTTD\\save\\gc3833d807.sav",
+  "source_bytes": 46620248,
+  "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+  "copied_without_conversion": true,
+  "same_as_9ab0228d": true,
+  "config_sha256": "bf8503ba53c6ec79dd57380a2244aa6b77014663ccfc1b53205ce1e09d94f30c",
+  "assets_verified": 245,
+  "start_tick": 3197276448,
+  "target_end_tick": 3197278496,
+  "requested_ticks": 2048,
+  "baseline_input_validation_sha256": "4b26939e49976feb544b49b2ac2b260d4bee2b02eb6527995387d0beac99ad5a",
+  "baseline_package_manifest_sha256": "11d72b48390395cb6283d365efcc2e960557e301ab253fcc8b44c5bdee2fa4b7",
+  "note": "Same frozen input directly in both modes; no additional warmup ticks or derived saves"
+}

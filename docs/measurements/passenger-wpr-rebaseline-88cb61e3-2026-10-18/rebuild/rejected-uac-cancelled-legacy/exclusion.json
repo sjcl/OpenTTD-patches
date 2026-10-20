@@ -1,0 +1,5 @@
+{
+  "accepted": false,
+  "reason": "UAC cancelled; no WPR trace; measurement gates timed out; no simulation ticks",
+  "replacement": "fresh output from the same immutable legacy seed"
+}

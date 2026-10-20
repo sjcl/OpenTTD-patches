@@ -39,9 +39,13 @@ struct CargoPacketIDTag : public PoolIDTraits<uint32_t, 0xFFF000, 0xFFFFFF> {};
 using CargoPacketID = PoolID<CargoPacketIDTag>;
 struct CargoPacket;
 void PassengerWaitingPacketChanged(const CargoPacket &packet);
+void SetPassengerWaitingRefreshDeferred(CargoPacketID id); ///< While set, changes to this packet do not refresh its owner's indices.
 void PassengerWaitingRoutingChanged(CargoPacket &packet);
 void InvalidatePassengerWaitingRouting();
+void RequestPassengerWaitingGeneration(); ///< Services were invalidated: sweep at the bounded publication rate.
 void ShiftPassengerWaitingEventTicks(StateTicksDelta delta);
+struct GoodsEntry;
+void PassengerWaitingFlowsChanged(GoodsEntry &ge, CargoType cargo); ///< The station's CargoDist flows for this cargo changed.
 
 /** Type of the pool for cargo packets for a little over 16 million packets. */
 using CargoPacketPool = Pool<CargoPacket, CargoPacketID, 1024, PoolType::Normal, true>;
@@ -670,6 +674,13 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 		/* Derived lookup state, never saved: HYPERPATH_UNINDEXED, HYPERPATH_PENDING, NONE, table slot 0/1 or ALWAYS. */
 		int8_t lookup_slot = -2;
 		std::vector<uint32_t> lookup_occurrences; ///< Entries in the slot table's occurrence numbering.
+		/* Derived memo of the loading pre-filter, never saved and never ordering. The predicate
+		 * is a function of this group's key, one consist and one loading context generation
+		 * (PassengerJourneyLoadingContext::HyperpathMemoSerial); bit (base | adjusted << 1). */
+		mutable uint64_t memo_serial = 0;
+		mutable VehicleID memo_vehicle = VehicleID::Invalid();
+		mutable VehicleOrderID memo_order = INVALID_VEH_ORDER_ID;
+		mutable uint8_t memo_known = 0, memo_value = 0;
 	};
 	using HyperpathGroups = std::map<HyperpathKey, HyperpathWaiting>;
 	struct HyperpathGroupRef { StationID destination; HyperpathGroups::iterator group; };
@@ -688,6 +699,15 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	static constexpr int8_t HYPERPATH_UNINDEXED = -2, HYPERPATH_PENDING = -3;
 	static HyperpathKey BoardingHyperpathKey(const JourneyRideKey &ride);
 	static StateTicks BoardingHyperpathExpiry(const JourneyRideKey &ride);
+	using HyperpathIndex = std::map<StationID, HyperpathGroups>;
+	/** A Hyperpath intent's only boarding entry: its policy group. Service cohorts are never
+	 * looked up by a Hyperpath intent, whose service is invalid. */
+	struct HyperpathSlot {
+		HyperpathIndex::iterator destination;
+		HyperpathGroups::iterator group;
+		StateTicks expiry; ///< Recorded in the group's expiries iff adjusted.
+		bool adjusted;
+	};
 	struct WaitingEntry {
 		StationID key;
 		StationCargoPacketList::iterator position;
@@ -701,6 +721,7 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 		bool journey;
 		std::optional<FallbackKey> fallback;
 		std::optional<std::pair<JourneyIndex::iterator, JourneyRides::iterator>> journey_group;
+		std::optional<HyperpathSlot> hyperpath_group;
 	};
 	mutable bool waiting_index_valid = false;
 	struct PacketHash { size_t operator()(CargoPacketID id) const { return id.base(); } };
@@ -708,7 +729,7 @@ class StationCargoList : public CargoList<StationCargoList, StationCargoPacketMa
 	mutable std::unordered_map<uint64_t, std::set<std::pair<uint16_t, CargoPacketID>>> merge_index;
 	mutable JourneyIndex boarding_index;
 	mutable std::map<uint64_t, std::map<JourneyRideKey, const std::set<BoardingOrder> *>> section_boarding_index; ///< Raw saved order-pair keys to shared cohort queues.
-	mutable std::map<StationID, HyperpathGroups> hyperpath_boarding_index; ///< Option (b): policy-state queues, independent of per-packet decision timestamps and table publication.
+	mutable HyperpathIndex hyperpath_boarding_index; ///< Option (b): policy-state queues, independent of per-packet decision timestamps and table publication.
 	mutable HyperpathLookup hyperpath_lookup;
 	void IndexHyperpathGroup(StationID destination, HyperpathGroups::iterator group) const;
 	void UnindexHyperpathGroup(HyperpathGroups::iterator group) const;
@@ -762,15 +783,22 @@ public:
 	uint32_t passenger_routing_cursor = 0, passenger_routing_end = 0;
 	StateTicks passenger_routing_tick = INVALID_STATE_TICKS;
 	uint16_t passenger_routing_work = 0;
+	StateTicks passenger_routing_swept = INVALID_STATE_TICKS; ///< Saved start of the latest generation sweep; bounds sweeps due only to publications.
 	/** Empty cargo may still own saved scheduling state. In particular, dropping
 	 * it on load must not reset a slice or pass its cursor to a reused goods entry. */
 	bool HasPassengerRoutingState() const
 	{
 		return this->passenger_boarding_last != StationID::Invalid() || !this->passenger_routing_dirty || this->passenger_routing_revision != UINT64_MAX || this->passenger_routing_rows != UINT64_MAX ||
 				this->passenger_routing_due != INVALID_STATE_TICKS || this->passenger_routing_sweeping || this->passenger_routing_cursor != 0 ||
-				this->passenger_routing_end != 0 || this->passenger_routing_tick != INVALID_STATE_TICKS || this->passenger_routing_work != 0;
+				this->passenger_routing_end != 0 || this->passenger_routing_tick != INVALID_STATE_TICKS || this->passenger_routing_work != 0 ||
+				this->passenger_routing_swept != INVALID_STATE_TICKS;
 	}
 	static constexpr uint16_t PASSENGER_ROUTING_SLICE = 256; ///< Cheap table events; national budget and station fairness also apply.
+	/** A service publication alone starts a generation sweep at most this often. It cannot resolve
+	 * a waiting packet through Hyperpath rows at all (a rare safety pass only); legacy rows keep a
+	 * shorter bound. Table changes, flow changes and invalidations still sweep immediately. */
+	static constexpr int64_t PASSENGER_REVISION_SWEEP_TICKS = 1024, PASSENGER_TABLE_REVISION_SWEEP_TICKS = 8192;
+	static constexpr uint64_t PASSENGER_ROUTING_STALE_REVISION = UINT64_MAX - 1; ///< Saved: a service invalidation is pending, like a publication.
 	uint64_t passenger_routing_inspected = 0, passenger_generation_inspected = 0; ///< Diagnostics only.
 	void RebuildWaitingIndex() const { this->EnsureWaitingIndex(); }
 	CargoType passenger_index_cargo = INVALID_CARGO; ///< Derived owning cargo, supplied by routing/boarding events.

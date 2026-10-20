@@ -1,0 +1,7 @@
+{
+  "executable": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\legacy\\openttd.exe",
+  "performance_accepted": false,
+  "pid": 30508,
+  "reason": "Saved passenger replay was unfinished; warm-up and background wait failed",
+  "aborted_at": "2026-10-19T18:11:56.1488943+09:00"
+}

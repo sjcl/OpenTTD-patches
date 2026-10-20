@@ -1,0 +1,106 @@
+{
+  "product_commit": "8f829b8c3d5f35cb420c2a16812716ef24e38939",
+  "baseline_commit": "0b8a21c0f3dc9a24ca0d9d3581c19fb9c207e684",
+  "accepted_traces": 2,
+  "native_tests": 778,
+  "native_assertions": 10745598,
+  "same_input": true,
+  "same_capture_profile": true,
+  "runs": {
+    "legacy": {
+      "exact_ticks": 2048,
+      "canonical": {
+        "97cdc0ad": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        },
+        "0b8a21c0": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        }
+      },
+      "window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "raw_csv_hashes_match": true,
+      "unresolved_product_functions": {},
+      "invalid_event_times_us": [
+        65880663
+      ],
+      "invalid_events_outside_markers": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 65202900500,
+          "stack_samples": 65197,
+          "exclusive_total_ns": 65202900500,
+          "exclusive_samples": 65197
+        },
+        "main": {
+          "stack_total_ns": 62963200900,
+          "stack_samples": 62958,
+          "exclusive_total_ns": 62963200900,
+          "exclusive_samples": 62958
+        },
+        "simulation_stack": {
+          "stack_total_ns": 54365850400,
+          "stack_samples": 54361,
+          "exclusive_total_ns": 54365850400,
+          "exclusive_samples": 54361
+        }
+      },
+      "payments_valid": true
+    },
+    "hyperpath": {
+      "exact_ticks": 2048,
+      "canonical": {
+        "97cdc0ad": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        },
+        "0b8a21c0": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        },
+        "6aeaff68_validate": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        }
+      },
+      "window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "raw_csv_hashes_match": true,
+      "unresolved_product_functions": {},
+      "invalid_event_times_us": [
+        48861546
+      ],
+      "invalid_events_outside_markers": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 51146148500,
+          "stack_samples": 51136,
+          "exclusive_total_ns": 51146148500,
+          "exclusive_samples": 51136
+        },
+        "main": {
+          "stack_total_ns": 46155752700,
+          "stack_samples": 46148,
+          "exclusive_total_ns": 46155752700,
+          "exclusive_samples": 46148
+        },
+        "simulation_stack": {
+          "stack_total_ns": 44359605400,
+          "stack_samples": 44352,
+          "exclusive_total_ns": 44359605400,
+          "exclusive_samples": 44352
+        }
+      },
+      "payments_valid": true
+    }
+  }
+}

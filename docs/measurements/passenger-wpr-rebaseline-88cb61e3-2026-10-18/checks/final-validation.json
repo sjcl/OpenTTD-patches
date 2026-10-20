@@ -1,0 +1,40 @@
+{
+  "accepted_traces": 8,
+  "matched_canonical_comparisons": 4,
+  "canonical_fields": 24,
+  "requested_ticks": 2048,
+  "runs": {
+    "normal/baseline/legacy": {
+      "binary_and_input_verified": true,
+      "exact_ticks": 2048
+    },
+    "normal/candidate/legacy": {
+      "binary_and_input_verified": true,
+      "exact_ticks": 2048
+    },
+    "normal/baseline/hyperpath": {
+      "binary_and_input_verified": true,
+      "exact_ticks": 2048
+    },
+    "normal/candidate/hyperpath": {
+      "binary_and_input_verified": true,
+      "exact_ticks": 2048
+    },
+    "rebuild/baseline/legacy": {
+      "binary_and_input_verified": true,
+      "exact_ticks": 2048
+    },
+    "rebuild/candidate/legacy": {
+      "binary_and_input_verified": true,
+      "exact_ticks": 2048
+    },
+    "rebuild/baseline/hyperpath": {
+      "binary_and_input_verified": true,
+      "exact_ticks": 2048
+    },
+    "rebuild/candidate/hyperpath": {
+      "binary_and_input_verified": true,
+      "exact_ticks": 2048
+    }
+  }
+}

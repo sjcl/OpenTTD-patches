@@ -8,6 +8,7 @@
 #define PASSENGER_PRECOMPUTED_H
 
 #include "passenger_journey_type.h"
+#include "passenger_aircraft_cost.h"
 #include "cargo_type.h"
 #include "passenger_build_task.h"
 #include "core/passenger_queue.hpp"
@@ -64,6 +65,7 @@ struct PassengerParallelBuildDiagnostic {
 	uint64_t wait_nanoseconds = 0, waits = 0, wait_timeouts = 0;
 	size_t outstanding = 0; ///< Queued or executing searches, observed locally.
 	size_t running = 0;
+	uint64_t finished_rows = 0, finish_effects = 0; ///< Hyperpath rows finished by a worker, and the effects replayed for them.
 	size_t workers = 0, peak_pending = 0, estimated_workspace_bytes = 0;
 };
 
@@ -84,7 +86,7 @@ public:
 	static constexpr uint64_t MAX_HYPERPATH_BYTES = uint64_t{32} * 1024 * 1024 * 1024; ///< Canonical admission, including a retained generation; not a physical allocation request.
 	/** Production uses the current algorithms. Alternate controls are differential
 	 * test/benchmark references, never saved construction-format identities. */
-	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true, bool integrated = true, bool hyperpath = false, bool revisit_dominance = true, bool continuation_witness = true, bool flat_storage = true);
+	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true, bool integrated = true, bool hyperpath = false, bool revisit_dominance = true, bool continuation_witness = true, bool flat_storage = true, PassengerAircraftCost aircraft_cost = PassengerAircraftCost::Current());
 	bool PrepareGraph(size_t quantum = 1024);
 	bool IsPreparingGraph() const { return static_cast<bool>(this->graph_build); }
 	uint64_t GetGraphWork() const { return this->graph_work; }
@@ -171,11 +173,11 @@ private:
 		std::vector<uint32_t> occurrences;
 		int64_t wait = 0, circuit = 0, risk = 0;
 		uint64_t weight = 1;
-		bool estimated = false;
+		bool estimated = false, aircraft = false;
 	};
-	struct Occurrence { StationID station; VehicleOrderID order; uint32_t pattern, arrival, departure; bool board, alight, forced, continues; int64_t travel = 0, uncertainty = 0, dwell = 0; uint32_t distance = 0; };
+	struct Occurrence { StationID station; VehicleOrderID order; uint32_t pattern, arrival, departure; bool board, alight, forced, continues; int64_t travel = 0, uncertainty = 0, dwell = 0, travel_cost = 0; uint32_t distance = 0; };
 	enum class EdgeKind : uint8_t { Board, Ride, Wait, Alight, Section };
-	struct Edge { uint32_t from, to, occurrence; int64_t cost; uint32_t distance; EdgeKind kind; int64_t uncertainty; uint32_t range = INVALID; };
+	struct Edge { uint32_t from, to, occurrence; int64_t cost; uint32_t distance; EdgeKind kind; int64_t riding; uint32_t range = INVALID; };
 	struct RangeEdge { uint32_t begin, end, excluded; }; ///< Base station is the descriptor's from, preceding this contiguous range.
 	struct SectionRide { uint32_t board, alight; int64_t riding, waiting, cost; };
 	struct SectionBinding { uint32_t board, alight; };
@@ -231,6 +233,10 @@ private:
 	size_t hyperpath_static_bytes = 0, hyperpath_row_bytes = 0;
 	mutable size_t local_policy_bytes = 0, expanded_policy_bytes = 0;
 	mutable std::map<std::pair<StationID, uint32_t>, std::vector<uint32_t>> expanded_policies;
+	/** Derived (destination, waiting station) -> every finite, non-dominated ride from that station,
+	 * sorted by (cost, occurrence). Shared by the local policies of all its states and failed carriers. */
+	mutable std::map<std::pair<StationID, uint32_t>, std::vector<std::pair<int64_t, uint32_t>>> station_choices;
+	const std::vector<std::pair<int64_t, uint32_t>> &StationChoices(const Row &row, StationID destination, uint32_t station) const;
 	/** Per block of 64 destination rows: a base-state plane, then an any-state plane, each one
 	 * word per occurrence. One row's publication then writes within two occurrence-sized arrays. */
 	std::vector<uint64_t> boarding_mask;
@@ -280,6 +286,15 @@ private:
 		uint32_t range_offset = 0, expanding = INVALID;
 		bool finishing_row = false, initializing_row = false, queues_configured = false;
 		size_t hyperpath_candidate_bytes = 0, prepared_candidate_bytes = 0;
+		/* A worker finishes its searched Hyperpath row ahead. The simulation thread then charges the
+		 * same Work and applies only the row's table-wide effects, each at its Work position. */
+		struct FinishEffect { size_t step; uint32_t value; uint8_t kind; };
+		std::vector<FinishEffect> finish_effects;
+		std::vector<uint8_t> finish_marked; ///< Per occurrence, while recording: mask planes already marked by this row.
+		std::vector<uint32_t> finish_touched;
+		PassengerPrecomputedDiagnostic finish_diagnostic; ///< Policy statistics of the prepared row, merged at publication.
+		size_t finish_steps = 0, finish_applied = 0, finish_effect = 0;
+		bool finish_prepared = false;
 		struct Counters {
 			uint64_t board_events = 0, board_accepts = 0, range_updates = 0, heap_pushes = 0, heap_pops = 0;
 		} counters;
@@ -301,7 +316,7 @@ private:
 			std::vector<uint32_t> range;
 		} hot_edges;
 		std::vector<RangeEdge> range_edges;
-		struct ColdEdge { uint32_t occurrence, distance; int64_t uncertainty; EdgeKind kind; };
+		struct ColdEdge { uint32_t occurrence, distance; int64_t riding; EdgeKind kind; };
 		std::vector<ColdEdge> cold_edges;
 		std::vector<SectionRide> section_rides;
 		std::vector<Section> sections;
@@ -316,6 +331,7 @@ private:
 		std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
 		std::vector<uint32_t> waiting_station;
 		std::vector<std::vector<uint32_t>> station_boarding;
+		PassengerAircraftCost aircraft_cost;
 		bool flat_storage = false; ///< Compact strategy storage.
 		size_t waiting_state_count = 0;
 		bool estimates = true;
@@ -336,6 +352,14 @@ private:
 		size_t RelaxIncoming(DestinationWorkspace &work, size_t allowance) const;
 		void PushHyperpath(DestinationWorkspace &work, int64_t key, uint32_t kind, uint32_t id) const;
 		uint32_t StateFor(uint32_t station, uint32_t pattern) const;
+		uint32_t PreviousPattern(uint32_t state) const;
+		static constexpr uint8_t FINISH_REACHABLE = 0, FINISH_MARK_ANY = 1, FINISH_MARK_BASE = 2;
+		/** Advances the finishing of a searched Hyperpath row by up to @p steps Work units, stopping
+		 * before its publication. Table-wide effects are reported in order as (kind, value, step). */
+		template <typename Effect> size_t FinishHyperpathRow(DestinationWorkspace &work, size_t steps, PassengerPrecomputedDiagnostic &diagnostic, Effect &&effect) const;
+		bool HyperpathRowFinished(const DestinationWorkspace &work) const { return work.prepared.labels.size() >= this->waiting_state_count && work.finishing >= this->waiting_state_count; }
+		void PrepareHyperpathFinish(DestinationWorkspace &work) const; ///< Worker side: the whole finishing, recorded.
+		static void ExactFlatPayloads(DestinationWorkspace &work); ///< Exact publication payloads; grown storage stays in the buffers.
 		bool DominatedRevisit(uint32_t board, int64_t cost, int64_t next_cost) const;
 		bool HasSameRunContinuationWitness(uint32_t board, uint32_t alight) const;
 		int64_t SearchCost(const DestinationWorkspace &work, uint32_t state) const { return this->optimized ? work.search.cost[state] : work.scratch.labels[state].cost; }
@@ -423,7 +447,7 @@ private:
 	bool HasSameRunContinuationWitness(uint32_t board, uint32_t alight) const;
 	void AddBoardEdges(uint32_t station, uint32_t to, uint32_t pattern, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance = 0);
 	void ContractGraph(size_t &nodes);
-	void AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence = INVALID, uint32_t distance = 0, int64_t uncertainty = 0);
+	void AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence = INVALID, uint32_t distance = 0, int64_t uncertainty = 0, int64_t riding = -1);
 	PassengerBuildTask BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members, int64_t transfer,
 			size_t &nodes, uint64_t &envelope, uint64_t memory, bool cooperative, bool &success);
 	PassengerPrecomputedPlan Select(const Label &label, StateTicks ready, OrderListID excluded, uint32_t sample) const;

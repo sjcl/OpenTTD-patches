@@ -1,0 +1,36 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-rebaseline-88cb61e3\\tools\\wpt\\Windows Kits\\10\\Windows Performance Toolkit\\wpaexporter.exe",
+    "-i",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-rebaseline-88cb61e3\\rebuild\\baseline\\legacy\\cpu.etl",
+    "-symbols",
+    "-marks",
+    "legacy-begin",
+    "legacy-end",
+    "-profile",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-rebaseline-88cb61e3\\rebuild\\baseline\\cpu-sampled.wpaProfile",
+    "-outputfolder",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-rebaseline-88cb61e3\\rebuild\\baseline\\legacy\\wpa",
+    "-outputformat",
+    "CSV"
+  ],
+  "environment": {
+    "_NT_SYMBOL_PATH": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-rebaseline-88cb61e3\\rebuild\\baseline\\Release;srv*C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-rebaseline-88cb61e3\\rebuild\\baseline\\symbols*https://msdl.microsoft.com/download/symbols",
+    "_NT_SYMCACHE_PATH": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-rebaseline-88cb61e3\\rebuild\\baseline\\symcache",
+    "_NT_EXECUTABLE_IMAGE_PATH": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-rebaseline-88cb61e3\\rebuild\\baseline\\Release"
+  },
+  "trace_bytes": 4817158144,
+  "trace_sha256": "700acab991c33555af07ebc815a7b41a37ad7f510cc9467b6801b662fb42c46f",
+  "pdb_sha256": "8b4f5537cac426d535401aaf95c26ff6f2fdc30e53a7c704e90cbec51b0ca2f9",
+  "exit_code": 0,
+  "exports": {
+    "CPU_Usage_(Sampled)_Exclusive_functions.csv": {
+      "bytes": 12451227,
+      "sha256": "0fcbd1e54b62ae222392f18475b639a3cba93b971fd7c8fb0bee2d5e0d9cab19"
+    },
+    "CPU_Usage_(Sampled)_Stacks.csv": {
+      "bytes": 50120549,
+      "sha256": "34e24f2331ecf3859b494d04157132ddf5b4288edbefde5841023dbd5374b588"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "original_event_buffers": 20,
+  "new_event_buffers": 256,
+  "buffer_size_kb": 1024,
+  "logging_mode": "Memory",
+  "all_other_profile_settings_identical": true,
+  "system_provider_sha256": "4d16086864b19e40a952b93f906ae72d3d60eb946dddf795abb5a90bf2f6df19",
+  "reason": "Both standard and one-second-preflight traces lost begin-side markers; retain CPU sampling settings and enlarge the event collector only",
+  "documentation": "https://learn.microsoft.com/en-us/windows-hardware/test/wpt/wpr-command-line-options"
+}

@@ -15,6 +15,7 @@
 bool IsPassengerJourneyRoutingEnabled(CargoType cargo);
 uint64_t PassengerJourneyServiceSignature(const OrderList &orders, CargoType cargo, size_t *budget = nullptr);
 void PassengerJourneySettingsChanged(int32_t);
+void PassengerAircraftCostSettingsChanged(int32_t);
 class PassengerJourneyLoadingContext;
 void RouteWaitingPassengerJourneys(Station *station, PassengerJourneyLoadingContext *loading = nullptr);
 void AfterLoadPassengerJourneys();
@@ -38,6 +39,12 @@ struct PassengerWaitingEventDiagnostic {
 	std::array<uint64_t, 3> hyperpath_walks{}, hyperpath_walk_groups{}, hyperpath_walk_nanoseconds{};
 	uint64_t hyperpath_lookup_rebuilds = 0, hyperpath_lookup_indexed_groups = 0; ///< Lookup maintenance.
 	uint64_t hyperpath_index_validated = 0, hyperpath_index_violations = 0; ///< Validate mode: admitted groups missing from the lookup.
+	/* Group pre-filter memo: answers reused for another coach/pass of the same consist. Validate
+	 * mode recomputes each kept answer: a disagreement is conservative when only an evicted
+	 * failed-carrier policy made the recomputation unknown and the exact answer equals the kept
+	 * one, otherwise a violation. Duplicates: a Hyperpath group reachable twice in one lookup walk. */
+	uint64_t hyperpath_memo_hits = 0, hyperpath_memo_validated = 0, hyperpath_memo_conservative = 0, hyperpath_memo_violations = 0;
+	uint64_t hyperpath_lookup_duplicates = 0;
 	std::array<uint64_t, static_cast<size_t>(PassengerWaitingCause::End)> cause_nanoseconds{}, cause_packets{};
 };
 void RecordPassengerWaitingCause(PassengerWaitingCause cause, uint64_t nanoseconds, bool unchanged = false);
@@ -236,13 +243,26 @@ class PassengerJourneyLoadingContext {
 	std::map<HyperpathBoardingKey, std::array<uint32_t, 2>> hyperpath_boardings;
 	using HyperpathMembershipKey = std::tuple<HyperpathKey, OrderListID, uint64_t, std::array<uint32_t, 2>>;
 	std::map<HyperpathMembershipKey, bool> hyperpath_memberships; ///< Base membership only, local to this loading context.
+	uint64_t hyperpath_memo_serial;
+	StateTicks hyperpath_memo_ticks{}; ///< A context normally lives within one tick; a later tick renews the serial.
+	using RetiredPlanKey = std::tuple<CargoType, StationID, StationID, StateTicks, OrderListID>;
+	std::map<RetiredPlanKey, PassengerPrecomputedPlan> retired_plans; ///< Plans replacing a retired Hyperpath intent.
+	const PassengerPrecomputedPlan &RetiredPlan(CargoType cargo, const PassengerJourneyExecution &intent, OrderListID previous);
+	void RefreshBoardingRevision(); ///< Clears every revision-bound memo when the database's boarding revision moved.
 	std::optional<PassengerJourneyExecution> ResolveHyperpath(const PassengerJourneyExecution &intent, const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo, bool override_failure = false, OrderListID failed = OrderListID::Invalid());
 public:
+	PassengerJourneyLoadingContext();
+	/** Identity of this context's revision-bound memos, renewed whenever they are cleared or a
+	 * consist is invalidated. Unique per process; only compared for equality, never ordering. */
+	uint64_t HyperpathMemoSerial();
 	void EnableWaitingEvents() { this->waiting_events = true; } ///< Actual station simulation only; read-only predicates never wake packets.
 	int8_t hyperpath_filter_choice = -1; ///< Alternate boarding-filter diagnostic: fixed at this context's first Hyperpath walk.
 	bool CanBoard(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo = INVALID_CARGO);
 	const std::array<uint32_t, 2> &HyperpathBoardingOccurrences(const Vehicle *vehicle, CargoType cargo);
-	bool MayUseHyperpathPolicy(const CargoPacket &representative, const Vehicle *vehicle, CargoType cargo, const std::array<uint32_t, 2> &occurrences, bool base, bool adjusted);
+	/** Conservative group pre-filter. @p certain (optional) is cleared when a cold failed-carrier
+	 * policy was admitted as unknown; @p exact builds that policy instead (validation only). */
+	bool MayUseHyperpathPolicy(const CargoPacket &representative, const Vehicle *vehicle, CargoType cargo, const std::array<uint32_t, 2> &occurrences, bool base, bool adjusted,
+			bool *certain = nullptr, bool exact = false);
 	int64_t ExpectedHyperpathWait(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo);
 	bool CanUseHyperpathPolicy(const CargoPacket &representative, const Vehicle *vehicle, CargoType cargo, bool base, bool adjusted);
 	void ResolveWaiting(CargoPacket &packet, const Vehicle *vehicle); ///< Selected indexed candidate only, detached before changing its cohort.
@@ -257,6 +277,7 @@ public:
 
 /** Shares snapshots/query caches across all coaches and packets at an arrival. */
 class PassengerJourneyActiveContext {
+	friend struct PassengerJourneyActiveTestAccess;
 	struct Snapshot;
 	PassengerServiceCapture capture;
 	const Vehicle *vehicle;

@@ -55,7 +55,7 @@ namespace {
 		if (elapsed < std::chrono::microseconds(250)) quantum = std::min(maximum, quantum * 2);
 		else if (elapsed > std::chrono::milliseconds(1)) quantum = std::max(minimum, quantum / 2);
 	}
-	constexpr uint64_t DATABASE_FORMAT_VERSION = 1;
+	constexpr uint64_t DATABASE_FORMAT_VERSION = 2;
 	constexpr int64_t MAX_PERIOD = int64_t{1} << 40;
 	bool AddTicks(int64_t &value, int64_t delta)
 	{
@@ -225,12 +225,25 @@ void PassengerServiceDatabase::ShiftTicks(StateTicksDelta delta)
 	for (auto &[id, since] : this->dirty_since) since += delta;
 }
 
+void PassengerPeriodicService::BuildAircraftCosts(PassengerAircraftCost cost)
+{
+	this->aircraft_adjustments.clear();
+	const auto &stops = this->timetable.stops;
+	if (cost.IsDefault() || !this->IsAircraft() || this->timetable.Circuit() <= 0 || stops.empty()) return;
+	this->aircraft_adjustments.resize(stops.size() + 1);
+	for (size_t i = 0; i < stops.size(); ++i) {
+		size_t next = (i + 1) % stops.size();
+		int64_t travel = stops[next].arrival - stops[i].departure + (next == 0 ? this->timetable.Circuit() : 0);
+		this->aircraft_adjustments[i + 1] = this->aircraft_adjustments[i] + cost.Adjustment(travel - stops[next].intermediate_wait);
+	}
+}
+
 PassengerPeriodicTimetable PassengerPeriodicTimetable::Compile(std::span<const Order> orders, Failure *failure)
 {
 	if (failure != nullptr) *failure = Failure::None;
 	auto fail = [&](Failure why) { if (failure != nullptr) *failure = why; return PassengerPeriodicTimetable{}; };
 	PassengerPeriodicTimetable result;
-	int64_t cursor = 0, first_travel = 0;
+	int64_t cursor = 0, first_travel = 0, intermediate_wait = 0, leading_wait = 0;
 	bool first = true;
 	for (size_t i = 0; i < orders.size(); ++i) {
 		const Order &order = orders[i];
@@ -244,6 +257,9 @@ PassengerPeriodicTimetable PassengerPeriodicTimetable::Compile(std::span<const O
 			PassengerPeriodicStop stop;
 			stop.station = order.GetDestination().ToStationID(); stop.order = static_cast<VehicleOrderID>(i);
 			stop.boarding_facility = order.GetRoadVehTravelDirection() == DiagDirection::Invalid ? 1 : 2 + static_cast<uint8_t>(order.GetRoadVehTravelDirection());
+			stop.intermediate_wait = intermediate_wait;
+			if (result.stops.empty()) leading_wait = intermediate_wait;
+			intermediate_wait = 0;
 			stop.arrival = cursor;
 			if (!AddTicks(cursor, *wait)) return fail(Failure::Overflow);
 			stop.departure = cursor;
@@ -254,13 +270,16 @@ PassengerPeriodicTimetable PassengerPeriodicTimetable::Compile(std::span<const O
 				if (order.GetCargoLoadType(cargo) != OrderLoadType::NoLoad && !(stop.forced & (uint64_t{1} << cargo))) stop.board |= uint64_t{1} << cargo;
 			}
 			result.stops.push_back(stop);
-		} else if (!AddTicks(cursor, *wait)) return fail(Failure::Overflow);
+		} else {
+			if (!AddTicks(cursor, *wait) || !AddTicks(intermediate_wait, *wait)) return fail(Failure::Overflow);
+		}
 		if (cursor > MAX_PERIOD) return fail(Failure::Overflow);
 	}
 	if (!AddTicks(cursor, first_travel) || cursor > MAX_PERIOD) return fail(Failure::Overflow);
 	if (cursor == 0) return fail(Failure::ZeroPeriod);
 	if (result.stops.size() < 2) return fail(Failure::TooFewStops);
 	/* The phase origin is the arrival at the first explicit stopping order. */
+	result.stops.front().intermediate_wait = intermediate_wait + leading_wait;
 	int64_t origin = result.stops.front().arrival;
 	for (auto &stop : result.stops) { stop.arrival -= origin; stop.departure -= origin; }
 	result.period = cursor;
@@ -278,7 +297,7 @@ PassengerPeriodicTimetable PassengerPeriodicTimetable::CompileEstimated(std::spa
 {
 	PassengerPeriodicTimetable result;
 	if (orders.size() > 4096 || type >= VehicleType::CompanyEnd) return result;
-	int64_t cursor = 0, first_travel = 0;
+	int64_t cursor = 0, first_travel = 0, intermediate_wait = 0, leading_wait = 0;
 	bool first = true;
 	const bool zero_circuit = std::none_of(orders.begin(), orders.end(), [](const Order &o) {
 		return !o.IsType(OT_IMPLICIT) && !o.IsType(OT_LABEL) && (o.GetTravelTime() != 0 ||
@@ -314,6 +333,9 @@ PassengerPeriodicTimetable PassengerPeriodicTimetable::CompileEstimated(std::spa
 			PassengerPeriodicStop stop;
 			stop.station = order.GetDestination().ToStationID(); stop.order = static_cast<VehicleOrderID>(i);
 			stop.boarding_facility = order.GetRoadVehTravelDirection() == DiagDirection::Invalid ? 1 : 2 + static_cast<uint8_t>(order.GetRoadVehTravelDirection());
+			stop.intermediate_wait = intermediate_wait;
+			if (result.stops.empty()) leading_wait = intermediate_wait;
+			intermediate_wait = 0;
 			stop.arrival = cursor; stop.travel_quality = quality;
 			if (!AddTicks(cursor, wait)) return {};
 			stop.departure = cursor;
@@ -328,7 +350,7 @@ PassengerPeriodicTimetable PassengerPeriodicTimetable::CompileEstimated(std::spa
 			result.stops.push_back(stop); quality = 0;
 		} else {
 			if (order.IsType(OT_GOTO_STATION) && station == nullptr) return {};
-			if (!AddTicks(cursor, wait)) return {};
+			if (!AddTicks(cursor, wait) || !AddTicks(intermediate_wait, wait)) return {};
 		}
 		/* Keep the last known position through a depot without coordinates. An
 		 * unknown waypoint/depot must not replace a long station-to-station leg
@@ -338,6 +360,7 @@ PassengerPeriodicTimetable PassengerPeriodicTimetable::CompileEstimated(std::spa
 	}
 	if (!AddTicks(cursor, first_travel) || cursor <= 0 || cursor > MAX_PERIOD || result.stops.size() < 2) return {};
 	result.stops.front().travel_quality = std::max(quality, leading_quality);
+	result.stops.front().intermediate_wait = intermediate_wait + leading_wait;
 	int64_t origin = result.stops.front().arrival;
 	for (auto &stop : result.stops) { stop.arrival -= origin; stop.departure -= origin; }
 	result.estimated_period = cursor;
@@ -459,6 +482,9 @@ void PassengerServiceDatabase::Reset()
 	this->generation = this->published_revision = 0; this->bytes = this->building_bytes = 0;
 	this->diagnostic = {}; this->schedule.ResetDiagnostic();
 	this->DiscardPrecomputed(); this->precomputed_refresh = {};
+	this->aircraft_cost = PassengerAircraftCost::Current();
+	this->precomputed_aircraft_cost = this->retained_precomputed_aircraft_cost = {};
+	this->legacy_aircraft_times = false;
 }
 
 void PassengerServiceDatabase::Remove(OrderListID id)
@@ -487,7 +513,7 @@ void PassengerServiceDatabase::Invalidate(OrderListID id)
 	 * can be deleted or its order vector changed. Network commands stay queued. */
 	this->preparation_capture = {};
 	++this->boarding_revision;
-	InvalidatePassengerWaitingRouting();
+	RequestPassengerWaitingGeneration();
 	++this->diagnostic.invalidations;
 	if (id == OrderListID::Invalid()) {
 		++this->diagnostic.global_invalidations;
@@ -533,6 +559,7 @@ void PassengerServiceDatabase::Tick(size_t allowance, bool build_precomputed, bo
 {
 	PassengerJourneyWorkTimer timer;
 	const auto started = std::chrono::steady_clock::now();
+	this->UpdateAircraftCosts();
 	const bool previous_cooperative = std::exchange(this->cooperative_graph, prepare_graphs);
 	auto task = this->TickBuild(allowance, build_precomputed, false);
 	task.Resume(SIZE_MAX);
@@ -887,6 +914,7 @@ void PassengerServiceDatabase::BeginPrecomputed(int64_t transfer)
 		this->retained_precomputed_services = std::move(this->precomputed_services);
 		this->retained_precomputed_revision = this->precomputed_revision;
 		this->retained_precomputed_transfer = this->precomputed_transfer;
+		this->retained_precomputed_aircraft_cost = this->precomputed_aircraft_cost;
 		this->retained_precomputed_hyperpath = this->precomputed_hyperpath;
 		this->retained_precomputed_policy_generation = this->precomputed_policy_generation;
 	} else {
@@ -902,6 +930,7 @@ void PassengerServiceDatabase::BeginPrecomputed(int64_t transfer)
 	++this->precomputed_policy_generation;
 	this->precomputed_revision = this->published_revision;
 	this->precomputed_transfer = transfer; this->precomputed_invalidated = false;
+	this->precomputed_aircraft_cost = this->aircraft_cost;
 	int64_t refresh = _state_ticks.base();
 	if (!AddTicks(refresh, TIMETABLE_EPOCH)) refresh = INT64_MAX;
 	this->precomputed_refresh = StateTicks{refresh};
@@ -923,11 +952,11 @@ void PassengerServiceDatabase::BuildPrecomputedTables()
 		uint64_t bytes = 512 + uint64_t{256} * service.timetable.stops.size() + uint64_t{1024} * service.vehicles.size() + uint64_t{32} * service.dispatch_slots.size();
 		remaining -= std::min(remaining, bytes);
 	}
-	this->BuildPrecomputedTables(this->precomputed, this->precomputed_services, this->precomputed_transfer, remaining, this->precomputed_hyperpath, this->cooperative_graph);
+	this->BuildPrecomputedTables(this->precomputed, this->precomputed_services, this->precomputed_transfer, remaining, this->precomputed_hyperpath, this->cooperative_graph, this->precomputed_aircraft_cost);
 }
 
 void PassengerServiceDatabase::BuildPrecomputedTables(std::array<PassengerPrecomputedTable, NUM_CARGO> &tables,
-		const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool hyperpath, bool cooperative)
+		const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool hyperpath, bool cooperative, PassengerAircraftCost aircraft_cost)
 {
 	std::vector<const PassengerPeriodicService *> records;
 	for (const auto &[id, service] : snapshot) {
@@ -939,7 +968,7 @@ void PassengerServiceDatabase::BuildPrecomputedTables(std::array<PassengerPrecom
 	auto memory_budget = cooperative ? std::make_shared<uint64_t>(remaining) : nullptr;
 	for (CargoType cargo : EnumRange(NUM_CARGO)) {
 		if (!IsCargoInClass(cargo, CargoClass::Passengers)) continue;
-		tables[cargo].Begin(records, cargo, transfer, remaining, true, cooperative, memory_budget, true, true, true, hyperpath);
+		tables[cargo].Begin(records, cargo, transfer, remaining, true, cooperative, memory_budget, true, true, true, hyperpath, true, true, true, aircraft_cost);
 		remaining -= std::min(remaining, tables[cargo].GetDiagnostic().envelope);
 	}
 }
@@ -955,6 +984,20 @@ void PassengerServiceDatabase::ClearRetainedPrecomputed()
 	this->retained_precomputed_revision = UINT64_MAX;
 	this->retained_precomputed_transfer = 0;
 	this->retained_precomputed_hyperpath = false; this->retained_precomputed_policy_generation = 0;
+}
+
+bool PassengerServiceDatabase::UpdateAircraftCosts()
+{
+	const auto cost = PassengerAircraftCost::Current();
+	if (this->restoring || this->load_state == LoadState::Replaying || cost == this->aircraft_cost) return false;
+	/* Cancel graph coroutines and speculative workers before replacing their inputs.
+	 * No old-cost rows remain eligible, even during a cooperative rebuild. */
+	this->DiscardPrecomputed();
+	this->aircraft_cost = cost;
+	for (auto &[id, service] : this->services) service.BuildAircraftCosts(cost);
+	this->ClearPolicies(PassengerDatabaseDiagnostic::ClearReason::Explicit);
+	InvalidatePassengerWaitingRouting();
+	return true;
 }
 
 void PassengerServiceDatabase::DiscardPrecomputed()
@@ -983,6 +1026,7 @@ void PassengerServiceDatabase::TickPrecomputed(size_t allowance)
 	 * saved immutable publication snapshot and never restart it for time drift.
 	 * Actual order/boarding changes still restart; cost-only changes coalesce. */
 	if (this->precomputed_revision == UINT64_MAX && this->services.empty()) return;
+	this->UpdateAircraftCosts();
 	const bool finished = std::all_of(this->precomputed.begin(), this->precomputed.end(), [](const auto &t) { return t.Finished(); });
 	if (this->precomputed_revision == UINT64_MAX || (finished && (this->precomputed_hyperpath != _settings_game.linkgraph.passenger_journey_hyperpath || this->precomputed_invalidated ||
 			this->precomputed_transfer != _settings_game.linkgraph.passenger_transfer_penalty ||
@@ -1075,6 +1119,7 @@ std::optional<PassengerJourneyExecution> PassengerServiceDatabase::ExtendPrecomp
 			size_t next = (previous + 1) % t.stops.size(); const auto &to = t.stops[next];
 			int64_t travel = std::max<int64_t>(1, to.arrival - from.departure + (next == 0 ? t.Circuit() : 0));
 			int64_t uncertainty = to.travel_quality == 1 ? (travel + 7) / 8 : to.travel_quality == 2 ? (travel + 3) / 4 : 0;
+			travel += found->second.AircraftAdjustment(previous, next);
 			if (!AddTicks(cost, travel) || !AddTicks(cost, uncertainty)) break;
 			if (prefix < 0 && to.station == destination && (to.alight & mask)) break;
 			if (prefix >= 0 && to.station == destination && (to.alight & mask)) {
@@ -1170,15 +1215,46 @@ std::array<uint32_t, 2> PassengerServiceDatabase::HyperpathBoardingOccurrences(C
 bool PassengerServiceDatabase::MayBoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo,
 		const std::array<uint32_t, 2> &occurrences, OrderListID previous, OrderListID failed, bool cached_only) const
 {
+	if (cached_only) return this->CachedHyperpathMembership(intent, cargo, occurrences, previous, failed).value_or(true);
 	if (cargo >= NUM_CARGO || intent.kind != PassengerRideKind::HyperpathIntent || intent.signature != uint64_t(cargo) + 1) return false;
 	for (size_t index = 0; index < 2; ++index) {
 		if (intent.generation != (index != 0 ? this->retained_precomputed_policy_generation : this->precomputed_policy_generation)) continue;
 		const auto &table = (index != 0 ? this->retained_precomputed : this->precomputed)[cargo];
-		if (!cached_only) {
-			const auto candidates = table.Candidates(intent.boarding, intent.alighting, previous, failed);
-			return std::binary_search(candidates.begin(), candidates.end(), occurrences[index]);
+		const auto candidates = table.Candidates(intent.boarding, intent.alighting, previous, failed);
+		return std::binary_search(candidates.begin(), candidates.end(), occurrences[index]);
+	}
+	return false;
+}
+
+const PassengerPrecomputedPlan *PassengerServiceDatabase::SharedHyperpathPlan(CargoType cargo, StationID origin, StationID destination, OrderListID previous) const
+{
+	if (this->RevisionAffectsWaitingPlans()) return nullptr;
+	const uint64_t changed = destination.base() < this->hyperpath_destination_changed.size() ? this->hyperpath_destination_changed[destination.base()] : 0;
+	const auto key = std::tuple(cargo, origin, destination, previous);
+	auto found = this->shared_hyperpath_plans.find(key);
+	if (found != this->shared_hyperpath_plans.end() && found->second.epoch == this->hyperpath_lookup_epoch && found->second.changes >= changed) return &found->second.plan;
+	if (found == this->shared_hyperpath_plans.end()) {
+		if (this->shared_hyperpath_plans.size() >= 32768) {
+			/* Evict the next key, not always the lowest stations. Residency never changes an identity. */
+			auto victim = this->shared_hyperpath_plans.upper_bound(key);
+			if (victim == this->shared_hyperpath_plans.end()) victim = this->shared_hyperpath_plans.begin();
+			this->shared_hyperpath_plans.erase(victim);
 		}
-		return table.ContainsCached(intent.boarding, intent.alighting, occurrences[index], previous, failed).value_or(true);
+		found = this->shared_hyperpath_plans.try_emplace(key).first;
+	}
+	found->second.epoch = this->hyperpath_lookup_epoch; found->second.changes = this->hyperpath_destination_changes;
+	found->second.plan = this->PlanPrecomputed(cargo, origin, destination, _state_ticks, previous);
+	return &found->second.plan;
+}
+
+std::optional<bool> PassengerServiceDatabase::CachedHyperpathMembership(const PassengerJourneyExecution &intent, CargoType cargo,
+		const std::array<uint32_t, 2> &occurrences, OrderListID previous, OrderListID failed) const
+{
+	if (cargo >= NUM_CARGO || intent.kind != PassengerRideKind::HyperpathIntent || intent.signature != uint64_t(cargo) + 1) return false;
+	for (size_t index = 0; index < 2; ++index) {
+		if (intent.generation != (index != 0 ? this->retained_precomputed_policy_generation : this->precomputed_policy_generation)) continue;
+		const auto &table = (index != 0 ? this->retained_precomputed : this->precomputed)[cargo];
+		return table.ContainsCached(intent.boarding, intent.alighting, occurrences[index], previous, failed);
 	}
 	return false;
 }
@@ -1215,7 +1291,11 @@ int PassengerServiceDatabase::HyperpathLookupCandidates(CargoType cargo, const P
 				(this->retained_precomputed_revision != UINT64_MAX && !this->retained_precomputed_hyperpath)) return HYPERPATH_LOOKUP_ALWAYS;
 		const std::array<OrderListID, 2> states{previous, OrderListID::Invalid()};
 		for (size_t i = 0; i < (previous == OrderListID::Invalid() ? 1 : 2); ++i) {
-			auto plan = this->PlanPrecomputed(cargo, intent.boarding, intent.alighting, _state_ticks, states[i]);
+			/* Only the replacement's identity is read: shared across ticks and stations. */
+			PassengerPrecomputedPlan own;
+			const auto *shared = this->SharedHyperpathPlan(cargo, intent.boarding, intent.alighting, states[i]);
+			if (shared == nullptr) { own = this->PlanPrecomputed(cargo, intent.boarding, intent.alighting, _state_ticks, states[i]); shared = &own; }
+			const auto &plan = *shared;
 			if (!plan.ride) continue;
 			if (plan.ride->kind != PassengerRideKind::HyperpathIntent) { out.clear(); return HYPERPATH_LOOKUP_ALWAYS; }
 			const int found = slot_of(*plan.ride);
@@ -1300,6 +1380,7 @@ void PassengerServiceDatabase::Publish(size_t &allowance)
 				}
 			}
 			auto normalized = service;
+			normalized.BuildAircraftCosts(this->aircraft_cost);
 			normalized.generation = old->second.generation;
 			if (normalized.timetable.period > 0 && normalized.vehicles.size() == old->second.vehicles.size()) {
 				for (size_t i = 0; i < normalized.vehicles.size(); ++i) {
@@ -1316,6 +1397,7 @@ void PassengerServiceDatabase::Publish(size_t &allowance)
 			else this->diagnostic.service_additions += service.incarnation != 0;
 			this->Remove(id);
 			if (service.incarnation != 0 && this->bytes + ServiceBytes(service) <= MAX_BYTES) {
+				service.BuildAircraftCosts(this->aircraft_cost);
 				this->TouchStations(service); this->bytes += ServiceBytes(service); this->Index(service);
 				auto published = this->services.emplace(id, std::move(service)).first;
 				if (this->service_lookup.empty()) this->service_lookup.resize(OrderListID::Invalid().base(), nullptr);
@@ -1453,6 +1535,7 @@ PassengerServiceDatabase::JourneyPolicy PassengerServiceDatabase::CompilePolicy(
 			if (policy.limited) break;
 			int64_t duration = stops[ref.stop].arrival - stops[previous].departure;
 			if (previous >= ref.stop) duration += service.timetable.period;
+			duration += service.AircraftAdjustment(previous, ref.stop);
 			int64_t next = distance;
 			if (AddTicks(next, duration) && !insert(stops[previous].station, next)) break;
 		}
@@ -1538,9 +1621,10 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanWithOriginalCompletion(Cargo
 	return this->PlanInternal(cargo, origin, destination, ready, limits, evaluation, excluded, true, false, false, false);
 }
 
-bool PassengerServiceDatabase::ServiceCannotImprove(const PassengerPeriodicTimetable &pattern, size_t boarding, CargoType cargo,
+bool PassengerServiceDatabase::ServiceCannotImprove(const PassengerPeriodicService &service, size_t boarding, CargoType cargo,
 		StationID destination, int64_t cost, bool transfer, int64_t best, const JourneyPolicy &policy, PassengerJourneyEvaluation evaluation)
 {
+	const auto &pattern = service.timetable;
 	++this->diagnostic.service_bound_checks;
 	/* Waiting is relaxed to zero; a required interchange alone guarantees
 	 * minimum_transfer elapsed ticks and its nonnegative preference penalties.
@@ -1559,6 +1643,7 @@ bool PassengerServiceDatabase::ServiceCannotImprove(const PassengerPeriodicTimet
 		const auto &alight = pattern.stops[index];
 		int64_t duration = alight.arrival - board.departure;
 		if (index <= boarding) duration += pattern.period;
+		duration += service.AircraftAdjustment(boarding, index);
 		int64_t lower = cost;
 		/* Arrival offsets increase around this one circuit. Once the ride
 		 * alone exceeds the incumbent, no later occurrence can improve it;
@@ -1713,7 +1798,14 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 					 * Continuations allow any service, so no path-history assumption
 					 * or forbidden-station set makes this dominance unsound. */
 					bool times = evaluation.waiting_weight == 0 ? other.time <= next.time : other.time == next.time;
-					if (times && other.cost <= next.cost && other.rides <= next.rides &&
+					/* Compare at the later clock time: a discounted later arrival
+					 * may cost less than waiting on the earlier, cheaper prefix. */
+					bool costs = other.cost <= next.cost;
+					if (times && !this->aircraft_cost.IsDefault()) {
+						int64_t wait = (next.time - other.time).base();
+						costs = next.cost >= wait && other.cost <= next.cost - wait;
+					}
+					if (times && costs && other.rides <= next.rides &&
 							(other.rides < next.rides || first_key(other) <= first_key(next) ||
 							(evaluation.waiting_weight != 0 && other.cost < next.cost))) return;
 				}
@@ -1787,7 +1879,7 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 					/* Deterministic algorithmic work reduction. Bounds, like bound()
 					 * above, are not logical Work; skipped vehicle/slot/alighting visits
 					 * are not replayed. No cache presence or physical timing is consulted. */
-					if (prune_services && incumbent_cost && this->ServiceCannotImprove(pattern, ref.stop, cargo, destination,
+					if (prune_services && incumbent_cost && this->ServiceCannotImprove(service, ref.stop, cargo, destination,
 							current.cost, current.rides != 0, *incumbent_cost, *policy, evaluation)) {
 						++this->diagnostic.pruned_services;
 						this->diagnostic.pruned_vehicle_visits += service.vehicles.size();
@@ -1877,6 +1969,9 @@ PassengerPeriodicPlan PassengerServiceDatabase::PlanInternal(CargoType cargo, St
 							int64_t end = departure->base(), cost = current.cost;
 							if (!AddTicks(end, duration) || end < current.time.base() || uint64_t(end) - uint64_t(current.time.base()) > INT64_MAX) { observe(Reason::Evaluation); continue; }
 							int64_t elapsed = end - current.time.base(), wait = departure->base() - current.time.base();
+							int64_t adjustment = service.AircraftAdjustment(ref.stop, stop_index);
+							if (adjustment > 0 && elapsed > INT64_MAX - adjustment) { observe(Reason::Evaluation); continue; }
+							elapsed += adjustment; // Discounts replace only movement, so this stays nonnegative.
 							if (!AddTicks(cost, elapsed) || (current.rides && !AddTicks(cost, evaluation.transfer_penalty)) ||
 									(evaluation.waiting_weight && (wait > INT64_MAX / evaluation.waiting_weight || !AddTicks(cost, wait * evaluation.waiting_weight / 1000))) ||
 									(current.rides && !AddTicks(cost, int64_t(evaluation.minimum_transfer) * evaluation.transfer_time_weight / 1000))) { observe(Reason::Evaluation); continue; }
@@ -1976,7 +2071,7 @@ PassengerPlannerComparison ComparePassengerPlanners(const PassengerServiceDataba
 		auto old_limits = limits; old_limits.candidates = 1; // Match the old Active path's admission and K.
 		auto legacy = planner.Plan(cargo, origin, destination, ready, old_limits, evaluation);
 		comparison.legacy_found = legacy.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound &&
-				legacy.journeys.front().generalized_time.base() < horizon && graph.GetQueryStatus(origin, destination) < PassengerPredictionStatus::LimitReached;
+				(horizon == 65536 || (!graph.HasAircraftDiscount() && legacy.journeys.front().generalized_time.base() < horizon)) && graph.GetQueryStatus(origin, destination) < PassengerPredictionStatus::LimitReached;
 		comparison.horizon = horizon; comparison.legacy_stop = legacy.stop_reason; comparison.legacy_status = legacy.status;
 		comparison.legacy_graph_work += graph.GetWork(); comparison.legacy_search_work += legacy.diagnostic.work;
 		comparison.legacy_route.clear();
@@ -1989,7 +2084,7 @@ PassengerPlannerComparison ComparePassengerPlanners(const PassengerServiceDataba
 						trip.prediction.visits[leg.boarding.visit].order, trip.prediction.visits[leg.alighting.visit].order,
 						leg.departure, leg.arrival, 0});
 			}
-			if (comparison.legacy_cost < horizon || legacy.GetOutcome() != PassengerJourneyOutcome::TimedRouteFound) break;
+			if ((!graph.HasAircraftDiscount() && comparison.legacy_cost < horizon) || legacy.GetOutcome() != PassengerJourneyOutcome::TimedRouteFound) break;
 		} else if (legacy.stop_reason != PassengerJourneyStopReason::PredictionHorizon) break;
 		if (horizon == 65536) break;
 	}
@@ -2163,7 +2258,7 @@ std::vector<uint8_t> PassengerServiceDatabase::Save() const
 		for (const auto &stop : service.timetable.stops) {
 			put(stop.station.base()); put(stop.order); put(stop.arrival); put(stop.departure);
 			put(stop.board); put(stop.alight); put(stop.forced);
-			put(stop.continues); put(stop.travel_quality);
+			put(stop.continues); put(stop.travel_quality); put(stop.intermediate_wait);
 		}
 		put(service.vehicles.size());
 		for (const auto &vehicle : service.vehicles) {
@@ -2196,6 +2291,9 @@ std::vector<uint8_t> PassengerServiceDatabase::Save() const
 			put(keys);
 		}
 	}
+	for (const auto &cost : {this->aircraft_cost, this->precomputed_aircraft_cost, this->retained_precomputed_aircraft_cost}) {
+		put(cost.scale); put(cost.addition);
+	}
 	return data;
 }
 
@@ -2212,7 +2310,9 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 	};
 	auto count = [&](size_t max) { uint64_t n = get(); if (n > max || n > (data.size() - cursor) / 8) { valid = false; return size_t{0}; } return static_cast<size_t>(n); };
 	PassengerServiceDatabase restored;
-	if (get() != DATABASE_FORMAT_VERSION) return false;
+	const uint64_t version = get();
+	restored.legacy_aircraft_times = version == 1;
+	if (version != 1 && version != DATABASE_FORMAT_VERSION) return false;
 	restored.generation = get();
 	uint64_t saved_cursor = get(); if (saved_cursor > OrderListID::Invalid().base()) return false;
 	restored.cursor = static_cast<uint32_t>(saved_cursor);
@@ -2246,6 +2346,7 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 			uint64_t continues = get(), quality = get();
 			if (continues > 1 || quality > 2 || (service.timetable.period > 0 && (!continues || quality != 0))) return false;
 			stop.continues = continues != 0; stop.travel_quality = static_cast<uint8_t>(quality);
+			if (version >= 2) { stop.intermediate_wait = static_cast<int64_t>(get()); if (stop.intermediate_wait < 0 || stop.intermediate_wait > MAX_PERIOD) return false; }
 			if (stop.arrival < previous || stop.departure < stop.arrival || stop.departure > service.timetable.Circuit()) return false;
 			previous = stop.departure; service.timetable.stops.push_back(stop);
 		}
@@ -2338,7 +2439,24 @@ bool PassengerServiceDatabase::Load(std::span<const uint8_t> data)
 			if (keys != 0) return false;
 		}
 	}
+	if (version >= 2) for (auto *cost : {&restored.aircraft_cost, &restored.precomputed_aircraft_cost, &restored.retained_precomputed_aircraft_cost}) {
+		uint64_t scale = get(), addition = get();
+		if (scale > UINT16_MAX || addition > uint64_t{UINT16_MAX} * DAY_TICKS * UINT8_MAX) return false;
+		*cost = {static_cast<uint16_t>(scale), static_cast<uint32_t>(addition)};
+	}
 	if (!valid || cursor != data.size()) return false;
+	/* Validate physical segment waits before constructing signed preference prefixes. */
+	for (auto *snapshot : {&restored.services, &restored.building, &restored.precomputed_services, &restored.retained_precomputed_services}) {
+		for (auto &[id, service] : *snapshot) {
+			const auto &t = service.timetable;
+			for (size_t i = 0; i < t.stops.size(); ++i) {
+				size_t next = (i + 1) % t.stops.size();
+				if (t.stops[next].intermediate_wait > t.stops[next].arrival - t.stops[i].departure + (next == 0 ? t.Circuit() : 0)) return false;
+			}
+			service.BuildAircraftCosts(snapshot == &restored.precomputed_services ? restored.precomputed_aircraft_cost :
+					snapshot == &restored.retained_precomputed_services ? restored.retained_precomputed_aircraft_cost : restored.aircraft_cost);
+		}
+	}
 	for (const auto &[id, service] : restored.services) { restored.Index(service); restored.TouchStations(service); }
 	restored.service_lookup.resize(OrderListID::Invalid().base(), nullptr);
 	for (const auto &[id, service] : restored.services) restored.service_lookup[id.base()] = &service;
@@ -2372,7 +2490,9 @@ uint64_t PassengerServiceDatabase::GetLoadWorkLimit() const
 
 void PassengerServiceDatabase::FinishLoad(bool present, bool defer_precomputed)
 {
-	if (!present) { this->Reset(); return; }
+	/* v1 has no movement/wait split. Recapture once, including at default costs,
+	 * so a subsequent settings change or save cannot scale its unknown waits. */
+	if (!present || this->legacy_aircraft_times) { this->Reset(); return; }
 	this->restoring = false;
 	this->load_state = LoadState::Ready;
 	this->load_work = 0;
@@ -2382,7 +2502,7 @@ void PassengerServiceDatabase::FinishLoad(bool present, bool defer_precomputed)
 		this->load_cargo = CargoType{0};
 		if (this->retained_precomputed_revision != UINT64_MAX) {
 			this->BuildPrecomputedTables(this->retained_precomputed, this->retained_precomputed_services,
-					this->retained_precomputed_transfer, this->retained_precomputed_hyperpath ? PassengerPrecomputedTable::MAX_HYPERPATH_BYTES : PassengerPrecomputedTable::MAX_BYTES, this->retained_precomputed_hyperpath, defer_precomputed);
+					this->retained_precomputed_transfer, this->retained_precomputed_hyperpath ? PassengerPrecomputedTable::MAX_HYPERPATH_BYTES : PassengerPrecomputedTable::MAX_BYTES, this->retained_precomputed_hyperpath, defer_precomputed, this->retained_precomputed_aircraft_cost);
 		}
 		this->load_current_graph_started = !defer_precomputed;
 		if (!defer_precomputed) this->BuildPrecomputedTables();

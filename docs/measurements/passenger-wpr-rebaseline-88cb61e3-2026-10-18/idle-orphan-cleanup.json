@@ -1,0 +1,51 @@
+[
+  {
+    "pid": 54936,
+    "parent_pid": 117948,
+    "cpu_delta_seconds": 0.0,
+    "action": "stopped idle orphan after completed build",
+    "ignored_child": "conhost.exe"
+  },
+  {
+    "pid": 76036,
+    "parent_pid": 117948,
+    "cpu_delta_seconds": 0.0,
+    "action": "stopped idle orphan after completed build",
+    "ignored_child": "conhost.exe"
+  },
+  {
+    "pid": 129456,
+    "parent_pid": 117948,
+    "cpu_delta_seconds": 0.0,
+    "action": "stopped idle orphan after completed build",
+    "ignored_child": "conhost.exe"
+  },
+  {
+    "pid": 472,
+    "parent_pid": 117948,
+    "cpu_delta_seconds": 0.0,
+    "action": "stopped idle orphan after completed build",
+    "ignored_child": "conhost.exe"
+  },
+  {
+    "pid": 16968,
+    "parent_pid": 117948,
+    "cpu_delta_seconds": 0.0,
+    "action": "stopped idle orphan after completed build",
+    "ignored_child": "conhost.exe"
+  },
+  {
+    "pid": 107424,
+    "parent_pid": 117948,
+    "cpu_delta_seconds": 0.0,
+    "action": "stopped idle orphan after completed build",
+    "ignored_child": "conhost.exe"
+  },
+  {
+    "pid": 49004,
+    "parent_pid": 1568,
+    "cpu_delta_seconds": 0.0,
+    "action": "stopped idle orphan after completed build",
+    "ignored_child": "conhost.exe"
+  }
+]

@@ -1,0 +1,38 @@
+{
+  "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-recordings-f9c4a85b-2026-10-18",
+  "files": {
+    "legacy/cpu.etl": {
+      "bytes": 3020947456,
+      "sha256": "38bf6bbee84599de16884e47afe5a2a504f9f45d7efa8182ca5a24bf77d3b6ef",
+      "read_only": true
+    },
+    "hyperpath/cpu.etl": {
+      "bytes": 2787115008,
+      "sha256": "e8d9fef97ce6e64fa2182571e40313448f5a55640de1ac98efb3bcfd65a86fdf",
+      "read_only": true
+    },
+    "Release/openttd.exe": {
+      "bytes": 14233088,
+      "sha256": "59a7a63146e6139cc16ea699dd09901dab4139456de6515f8fadc041abf7a7d1"
+    },
+    "Release/openttd.pdb": {
+      "bytes": 150581248,
+      "sha256": "0a9ba4ea8cf103a44a1b49346d36ed14a36d0ef79814fb4f169d1fc089bd158a"
+    },
+    "cpu-sampled.wpaProfile": {
+      "bytes": 4034,
+      "sha256": "5092304c54ce1f2d1e34f73cc09c6d8b91513a7aba76e6c16fd1f4403067682c"
+    },
+    "build-identity.json": {
+      "bytes": 812,
+      "sha256": "d9be33abcfc5be692cd0941ee45962a255f46920d3c9c6cae5e372d2cd8770ea"
+    },
+    "input-validation.json": {
+      "bytes": 3737,
+      "sha256": "8363006e816f99135f11e409710e681c59a3153c0ced0961b6ebe982d03aa06a"
+    }
+  },
+  "matching_binary_and_pdb_copied": true,
+  "traces_read_only": true,
+  "note": "ETLs retained with NTFS hard links where possible; either archive link survives removal of the worktree link"
+}

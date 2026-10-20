@@ -46,6 +46,16 @@ struct PassengerPrecomputedTestAccess {
 	static bool Serial(const PassengerPrecomputedTable &table) { return table.serial_destination == table.destination; }
 	static bool Pending(const PassengerPrecomputedTable &table) { return table.parallel_credit != 0; }
 	static void ExpirePreparationWait(PassengerPrecomputedTable &table) { table.preparation_wait_limit = std::chrono::milliseconds(0); }
+	/** Rotating eviction of every failed-carrier local policy, as a full cache would do. */
+	static void EvictLocalPolicies(const PassengerPrecomputedTable &table)
+	{
+		for (const auto &[key, policy] : table.local_policies) {
+			const size_t bytes = 128 + policy.candidates.capacity() * 4;
+			table.local_policy_bytes -= bytes; table.diagnostic.bytes -= std::min(table.diagnostic.bytes, bytes);
+		}
+		table.local_policies.clear();
+	}
+	static size_t LocalPolicies(const PassengerPrecomputedTable &table) { return table.local_policies.size(); }
 };
 
 struct PassengerServiceDatabaseTestAccess {

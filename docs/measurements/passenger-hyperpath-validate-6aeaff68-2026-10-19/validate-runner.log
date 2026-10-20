@@ -1,0 +1,253 @@
+{
+  "exit_code": 0,
+  "requested_ticks": 2048,
+  "elapsed_seconds": 167.94724959973246,
+  "trace_enabled": false,
+  "checkpoint_tick": null,
+  "focused_od_trace": false,
+  "departure_diagnostic": false,
+  "contamination": [
+    [
+      "openttd:117528"
+    ],
+    [
+      "openttd:117528"
+    ],
+    [
+      "openttd:117528",
+      "cmake:101236",
+      "MSBuild:132068"
+    ],
+    [
+      "openttd:117528"
+    ],
+    [
+      "openttd:117528"
+    ],
+    [
+      "openttd:117528"
+    ],
+    [
+      "openttd:117528"
+    ],
+    [
+      "openttd:117528"
+    ],
+    [
+      "openttd:117528"
+    ],
+    [
+      "openttd:117528"
+    ],
+    [
+      "openttd:117528"
+    ],
+    [
+      "openttd:117528"
+    ],
+    [
+      "openttd:117528"
+    ],
+    [
+      "openttd:117528"
+    ]
+  ],
+  "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+  "binary_sha256": "41fb4fd5834c98f0d298d5fcc2f11a1c3d1f663bfc326b35a58700400d12e8c2",
+  "language_sha256": "c7864bc7e19f9542189be35250ff47d07613a4a5a4acd56dbc697026b65781d1",
+  "resume_settings": true,
+  "fixture_timetable": false,
+  "fixture_estimated": false,
+  "cold_precomputed": false,
+  "precomputed": true,
+  "hyperpath": true,
+  "hyperpath_filter": null,
+  "hyperpath_filter_alternate": false,
+  "hyperpath_filter_mode": "validate",
+  "warm_precomputed": true,
+  "rebuild_precomputed": false,
+  "full_rebuild_precomputed": false,
+  "mid_rebuild_tick": 0,
+  "finish_rebuild_precomputed": false,
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-validate-6aeaff68-2026-10-19\\validate\\openttd.exe",
+    "-x",
+    "-X",
+    "-c",
+    "openttd.cfg",
+    "-g",
+    "input.sav",
+    "-v",
+    "null:ticks=2048",
+    "-snull",
+    "-mnull",
+    "-d",
+    "sl=2"
+  ],
+  "peak_working_bytes": 8358989824,
+  "peak_commit_bytes": 8384045056,
+  "process_cpu_seconds": 218.375,
+  "unpause_before_save": false,
+  "wpr_profile": false,
+  "validation_only": true,
+  "retirement_profile": false,
+  "retirement_reference": false,
+  "affinity_mask": null,
+  "main_thread_affinity_mask": 1,
+  "main_thread": {
+    "thread_id": 91512,
+    "process_affinity": 4294967295,
+    "verified_mask": 1,
+    "group": 0
+  },
+  "phase_contamination": [
+    {
+      "elapsed_seconds": 12.589341699611396,
+      "stage": "preparation",
+      "processes": [
+        "openttd:117528"
+      ]
+    },
+    {
+      "elapsed_seconds": 24.556896599940956,
+      "stage": "preparation",
+      "processes": [
+        "openttd:117528"
+      ]
+    },
+    {
+      "elapsed_seconds": 36.481603499967605,
+      "stage": "preparation",
+      "processes": [
+        "openttd:117528",
+        "cmake:101236",
+        "MSBuild:132068"
+      ]
+    },
+    {
+      "elapsed_seconds": 48.29923399956897,
+      "stage": "preparation",
+      "processes": [
+        "openttd:117528"
+      ]
+    },
+    {
+      "elapsed_seconds": 59.94201170001179,
+      "stage": "preparation",
+      "processes": [
+        "openttd:117528"
+      ]
+    },
+    {
+      "elapsed_seconds": 71.54511679988354,
+      "stage": "preparation",
+      "processes": [
+        "openttd:117528"
+      ]
+    },
+    {
+      "elapsed_seconds": 83.17148129967973,
+      "stage": "preparation",
+      "processes": [
+        "openttd:117528"
+      ]
+    },
+    {
+      "elapsed_seconds": 95.08215009979904,
+      "stage": "preparation",
+      "processes": [
+        "openttd:117528"
+      ]
+    },
+    {
+      "elapsed_seconds": 106.735345099587,
+      "stage": "simulation",
+      "processes": [
+        "openttd:117528"
+      ]
+    },
+    {
+      "elapsed_seconds": 118.31902939965948,
+      "stage": "simulation",
+      "processes": [
+        "openttd:117528"
+      ]
+    },
+    {
+      "elapsed_seconds": 129.97933139977977,
+      "stage": "simulation",
+      "processes": [
+        "openttd:117528"
+      ]
+    },
+    {
+      "elapsed_seconds": 141.5793025000021,
+      "stage": "simulation",
+      "processes": [
+        "openttd:117528"
+      ]
+    },
+    {
+      "elapsed_seconds": 153.20453119976446,
+      "stage": "after_simulation",
+      "processes": [
+        "openttd:117528"
+      ]
+    },
+    {
+      "elapsed_seconds": 164.83190449979156,
+      "stage": "after_simulation",
+      "processes": [
+        "openttd:117528"
+      ]
+    }
+  ],
+  "whole_process_timing_valid": false,
+  "save-integrity.json": {
+    "runtime_routing_feature": 1,
+    "state_ticks": 3197278496,
+    "packets": 469547,
+    "cargo_units": 546198,
+    "known_od_units": 467965,
+    "journey_packets": 456954,
+    "packet_state_digest": 12763629749201381160,
+    "payment_digest": 13774651420232285578,
+    "payments_valid": true,
+    "database_digest": 16064563056932437984,
+    "ownership_digest": 5786729106522441514,
+    "loading_digest": 5759760310152142397,
+    "completed_rows": 333,
+    "retained_rows": 4603,
+    "table_operations": 134152192,
+    "published_revision": 1777,
+    "company_deliveries": 13595,
+    "journey_routing": 1,
+    "precomputed_routing": 1,
+    "legacy_true_packets": 0,
+    "legacy_false_packets": 0,
+    "legacy_true_units": 0,
+    "legacy_false_units": 0,
+    "opposite_history_mergeable_pairs": 0
+  },
+  "simulation_timing_valid": false,
+  "result_sha256": "0e1d7a70626bde69adb8c3154e4945c244504f601458b2a9c83593de61de7d77",
+  "load_failed": false,
+  "newgrf_warning_lines": 22403,
+  "saved_replay": {
+    "ready": true,
+    "elapsed_us": 84785379
+  },
+  "warm_observations": [
+    "true"
+  ],
+  "warm_complete": true,
+  "background_ready": {
+    "completed": true,
+    "initial": 0,
+    "total": 13,
+    "elapsed_us": 1,
+    "tick_before": 3197276448,
+    "tick_after": 3197276448
+  },
+  "script_error_pause_resumes": 1
+}

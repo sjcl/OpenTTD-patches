@@ -1,0 +1,15 @@
+Failed to find real location of C:\Users\bebe\AppData\Local\Programs\Python\Python313\python.exe
+Traceback (most recent call last):
+  File "C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-88cb61e3\measure.py", line 94, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-88cb61e3\measure.py", line 47, in main
+    if sha(package / 'input.sav') != EXPECTED[mode]:
+       ~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-88cb61e3\measure.py", line 27, in sha
+    with path.open('rb') as stream:
+         ~~~~~~~~~^^^^^^
+  File "C:\Users\bebe\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py", line 537, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-passenger-legacy-steady-8462e6cd\\frozen-8192\\input.sav'

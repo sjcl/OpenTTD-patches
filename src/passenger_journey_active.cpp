@@ -474,15 +474,23 @@ struct JourneyCapacityUpperBound : PassengerJourneyCapacityProvider {
 };
 
 struct PassengerJourneyActiveContext::Snapshot {
+	struct TimedPlan {
+		std::optional<PassengerJourneyExecution> ride;
+		std::tuple<int64_t, StateTicks, uint32_t, size_t, StateTicksDelta> rank{};
+		bool staying = false, extend = false, ignored_unknown = false;
+		void Set(PassengerJourneyExecution ride, const PassengerPlannedJourney &journey, bool staying, bool extend, bool ignored_unknown)
+		{
+			this->ride = ride; this->rank = {journey.generalized_time.base(), journey.arrival, journey.transfers, journey.legs.size(), journey.waiting};
+			this->staying = staying; this->extend = extend; this->ignored_unknown = ignored_unknown;
+		}
+	};
 	PassengerServiceGraph graph;
 	JourneyCapacityUpperBound capacity;
 	PassengerJourneyPlanner planner;
 	std::map<OrderListID, uint64_t> signatures;
-	std::map<StationID, std::optional<PassengerJourneyExecution>> waiting;
-	std::map<StationID, std::optional<std::pair<PassengerJourneyExecution, bool>>> onboard;
+	std::map<StationID, TimedPlan> waiting, onboard;
 	PassengerJourneyFallbackReason failure = PassengerJourneyFallbackReason::NoJourney;
 	bool deferred = false, budget_limited = false;
-	bool waiting_ignored_unknown = false, onboard_ignored_unknown = false;
 	Snapshot(PassengerServiceGraph graph) : graph(std::move(graph)), planner(this->graph, &this->capacity, {2, 256 * 1024}) {}
 };
 
@@ -805,7 +813,21 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		return true;
 	}
 	Snapshot *snapshot = nullptr;
+	const Snapshot::TimedPlan *incumbent = nullptr;
+	auto retain = [&](const Snapshot::TimedPlan &plan) {
+		if (plan.ride && (incumbent == nullptr || plan.rank < incumbent->rank)) incumbent = &plan;
+	};
+	auto adopt = [&]() {
+		this->deferred = false;
+		packet.SetPassengerJourney(*incumbent->ride, fallback_hop);
+		TickBudget().diagnostic.timed_routes_ignoring_unknown += incumbent->ignored_unknown;
+		++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count();
+		return true;
+	};
 	auto reject = [&](PassengerJourneyFallbackReason reason) {
+		/* Widening is optional once a validated journey exists. A later work,
+		 * memory or prediction limit cannot revoke that usable first leg. */
+		if (incumbent != nullptr) return adopt();
 		if (snapshot != nullptr) { snapshot->failure = reason; snapshot->deferred = this->deferred; }
 		if (reason == PassengerJourneyFallbackReason::GraphWork || reason == PassengerJourneyFallbackReason::GraphMemory ||
 				reason == PassengerJourneyFallbackReason::SnapshotLimit || reason == PassengerJourneyFallbackReason::QueryWork ||
@@ -834,14 +856,13 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		auto [cached, inserted] = snapshot->waiting.try_emplace(packet.GetPassengerDestination());
 		if (!inserted) {
 			++TickBudget().diagnostic.query_cache_hits;
-			if (!cached->second) {
+			if (!cached->second.ride) {
 				if (snapshot->failure == PassengerJourneyFallbackReason::PredictionHorizon && horizon < 65536) continue;
 				this->deferred = snapshot->deferred; return reject(snapshot->failure);
 			}
-			packet.SetPassengerJourney(*cached->second, fallback_hop);
-			TickBudget().diagnostic.timed_routes_ignoring_unknown += snapshot->waiting_ignored_unknown;
-			++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count();
-			return true;
+			retain(cached->second);
+			if (cached->second.extend) continue;
+			return adopt();
 		}
 		/* Reserve a fixed query allowance. Cache reuse is a performance optimization only. */
 		auto limits = ActiveJourneyLimits();
@@ -849,8 +870,7 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		const auto query_start = std::chrono::steady_clock::now();
 		auto result = snapshot->planner.Plan(cargo, this->station, packet.GetPassengerDestination(), _state_ticks, limits, ActiveJourneyEvaluation(), 1);
 		CountJourneySearch(result, snapshot->planner, query_start, this->station, packet.GetPassengerDestination());
-		if (result.stop_reason == PassengerJourneyStopReason::PredictionHorizon ||
-				(result.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound && result.journeys.front().generalized_time.base() >= horizon)) {
+		if (result.stop_reason == PassengerJourneyStopReason::PredictionHorizon) {
 			snapshot->failure = PassengerJourneyFallbackReason::PredictionHorizon;
 			if (horizon < 65536) continue;
 			return reject(PassengerJourneyFallbackReason::PredictionHorizon);
@@ -859,12 +879,12 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		if (!result.HasJourney() || result.journeys.front().legs.empty()) return reject(PassengerJourneyFallbackReason::NoJourney);
 		auto execution = this->Execute(*snapshot, cargo, result.journeys.front().legs.front());
 		if (!execution) return reject(this->deferred ? this->failure : PassengerJourneyFallbackReason::InvalidLeg);
-		cached->second = *execution;
-		snapshot->waiting_ignored_unknown = result.diagnostic.unknown_alternatives_ignored;
-		packet.SetPassengerJourney(*execution, fallback_hop);
-		TickBudget().diagnostic.timed_routes_ignoring_unknown += snapshot->waiting_ignored_unknown;
-		++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count();
-		return true;
+		const auto &journey = result.journeys.front();
+		bool extend = horizon < 65536 && (snapshot->graph.HasAircraftDiscount() || journey.generalized_time.base() >= horizon);
+		cached->second.Set(*execution, journey, false, extend, result.diagnostic.unknown_alternatives_ignored);
+		retain(cached->second);
+		if (extend) continue;
+		return adopt();
 	}
 }
 
@@ -1130,6 +1150,16 @@ StationID PassengerOdFallbackContext::BoardingVia(const CargoPacket &packet, con
 	/* A live direct ride takes priority over an intermediate CargoDist hop. Both
 	 * checks reuse one order prefix and require no LinkGraph reverse exploration. */
 	StationID via = destination;
+	/* A penalized aircraft must not bypass an existing CargoDist ground corridor
+	 * merely because it also serves the destination directly. CargoDist already
+	 * applies these settings; keep its usable hop until timed routing resumes. */
+	if (vehicle->type == VehicleType::Aircraft && (_settings_game.linkgraph.aircraft_link_scale > 100 || _settings_game.linkgraph.aircraft_link_add != 0)) {
+		StationID hop = _settings_game.linkgraph.passenger_journey_precomputed ? packet.GetPassengerLegacyHop() :
+				CurrentPassengerLegacyHop(packet, cargo, vehicle->last_station_visited, packet.GetPassengerLegacyHop());
+		if (Station::IsValidID(hop) && hop != vehicle->last_station_visited && hop != destination) {
+			return this->CanReach(vehicle, cargo, hop) ? hop : StationID::Invalid();
+		}
+	}
 	if (!this->CanReach(vehicle, cargo, destination)) {
 		/* Precomputed waiting cohorts are indexed by their saved hop. Flow
 		 * changes are routing events, never a hidden per-packet boarding search. */
@@ -1393,15 +1423,51 @@ bool PassengerJourneyLoadingContext::CanBoardUncached(const CargoPacket &packet,
 	return this->boarding.try_emplace(key, vehicle, cargo).first->second.CanBoard(packet);
 }
 
+/** Process-local identities for loading-context memo generations; zero is never issued. */
+static uint64_t NextHyperpathMemoSerial()
+{
+	static uint64_t serial = 0;
+	return ++serial;
+}
+
+PassengerJourneyLoadingContext::PassengerJourneyLoadingContext() : hyperpath_memo_serial(NextHyperpathMemoSerial()), hyperpath_memo_ticks(_state_ticks) {}
+
+uint64_t PassengerJourneyLoadingContext::HyperpathMemoSerial()
+{
+	this->RefreshBoardingRevision();
+	if (this->hyperpath_memo_ticks != _state_ticks) { this->hyperpath_memo_serial = NextHyperpathMemoSerial(); this->hyperpath_memo_ticks = _state_ticks; }
+	return this->hyperpath_memo_serial;
+}
+
+const PassengerPrecomputedPlan &PassengerJourneyLoadingContext::RetiredPlan(CargoType cargo, const PassengerJourneyExecution &intent, OrderListID previous)
+{
+	/* Callers read only the replacement's identity. With Hyperpath tables only, the database
+	 * shares it across ticks; otherwise every group and consist of this station pass that asks
+	 * for the same retired OD and arriving carrier shares it. */
+	if (const auto *shared = GetPassengerServiceDatabase().SharedHyperpathPlan(cargo, intent.boarding, intent.alighting, previous)) return *shared;
+	this->RefreshBoardingRevision();
+	auto [found, inserted] = this->retired_plans.try_emplace(RetiredPlanKey{cargo, intent.boarding, intent.alighting, _state_ticks, previous});
+	if (inserted) found->second = GetPassengerServiceDatabase().PlanPrecomputed(cargo, intent.boarding, intent.alighting, _state_ticks, previous);
+	return found->second;
+}
+
+void PassengerJourneyLoadingContext::RefreshBoardingRevision()
+{
+	const auto revision = GetPassengerServiceDatabase().BoardingRevision();
+	if (this->pending_revision == revision) return;
+	this->pending_plans.clear(); this->hyperpath_rides.clear(); this->hyperpath_boardings.clear(); this->hyperpath_memberships.clear();
+	this->retired_plans.clear();
+	this->pending_revision = revision;
+	this->hyperpath_memo_serial = NextHyperpathMemoSerial();
+}
+
 std::optional<PassengerJourneyExecution> PassengerJourneyLoadingContext::ResolveHyperpath(const PassengerJourneyExecution &intent,
 		const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo, bool override_failure, OrderListID failed)
 {
 	const auto *front = vehicle == nullptr ? nullptr : vehicle->First();
 	if (front == nullptr || front->orders == nullptr || intent.boarding != front->last_station_visited) return {};
 	auto &db = GetPassengerServiceDatabase();
-	if (this->pending_revision != db.BoardingRevision()) {
-		this->pending_plans.clear(); this->hyperpath_rides.clear(); this->hyperpath_boardings.clear(); this->hyperpath_memberships.clear(); this->pending_revision = db.BoardingRevision();
-	}
+	this->RefreshBoardingRevision();
 	const auto *arriving = OrderList::GetIfValid(packet.GetPassengerArrivingService());
 	OrderListID previous = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == packet.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
 	if (!override_failure) failed = packet.GetPassengerFailedService(_state_ticks);
@@ -1416,9 +1482,7 @@ std::optional<PassengerJourneyExecution> PassengerJourneyLoadingContext::Resolve
 const std::array<uint32_t, 2> &PassengerJourneyLoadingContext::HyperpathBoardingOccurrences(const Vehicle *vehicle, CargoType cargo)
 {
 	auto &db = GetPassengerServiceDatabase();
-	if (this->pending_revision != db.BoardingRevision()) {
-		this->pending_plans.clear(); this->hyperpath_rides.clear(); this->hyperpath_boardings.clear(); this->hyperpath_memberships.clear(); this->pending_revision = db.BoardingRevision();
-	}
+	this->RefreshBoardingRevision();
 	const auto *front = vehicle->First();
 	auto key = HyperpathBoardingKey{front->index, cargo, front->orders->index, front->cur_real_order_index, front->last_station_visited};
 	auto [found, inserted] = this->hyperpath_boardings.try_emplace(key);
@@ -1427,8 +1491,9 @@ const std::array<uint32_t, 2> &PassengerJourneyLoadingContext::HyperpathBoarding
 }
 
 bool PassengerJourneyLoadingContext::MayUseHyperpathPolicy(const CargoPacket &representative, const Vehicle *vehicle, CargoType cargo,
-		const std::array<uint32_t, 2> &occurrences, bool base, bool adjusted)
+		const std::array<uint32_t, 2> &occurrences, bool base, bool adjusted, bool *certain, bool exact)
 {
+	if (certain != nullptr) *certain = true;
 	if (vehicle == nullptr || vehicle->First()->orders == nullptr || !IsPassengerJourneyRoutingEnabled(cargo) ||
 			vehicle->First()->current_order.GetCargoLoadType(cargo) == OrderLoadType::NoLoad) return false;
 	const auto &intent = representative.GetPassengerJourney();
@@ -1437,7 +1502,7 @@ bool PassengerJourneyLoadingContext::MayUseHyperpathPolicy(const CargoPacket &re
 	const auto *failed_list = OrderList::GetIfValid(failure.service);
 	if (failed_list == nullptr || failed_list->GetCargoDistRouteGeneration() != failure.incarnation) { base = true; adjusted = false; }
 	auto &db = GetPassengerServiceDatabase(); auto current_occurrences = occurrences;
-	if (this->pending_revision != db.BoardingRevision()) this->HyperpathBoardingOccurrences(vehicle, cargo);
+	this->RefreshBoardingRevision();
 	const auto *arriving = OrderList::GetIfValid(representative.GetPassengerArrivingService());
 	auto previous = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == representative.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
 	auto key = [&](const PassengerJourneyExecution &policy) {
@@ -1450,11 +1515,19 @@ bool PassengerJourneyLoadingContext::MayUseHyperpathPolicy(const CargoPacket &re
 	auto cached = direct ? this->hyperpath_memberships.end() : this->hyperpath_memberships.find(key(intent));
 	const bool current = cached != this->hyperpath_memberships.end() || db.IsCurrent(intent);
 	if (current && intent.boarding != vehicle->First()->last_station_visited) return false;
+	/* A failed carrier's local policy may be cold or evicted: unknown, admitted conservatively and
+	 * reported as uncertain. Base membership is always known. Exact mode builds the local policy. */
+	auto failed_member = [&](const PassengerJourneyExecution &policy) {
+		if (exact) return db.MayBoardHyperpath(policy, cargo, current_occurrences, previous, failure.service, false);
+		const auto known = db.CachedHyperpathMembership(policy, cargo, current_occurrences, previous, failure.service);
+		if (!known.has_value() && certain != nullptr) *certain = false;
+		return known.value_or(true);
+	};
 	auto inspect = [&](const PassengerJourneyExecution &policy, auto entry) {
 		if (policy.boarding != vehicle->First()->last_station_visited) return false;
 		if (direct) {
 			return (base && db.MayBoardHyperpath(policy, cargo, current_occurrences, previous, OrderListID::Invalid())) ||
-					(adjusted && db.MayBoardHyperpath(policy, cargo, current_occurrences, previous, failure.service));
+					(adjusted && failed_member(policy));
 		}
 		if (entry == this->hyperpath_memberships.end()) {
 			auto [found, inserted] = this->hyperpath_memberships.try_emplace(key(policy)); entry = found;
@@ -1463,10 +1536,10 @@ bool PassengerJourneyLoadingContext::MayUseHyperpathPolicy(const CargoPacket &re
 		/* Base membership is exact and immutable for this frozen revision. Keep
 		 * failed policies on the table's cache so a cold unknown is never latched.
 		 * Membership entries contain neither a concrete ride nor live legality. */
-		return (base && entry->second) || (adjusted && db.MayBoardHyperpath(policy, cargo, current_occurrences, previous, failure.service));
+		return (base && entry->second) || (adjusted && failed_member(policy));
 	};
 	if (current) return inspect(intent, cached);
-	auto plan = db.PlanPrecomputed(cargo, intent.boarding, intent.alighting, _state_ticks, previous);
+	const auto &plan = this->RetiredPlan(cargo, intent, previous);
 	if (!plan.ride) return false;
 	if (plan.ride->kind != PassengerRideKind::HyperpathIntent) return true;
 	return inspect(*plan.ride, this->hyperpath_memberships.end());
@@ -1497,7 +1570,7 @@ bool PassengerJourneyLoadingContext::CanUseHyperpathPolicy(const CargoPacket &re
 	if (!db.IsCurrent(intent)) {
 		const auto *arriving = OrderList::GetIfValid(representative.GetPassengerArrivingService());
 		auto previous = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == representative.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
-		auto plan = db.PlanPrecomputed(cargo, intent.boarding, intent.alighting, _state_ticks, previous);
+		const auto &plan = this->RetiredPlan(cargo, intent, previous);
 		if (!plan.ride) return false;
 		intent = *plan.ride;
 		if (intent.kind != PassengerRideKind::HyperpathIntent) return true; // A retained legacy row is validated per packet.
@@ -1514,8 +1587,7 @@ bool PassengerJourneyLoadingContext::CanUseHyperpathPolicy(const CargoPacket &re
 const PassengerPrecomputedPlan &PassengerJourneyLoadingContext::PendingPlan(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo)
 {
 	auto &db = GetPassengerServiceDatabase();
-	const auto revision = db.BoardingRevision();
-	if (this->pending_revision != revision) { this->pending_plans.clear(); this->hyperpath_rides.clear(); this->hyperpath_boardings.clear(); this->hyperpath_memberships.clear(); this->pending_revision = revision; }
+	this->RefreshBoardingRevision();
 	const auto *arriving = OrderList::GetIfValid(packet.GetPassengerArrivingService());
 	const auto excluded = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == packet.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
 	const auto station = vehicle->First()->last_station_visited;
@@ -1594,6 +1666,7 @@ void PassengerJourneyLoadingContext::Invalidate(const Vehicle *vehicle)
 	for (auto it = this->decisions.lower_bound({id, CargoType{0}}); it != this->decisions.end() && it->first.first == id;) it = this->decisions.erase(it);
 	std::erase_if(this->hyperpath_boardings, [id](const auto &item) { return std::get<0>(item.first) == id; });
 	std::erase_if(this->hyperpath_memberships, [id](const auto &item) { return std::get<0>(std::get<0>(item.first)) == id; });
+	this->hyperpath_memo_serial = NextHyperpathMemoSerial(); // Group memos are keyed by consist; drop them all.
 }
 
 size_t PassengerJourneyLoadingContext::GetPredictionCount() const
@@ -1620,7 +1693,20 @@ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Dec
 	Snapshot *snapshot = nullptr;
 	this->failure = PassengerJourneyFallbackReason::InvalidLeg;
 	this->deferred = false;
+	const Snapshot::TimedPlan *incumbent = nullptr;
+	auto retain = [&](const Snapshot::TimedPlan &plan) {
+		if (plan.ride && (incumbent == nullptr || plan.rank < incumbent->rank)) incumbent = &plan;
+	};
+	auto adopt = [&]() -> std::optional<Action> {
+		this->deferred = false;
+		packet.SetPassengerJourney(*incumbent->ride, StationID::Invalid());
+		packet.SetNextHop(StationID::Invalid());
+		TickBudget().diagnostic.timed_routes_ignoring_unknown += incumbent->ignored_unknown;
+		++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count();
+		return incumbent->staying ? Action::Keep : Action::Transfer;
+	};
 	auto fallback = [&]() -> std::optional<Action> {
+		if (incumbent != nullptr) return adopt();
 		if (snapshot != nullptr) { snapshot->failure = this->failure; snapshot->deferred = this->deferred; }
 		const bool budget_failure = this->deferred || this->failure == PassengerJourneyFallbackReason::GraphWork ||
 				this->failure == PassengerJourneyFallbackReason::GraphMemory || this->failure == PassengerJourneyFallbackReason::QueryWork ||
@@ -1668,15 +1754,13 @@ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Dec
 		auto [cached, inserted] = snapshot->onboard.try_emplace(packet.GetPassengerDestination());
 		if (!inserted) {
 			++TickBudget().diagnostic.query_cache_hits;
-			if (!cached->second) {
+			if (!cached->second.ride) {
 				if (snapshot->failure == PassengerJourneyFallbackReason::PredictionHorizon && horizon < 65536) continue;
 				this->failure = snapshot->failure; this->deferred = snapshot->deferred; return fallback();
 			}
-			packet.SetPassengerJourney(cached->second->first, StationID::Invalid());
-			packet.SetNextHop(StationID::Invalid());
-			TickBudget().diagnostic.timed_routes_ignoring_unknown += snapshot->onboard_ignored_unknown;
-			++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count();
-			return cached->second->second ? Action::Keep : Action::Transfer;
+			retain(cached->second);
+			if (cached->second.extend) continue;
+			return adopt();
 		}
 		auto onboard = snapshot->graph.FindOnboardVisit(this->vehicle->index, this->station, this->vehicle->cur_real_order_index);
 		auto limits = ActiveJourneyLimits();
@@ -1685,8 +1769,7 @@ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Dec
 		const auto query_start = std::chrono::steady_clock::now();
 		auto result = snapshot->planner.PlanOnboard(cargo, *onboard, packet.GetPassengerDestination(), limits, ActiveJourneyEvaluation(), 1);
 		CountJourneySearch(result, snapshot->planner, query_start, this->station, packet.GetPassengerDestination());
-		if (result.stop_reason == PassengerJourneyStopReason::PredictionHorizon ||
-				(result.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound && result.journeys.front().generalized_time.base() >= horizon)) {
+		if (result.stop_reason == PassengerJourneyStopReason::PredictionHorizon) {
 			snapshot->failure = PassengerJourneyFallbackReason::PredictionHorizon;
 			if (horizon < 65536) continue;
 			this->failure = PassengerJourneyFallbackReason::PredictionHorizon; return fallback();
@@ -1699,13 +1782,12 @@ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Dec
 		if (!execution) return fallback();
 		bool staying = leg.vehicle == this->vehicle->index && leg.boarding == *onboard;
 		if (staying && (unload == OrderUnloadType::Unload || unload == OrderUnloadType::Transfer)) return fallback();
-		cached->second = std::pair(*execution, staying);
-		snapshot->onboard_ignored_unknown = result.diagnostic.unknown_alternatives_ignored;
-		packet.SetPassengerJourney(*execution, StationID::Invalid());
-		packet.SetNextHop(StationID::Invalid());
-		TickBudget().diagnostic.timed_routes_ignoring_unknown += snapshot->onboard_ignored_unknown;
-		++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count();
-		return staying ? Action::Keep : Action::Transfer;
+		const auto &journey = result.journeys.front();
+		bool extend = horizon < 65536 && (snapshot->graph.HasAircraftDiscount() || journey.generalized_time.base() >= horizon);
+		cached->second.Set(*execution, journey, staying, extend, result.diagnostic.unknown_alternatives_ignored);
+		retain(cached->second);
+		if (extend) continue;
+		return adopt();
 	}
 }
 
@@ -1723,9 +1805,13 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 			this->passenger_routing_work = 0;
 		}
 		/* Do not restart an in-progress sweep on another publication. Finish its
-		 * saved cursor first, then coalesce newer generations into the next one. */
-		if (!this->passenger_routing_sweeping && (this->passenger_routing_dirty ||
-				this->passenger_routing_revision != revision || this->passenger_routing_rows != rows)) {
+		 * saved cursor first, then coalesce newer generations into the next one.
+		 * A publication alone is bounded per list: a busy map publishes almost every tick. */
+		const int64_t revision_interval = GetPassengerServiceDatabase().RevisionAffectsWaitingPlans() ? PASSENGER_REVISION_SWEEP_TICKS : PASSENGER_TABLE_REVISION_SWEEP_TICKS;
+		const bool revision_due = this->passenger_routing_revision != revision && (this->passenger_routing_swept == INVALID_STATE_TICKS ||
+				this->passenger_routing_swept > _state_ticks || _state_ticks.base() - this->passenger_routing_swept.base() >= revision_interval);
+		if (!this->passenger_routing_sweeping && (this->passenger_routing_dirty || revision_due || this->passenger_routing_rows != rows)) {
+			this->passenger_routing_swept = _state_ticks;
 			this->passenger_routing_sweeping = true;
 			this->passenger_routing_cursor = 0;
 			this->passenger_routing_end = this->routing_packets.empty() ? 0 : this->routing_packets.rbegin()->base();
@@ -1744,8 +1830,8 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 	}
 	CounterTimer category{TickBudget().diagnostic.waiting_microseconds};
 	PassengerJourneyActiveContext context(nullptr, station);
-	PassengerJourneyLoadingContext local_loading;
-	if (loading == nullptr) loading = &local_loading;
+	std::optional<PassengerJourneyLoadingContext> local_loading; // Only without a caller's context: MSVC containers allocate on construction.
+	if (loading == nullptr) loading = &local_loading.emplace();
 	const bool search = IsJourneyRetryTick(station);
 	std::map<OrderListID, uint64_t> signatures;
 	std::map<std::tuple<VehicleID, VehicleOrderID, VehicleOrderID, StationID>, bool> usable;
@@ -1945,12 +2031,16 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 					continue;
 				}
 			}
-			this->ForgetWaitingPacket(id);
+			/* Index once after routing. The entry still describes the old state until then, so a
+			 * moved packet is forgotten from exactly the indices it was in. */
+			SetPassengerWaitingRefreshDeferred(id);
 			const StationID key = route(packet, entry.key);
 			schedule(*packet);
+			SetPassengerWaitingRefreshDeferred(CargoPacketID::Invalid());
 			if (key == entry.key) {
-				this->IndexPacket(packet, key, entry.position, entry.sequence);
+				this->RefreshWaitingPacket(*packet);
 			} else {
+				this->ForgetWaitingPacket(id);
 				auto bucket = queues.find(entry.key);
 				auto &list = queues[key];
 				list.splice(list.end(), bucket->second, entry.position);
@@ -2018,10 +2108,18 @@ std::array<uint, 3> CountReservedPassengerRoutingModes(const Station &station, C
 	return counts;
 }
 
+void PassengerAircraftCostSettingsChanged(int32_t)
+{
+	GetPassengerServiceDatabase().UpdateAircraftCosts();
+	ClearPassengerOdFallbackCache();
+}
+
 void PassengerJourneySettingsChanged(int32_t)
 {
+	PassengerAircraftCostSettingsChanged(0);
 	if (!_settings_game.linkgraph.passenger_journey_precomputed) GetPassengerServiceDatabase().DiscardPrecomputed();
 	InvalidatePassengerServiceDatabase();
+	InvalidatePassengerWaitingRouting(); // A mode change re-routes every waiting list at once.
 	/* Reserved cargo lives on vehicles. Return it before changing queue keys or mode. */
 	for (Station *station : Station::Iterate()) {
 		for (Vehicle *front : station->loading_vehicles) {

@@ -1,0 +1,114 @@
+{
+  ".gitattributes": {
+    "bytes": 92,
+    "sha256": "b5210b5a5bb577c049bcba079b68f2ad56ea9e51a2e6875b820bc708b80ee093"
+  },
+  "build-command.json": {
+    "bytes": 1375,
+    "sha256": "2110c6a0aacbb2a9ecc4d02f0413e2a7afbcaefbebf0c56dd86cf4fa5d169882"
+  },
+  "build-identity.json": {
+    "bytes": 817,
+    "sha256": "1c07aa4b43da5611713e52b35f464a6ce5a224e22783826ff15404c624b4c196"
+  },
+  "build.log": {
+    "bytes": 4761,
+    "sha256": "805171d9c0c97c1ca80e83276fce02a288ab6a66af1e91b0ead51830ceff0766"
+  },
+  "checks/estimated_prepare_compat.py": {
+    "bytes": 10421,
+    "sha256": "02ffc3969159d86f68e15ccb0a4e6db457d7c0519d51665b6cdacfc0be46e9f8"
+  },
+  "checks/package.py": {
+    "bytes": 8090,
+    "sha256": "4d7c1851cab547f33ae19b42f8ec479f5f4e2d18512175cd74590ccf32105f5d"
+  },
+  "checks/prepare.py": {
+    "bytes": 5860,
+    "sha256": "85df5dcd133f1cdc82ed394040f8640dd4f3ce64742d617678db7cffefb6126c"
+  },
+  "checks/validate.py": {
+    "bytes": 5534,
+    "sha256": "07cc034c385f5814bdb22a73b7d79d08ba3c5c69881148d3584b4bc382ccbcab"
+  },
+  "configure.log": {
+    "bytes": 2318,
+    "sha256": "7024d20cd9257bdc8c5c936ed69a59ed4eee7e9ff16a3981f77235b4a758e7c1"
+  },
+  "input/openttd.cfg": {
+    "bytes": 125,
+    "sha256": "bf8503ba53c6ec79dd57380a2244aa6b77014663ccfc1b53205ce1e09d94f30c"
+  },
+  "input/package.json": {
+    "bytes": 45265,
+    "sha256": "11d72b48390395cb6283d365efcc2e960557e301ab253fcc8b44c5bdee2fa4b7"
+  },
+  "input-backup.json": {
+    "bytes": 515,
+    "sha256": "e70faee63db4a9beaf58e9456a8dd718da220b648df32e491635188b6aaa39c9"
+  },
+  "input-identity.json": {
+    "bytes": 1029,
+    "sha256": "2b217ecbeef3a68ce532d13f6b96491f5fb7a3e1886ef063dd01bfe82c0c18e6"
+  },
+  "instrumentation-sha256.json": {
+    "bytes": 1333,
+    "sha256": "dcc4c8195a97f9ad8da1ce499b24c2fde74eac4198d943320ab806d56d6ef312"
+  },
+  "native-all.log": {
+    "bytes": 7237,
+    "sha256": "64ba067dd151387e7137282f26753d78b0654cf616ffe079a3f8a8aa6a46ba34"
+  },
+  "native-test.json": {
+    "bytes": 73,
+    "sha256": "495225305ba867dffed03de700026851f38bccd21d046d102157126844307c1b"
+  },
+  "prepare-compat.json": {
+    "bytes": 796,
+    "sha256": "94ad4c6c100bb7206555c2154a54c41ef99d4ee53663377dde61b53a6c89c8f9"
+  },
+  "recording-backup.json": {
+    "bytes": 908,
+    "sha256": "4c182a112dcab4df404db679654eb96ffa6c51d5d2b24a27906afb68adcb5bcb"
+  },
+  "report-sha256.json": {
+    "bytes": 153,
+    "sha256": "097c1f1964354d61b62b1b646523e13fc33ec60360531278505d8538f07fabc2"
+  },
+  "validate/actual-ticks.json": {
+    "bytes": 48150,
+    "sha256": "c1aa3d930b9720cd03fd0fec7d86df165a0ce1fae0f18f9e8f81c4ce7cfe2611"
+  },
+  "validate/on-1-console.txt": {
+    "bytes": 19554,
+    "sha256": "2fa1f05b5d327ee84598385b8c4cdc87e17e2246d68cce53b95be035de68ed71"
+  },
+  "validate/process.json": {
+    "bytes": 148342,
+    "sha256": "6ec6a02cc3342ae6f80a2efe1a1086dd5c2c6f8b24fb24d914bfa9ce35eb2867"
+  },
+  "validate/save-integrity.json": {
+    "bytes": 660,
+    "sha256": "4c1fa2a8ef91d6b1493078e629723cfa705cc99f286cbf5e9e771c74defbbcd6"
+  },
+  "validate/stderr.txt": {
+    "bytes": 2327375,
+    "sha256": "0c4825998653606a6c15c4c34a4f129e7bbd42616e298d4affb97e540d8d81b7"
+  },
+  "validate/stdout.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "validate-command.json": {
+    "bytes": 1233,
+    "sha256": "8fcb00cf5a4a7d9d4dc968a3ad667afeee6f7ebcebf217fa59fa5cb93686f110"
+  },
+  "validate-result.json": {
+    "bytes": 2713,
+    "sha256": "3017178d6a51cbb3d361ca0a7197c97c7192f0e64eb748bac6fbe27a38d0a96d"
+  },
+  "validate-runner.log": {
+    "bytes": 5915,
+    "sha256": "b0e23520e992faa2b03f51a44d9796f41df942ef16c3c0fc4bfe6e74aca548a3"
+  }
+}

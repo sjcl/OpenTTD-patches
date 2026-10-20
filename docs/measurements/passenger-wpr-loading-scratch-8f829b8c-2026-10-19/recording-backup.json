@@ -1,0 +1,42 @@
+{
+  "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-recordings-8f829b8c-2026-10-19",
+  "files": {
+    "Release/openttd.exe": {
+      "bytes": 14257664,
+      "sha256": "934465f5e8417132054bc3b38b36dca45d67108023dad15d919c9b16773a28f7",
+      "read_only": true
+    },
+    "Release/openttd.pdb": {
+      "bytes": 151326720,
+      "sha256": "c22fcf379250c7ea5b80032194f3db2888247f8c5ca1baa4458780c9218faaec",
+      "read_only": true
+    },
+    "build-identity.json": {
+      "bytes": 820,
+      "sha256": "e7ac0a5e6d9fccf4d7771a448de1d62a94222a024e7c7cc08a91156f75829483",
+      "read_only": true
+    },
+    "legacy/cpu.etl": {
+      "bytes": 189792256,
+      "sha256": "7b7b9f2bd516133028607414ef6925ab5a5303f31f015bccf6d3b088d6406d58",
+      "read_only": true
+    },
+    "hyperpath/cpu.etl": {
+      "bytes": 152043520,
+      "sha256": "a1cb5a6ca7d83293815fa8f989abad08d5640a40b9c56a595450a0d414313d2f",
+      "read_only": true
+    },
+    "legacy/result.sav": {
+      "bytes": 46681056,
+      "sha256": "88c2a73c3c7812c85f672cb4bf4a8de7ae07c89caa6a61beba0c573a66eb5804",
+      "read_only": true
+    },
+    "hyperpath/result.sav": {
+      "bytes": 46700872,
+      "sha256": "19197ef7b5606d8ccc482f98c5a49f9d0ea92ef802326298bbda604924e3b285",
+      "read_only": true
+    }
+  },
+  "accepted_traces": 2,
+  "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82"
+}

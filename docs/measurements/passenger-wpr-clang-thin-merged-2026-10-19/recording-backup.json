@@ -1,0 +1,42 @@
+{
+  "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-recordings-clang-thin-merged-2026-10-19",
+  "files": {
+    "Release/openttd.exe": {
+      "bytes": 16999424,
+      "sha256": "4f3d303c4a4e99380a90b427f5eec24117f747ccb1ea124eae5e1964e46f27f8",
+      "read_only": true
+    },
+    "Release/openttd.pdb": {
+      "bytes": 144642048,
+      "sha256": "3e413932b675d72ef89a3e2d54e3add87033343edb063c3c2df7e371faa2da79",
+      "read_only": true
+    },
+    "build-identity.json": {
+      "bytes": 1310,
+      "sha256": "a21d7153dfc3dd803adb2ffc9ed26f48c31cb87cd792b9dd12c8182a585e036c",
+      "read_only": true
+    },
+    "legacy/cpu.etl": {
+      "bytes": 224395264,
+      "sha256": "98a00a1f151c85b781fb9d5c9a9148e4626ec0c3eca5de69850e03b41c5d019a",
+      "read_only": true
+    },
+    "hyperpath/cpu.etl": {
+      "bytes": 197132288,
+      "sha256": "1c981194e319d84fb43fdff9cc0b7d0182b16f7f54ac92071f29582155c6cfac",
+      "read_only": true
+    },
+    "legacy/result.sav": {
+      "bytes": 46681052,
+      "sha256": "56b358bae4805d20e880354a2b8a553e80f4032f595aeef3eaf69d0d50de7a8e",
+      "read_only": true
+    },
+    "hyperpath/result.sav": {
+      "bytes": 46700872,
+      "sha256": "c94043287a7de0af01ff7ef72eb72e7ed5c3b8c6057099a730bcf4d24923aac7",
+      "read_only": true
+    }
+  },
+  "accepted_traces": 2,
+  "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82"
+}

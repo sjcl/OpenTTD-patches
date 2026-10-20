@@ -196,6 +196,7 @@ void LinkGraphJob::FinaliseJob()
 			geflows.insert(std::move(*it));
 		}
 		geflows.SortStorage();
+		PassengerWaitingFlowsChanged(ge, this->Cargo());
 		ge.RemoveDataIfUnused();
 		InvalidateWindowData(WindowClass::StationView, st->index, this->Cargo());
 	}

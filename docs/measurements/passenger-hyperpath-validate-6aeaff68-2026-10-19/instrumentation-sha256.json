@@ -1,0 +1,38 @@
+{
+  "save-integrity/cargopacket.cpp": {
+    "bytes": 126397,
+    "sha256": "72e220a237865fb8a8696924d0b77c8f06504f8c3c5bb779b390f5d67855640b"
+  },
+  "save-integrity/cargopacket_sl.cpp": {
+    "bytes": 21450,
+    "sha256": "dafa30832280d5f222db0c7fee934657b9ade2516bc2e40bb6eace3a064b28ac"
+  },
+  "save-integrity/command.cpp": {
+    "bytes": 41760,
+    "sha256": "1b74b0b7454c8f8e9c29ff0c64676fda229b4c2cb4cc86432a932cebf7b81acf"
+  },
+  "save-integrity/console_cmds.cpp": {
+    "bytes": 253699,
+    "sha256": "4e3a0619e859ed788dc8f2c93dd208fe41f83ad3bced4a7b4fe70d95a1018aba"
+  },
+  "save-integrity/integrity.h": {
+    "bytes": 6245,
+    "sha256": "a1829785fd341072840102949c0bb68e0960333f67c39b14c03a25d76d8d4b15"
+  },
+  "save-integrity/passenger_service_database.cpp": {
+    "bytes": 151184,
+    "sha256": "b07a40bed7d9a233909ac604cf9dcc88534c882aee23ebefd3b372d7a8eff6d9"
+  },
+  "save-integrity/wpr_gate.h": {
+    "bytes": 719,
+    "sha256": "64793e1253d3040ee8b8855b9c23a1d00b3db7690e26caf2716480d8750b8b24"
+  },
+  "real-map-driver/null_v.cpp": {
+    "bytes": 8852,
+    "sha256": "195704eac606e0648647a7bbf19946bfb3f3ffb315f535b306ba3f64a8553f34"
+  },
+  "real-map-driver/win32.cpp": {
+    "bytes": 28230,
+    "sha256": "61c5c6cfb7279228676a8215f97e12472c9d3d9a36fa40a9592633cc78ae7c8c"
+  }
+}

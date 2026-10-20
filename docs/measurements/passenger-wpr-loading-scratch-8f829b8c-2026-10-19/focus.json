@@ -1,0 +1,422 @@
+{
+  "legacy": {
+    "StationCargoList::Load": {
+      "old": {
+        "ns": 4904263700,
+        "samples": 4904,
+        "ms_per_tick": 2.394660009765625
+      },
+      "new": {
+        "ns": 4592939000,
+        "samples": 4593,
+        "ms_per_tick": 2.24264599609375
+      },
+      "new_adjusted_ms_per_tick": 2.2091645428686397,
+      "raw_percent": -6.348041603064702,
+      "adjusted_percent": -7.746213079957876,
+      "machine_factor": 1.0151557082215497
+    },
+    "Load -> _malloc_base": {
+      "old": {
+        "ns": 473057800,
+        "samples": 473,
+        "ms_per_tick": 0.23098525390625
+      },
+      "new": {
+        "ns": 291005400,
+        "samples": 291,
+        "ms_per_tick": 0.14209248046875
+      },
+      "new_adjusted_ms_per_tick": 0.13997111902929815,
+      "raw_percent": -38.484176775015655,
+      "adjusted_percent": -39.40257368718947,
+      "machine_factor": 1.0151557082215497
+    },
+    "Load -> RtlFreeHeap": {
+      "old": {
+        "ns": 251920000,
+        "samples": 252,
+        "ms_per_tick": 0.1230078125
+      },
+      "new": {
+        "ns": 204971700,
+        "samples": 205,
+        "ms_per_tick": 0.100083837890625
+      },
+      "new_adjusted_ms_per_tick": 0.09858964204216689,
+      "raw_percent": -18.63619402985074,
+      "adjusted_percent": -19.850910248349564,
+      "machine_factor": 1.0151557082215497
+    },
+    "LoadingContext constructor": {
+      "old": {
+        "ns": 104113400,
+        "samples": 104,
+        "ms_per_tick": 0.05083662109375
+      },
+      "new": {
+        "ns": 55039200,
+        "samples": 55,
+        "ms_per_tick": 0.026874609375
+      },
+      "new_adjusted_ms_per_tick": 0.02647338645426287,
+      "raw_percent": -47.1353351249695,
+      "adjusted_percent": -47.924575070711015,
+      "machine_factor": 1.0151557082215497
+    },
+    "LoadingContext destructor": {
+      "old": {
+        "ns": 117947700,
+        "samples": 118,
+        "ms_per_tick": 0.057591650390625
+      },
+      "new": {
+        "ns": 150084700,
+        "samples": 150,
+        "ms_per_tick": 0.073283544921875
+      },
+      "new_adjusted_ms_per_tick": 0.07218946249168058,
+      "raw_percent": 27.24682210844298,
+      "adjusted_percent": 25.34709806377049,
+      "machine_factor": 1.0151557082215497
+    },
+    "Load -> LoadingContext constructor": {
+      "old": {
+        "ns": 39004000,
+        "samples": 39,
+        "ms_per_tick": 0.019044921875
+      },
+      "new": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "new_adjusted_ms_per_tick": 0.0,
+      "raw_percent": -100.0,
+      "adjusted_percent": -100.0,
+      "machine_factor": 1.0151557082215497
+    },
+    "Load -> LoadingContext destructor": {
+      "old": {
+        "ns": 14924700,
+        "samples": 15,
+        "ms_per_tick": 0.007287451171875
+      },
+      "new": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "new_adjusted_ms_per_tick": 0.0,
+      "raw_percent": -100.0,
+      "adjusted_percent": -100.0,
+      "machine_factor": 1.0151557082215497
+    },
+    "MayUseHyperpathPolicy": {
+      "old": {
+        "ns": 2188948700,
+        "samples": 2189,
+        "ms_per_tick": 1.068822607421875
+      },
+      "new": {
+        "ns": 2254943500,
+        "samples": 2255,
+        "ms_per_tick": 1.101046630859375
+      },
+      "new_adjusted_ms_per_tick": 1.0846086190938113,
+      "raw_percent": 3.014908480952516,
+      "adjusted_percent": 1.4769533842490468,
+      "machine_factor": 1.0151557082215497
+    },
+    "MayUseHyperpathPolicy -> PlanPrecomputed": {
+      "old": {
+        "ns": 841851100,
+        "samples": 842,
+        "ms_per_tick": 0.411060107421875
+      },
+      "new": {
+        "ns": 707988500,
+        "samples": 708,
+        "ms_per_tick": 0.345697509765625
+      },
+      "new_adjusted_ms_per_tick": 0.3405364388594654,
+      "raw_percent": -15.900982964802202,
+      "adjusted_percent": -17.156534358132326,
+      "machine_factor": 1.0151557082215497
+    },
+    "CanUseHyperpathPolicy -> PlanPrecomputed": {
+      "old": {
+        "ns": 73067900,
+        "samples": 73,
+        "ms_per_tick": 0.035677685546875
+      },
+      "new": {
+        "ns": 27016000,
+        "samples": 27,
+        "ms_per_tick": 0.01319140625
+      },
+      "new_adjusted_ms_per_tick": 0.012994465916081003,
+      "raw_percent": -63.026171547286836,
+      "adjusted_percent": -63.5781701730392,
+      "machine_factor": 1.0151557082215497
+    },
+    "PlanPrecomputed": {
+      "old": {
+        "ns": 1230645600,
+        "samples": 1231,
+        "ms_per_tick": 0.600901171875
+      },
+      "new": {
+        "ns": 1034242600,
+        "samples": 1034,
+        "ms_per_tick": 0.50500126953125
+      },
+      "new_adjusted_ms_per_tick": 0.4974618823903983,
+      "raw_percent": -15.959346866392732,
+      "adjusted_percent": -17.214026919241764,
+      "machine_factor": 1.0151557082215497
+    },
+    "RetiredPlan": {
+      "old": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "new": {
+        "ns": 990033800,
+        "samples": 990,
+        "ms_per_tick": 0.48341494140625
+      },
+      "new_adjusted_ms_per_tick": 0.4761978260981699,
+      "raw_percent": null,
+      "adjusted_percent": null,
+      "machine_factor": 1.0151557082215497
+    },
+    "loading walk": {
+      "old": {
+        "ns": 4848343600,
+        "samples": 4848,
+        "ms_per_tick": 2.3673552734375
+      },
+      "new": {
+        "ns": 4585956200,
+        "samples": 4586,
+        "ms_per_tick": 2.23923642578125
+      },
+      "new_adjusted_ms_per_tick": 2.205805875538213,
+      "raw_percent": -5.411897787112297,
+      "adjusted_percent": -6.824045368767595,
+      "machine_factor": 1.0151557082215497
+    }
+  },
+  "hyperpath": {
+    "StationCargoList::Load": {
+      "old": {
+        "ns": 3851911900,
+        "samples": 3853,
+        "ms_per_tick": 1.880816357421875
+      },
+      "new": {
+        "ns": 2993988800,
+        "samples": 2994,
+        "ms_per_tick": 1.46190859375
+      },
+      "new_adjusted_ms_per_tick": 1.920232019432804,
+      "raw_percent": -22.272656339829577,
+      "adjusted_percent": 2.095667759129749,
+      "machine_factor": 0.7613187255266252
+    },
+    "Load -> _malloc_base": {
+      "old": {
+        "ns": 485011200,
+        "samples": 485,
+        "ms_per_tick": 0.236821875
+      },
+      "new": {
+        "ns": 216050400,
+        "samples": 216,
+        "ms_per_tick": 0.105493359375
+      },
+      "new_adjusted_ms_per_tick": 0.13856661584414245,
+      "raw_percent": -55.45455445152607,
+      "adjusted_percent": -41.489097726237304,
+      "machine_factor": 0.7613187255266252
+    },
+    "Load -> RtlFreeHeap": {
+      "old": {
+        "ns": 278944500,
+        "samples": 279,
+        "ms_per_tick": 0.136203369140625
+      },
+      "new": {
+        "ns": 177925200,
+        "samples": 178,
+        "ms_per_tick": 0.0868775390625
+      },
+      "new_adjusted_ms_per_tick": 0.11411454381659193,
+      "raw_percent": -36.21483843560278,
+      "adjusted_percent": -16.217532255921775,
+      "machine_factor": 0.7613187255266252
+    },
+    "LoadingContext constructor": {
+      "old": {
+        "ns": 94028600,
+        "samples": 94,
+        "ms_per_tick": 0.04591240234375
+      },
+      "new": {
+        "ns": 51055900,
+        "samples": 51,
+        "ms_per_tick": 0.024929638671875
+      },
+      "new_adjusted_ms_per_tick": 0.03274533757806953,
+      "raw_percent": -45.701733302420756,
+      "adjusted_percent": -28.678666533494702,
+      "machine_factor": 0.7613187255266252
+    },
+    "LoadingContext destructor": {
+      "old": {
+        "ns": 101111700,
+        "samples": 101,
+        "ms_per_tick": 0.049370947265625
+      },
+      "new": {
+        "ns": 62995000,
+        "samples": 63,
+        "ms_per_tick": 0.03075927734375
+      },
+      "new_adjusted_ms_per_tick": 0.04040262811409631,
+      "raw_percent": -37.69761560729372,
+      "adjusted_percent": -18.165175367767283,
+      "machine_factor": 0.7613187255266252
+    },
+    "Load -> LoadingContext constructor": {
+      "old": {
+        "ns": 33945300,
+        "samples": 34,
+        "ms_per_tick": 0.016574853515625
+      },
+      "new": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "new_adjusted_ms_per_tick": 0.0,
+      "raw_percent": -100.0,
+      "adjusted_percent": -100.0,
+      "machine_factor": 0.7613187255266252
+    },
+    "Load -> LoadingContext destructor": {
+      "old": {
+        "ns": 15020700,
+        "samples": 15,
+        "ms_per_tick": 0.007334326171875
+      },
+      "new": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "new_adjusted_ms_per_tick": 0.0,
+      "raw_percent": -100.0,
+      "adjusted_percent": -100.0,
+      "machine_factor": 0.7613187255266252
+    },
+    "MayUseHyperpathPolicy": {
+      "old": {
+        "ns": 1308620600,
+        "samples": 1309,
+        "ms_per_tick": 0.63897490234375
+      },
+      "new": {
+        "ns": 1202933500,
+        "samples": 1203,
+        "ms_per_tick": 0.587369873046875
+      },
+      "new_adjusted_ms_per_tick": 0.7715163877528103,
+      "raw_percent": -8.076221633680525,
+      "adjusted_percent": 20.742831200865663,
+      "machine_factor": 0.7613187255266252
+    },
+    "MayUseHyperpathPolicy -> PlanPrecomputed": {
+      "old": {
+        "ns": 220831300,
+        "samples": 221,
+        "ms_per_tick": 0.107827783203125
+      },
+      "new": {
+        "ns": 180015100,
+        "samples": 180,
+        "ms_per_tick": 0.087897998046875
+      },
+      "new_adjusted_ms_per_tick": 0.1154549272199676,
+      "raw_percent": -18.4829777300591,
+      "adjusted_percent": 7.073449708666146,
+      "machine_factor": 0.7613187255266252
+    },
+    "CanUseHyperpathPolicy -> PlanPrecomputed": {
+      "old": {
+        "ns": 40006700,
+        "samples": 40,
+        "ms_per_tick": 0.019534521484375
+      },
+      "new": {
+        "ns": 15001400,
+        "samples": 15,
+        "ms_per_tick": 0.00732490234375
+      },
+      "new_adjusted_ms_per_tick": 0.009621334794679014,
+      "raw_percent": -62.50278078421865,
+      "adjusted_percent": -50.74701572610933,
+      "machine_factor": 0.7613187255266252
+    },
+    "PlanPrecomputed": {
+      "old": {
+        "ns": 680845700,
+        "samples": 681,
+        "ms_per_tick": 0.332444189453125
+      },
+      "new": {
+        "ns": 548430100,
+        "samples": 548,
+        "ms_per_tick": 0.267788134765625
+      },
+      "new_adjusted_ms_per_tick": 0.35174247760737604,
+      "raw_percent": -19.448694469246107,
+      "adjusted_percent": 5.8049708090843755,
+      "machine_factor": 0.7613187255266252
+    },
+    "RetiredPlan": {
+      "old": {
+        "ns": 0,
+        "samples": 0,
+        "ms_per_tick": 0.0
+      },
+      "new": {
+        "ns": 286013900,
+        "samples": 286,
+        "ms_per_tick": 0.139655224609375
+      },
+      "new_adjusted_ms_per_tick": 0.18343857825481913,
+      "raw_percent": null,
+      "adjusted_percent": null,
+      "machine_factor": 0.7613187255266252
+    },
+    "loading walk": {
+      "old": {
+        "ns": 3796978200,
+        "samples": 3798,
+        "ms_per_tick": 1.85399326171875
+      },
+      "new": {
+        "ns": 2990993900,
+        "samples": 2991,
+        "ms_per_tick": 1.460446240234375
+      },
+      "new_adjusted_ms_per_tick": 1.9183112030038982,
+      "raw_percent": -21.22699308623894,
+      "adjusted_percent": 3.4691572301358997,
+      "machine_factor": 0.7613187255266252
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "product_commit": "6aeaff68fc016a83eeca44d4484c9fc8024cabef",
+  "src_tree": "7540eb130a98ee63e49146d4b2186aecb798134c",
+  "files": {
+    "Release/openttd.exe": {
+      "bytes": 14253056,
+      "sha256": "41fb4fd5834c98f0d298d5fcc2f11a1c3d1f663bfc326b35a58700400d12e8c2"
+    },
+    "Release/openttd.pdb": {
+      "bytes": 150704128,
+      "sha256": "275ec778760b894dddaebc35c3c59276eeee781bdd6fdffff86cb079b8b0d829"
+    },
+    "Release/openttd_test.exe": {
+      "bytes": 19824128,
+      "sha256": "f4a162707318371736272d7ed85f67610e1060c9c6fc96770651f2816939026b"
+    }
+  },
+  "instrumentation": "Same copied-TU exact-tick/canonical/WPR helpers; WPR disabled for this validate run",
+  "compiled_from": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-97cdc0ad\\compile"
+}

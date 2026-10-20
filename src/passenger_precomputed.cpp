@@ -198,6 +198,7 @@ bool PassengerPrecomputedTable::RefreshService(const PassengerPeriodicService &s
 	if (member == p.members.end() || member->id != service.id || member->incarnation != service.incarnation ||
 			service.timetable.Circuit() <= 0 || p.occurrences.size() != service.timetable.stops.size()) return false;
 	if (!this->graph->estimates && p.estimated != (service.timetable.period == 0)) return false; // Reference binding without duration estimates.
+	if (!this->graph->aircraft_cost.IsDefault() && p.aircraft != service.IsAircraft()) return false;
 	uint64_t mask = uint64_t{1} << this->cargo;
 	for (size_t i = 0; i < p.occurrences.size(); ++i) {
 		const auto &old = this->graph->occurrences[p.occurrences[i]];
@@ -210,10 +211,10 @@ bool PassengerPrecomputedTable::RefreshService(const PassengerPeriodicService &s
 	return true;
 }
 
-void PassengerPrecomputedTable::AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance, int64_t uncertainty)
+void PassengerPrecomputedTable::AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance, int64_t uncertainty, int64_t riding)
 {
 	assert(cost >= 0);
-	this->building_graph->edges.push_back({from, to, occurrence, cost, distance, kind, uncertainty});
+	this->building_graph->edges.push_back({from, to, occurrence, cost, distance, kind, riding >= 0 ? riding : kind == EdgeKind::Ride ? cost - uncertainty : 0, INVALID});
 }
 
 void PassengerPrecomputedTable::AddBoardEdges(uint32_t station, uint32_t to, uint32_t pattern, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance)
@@ -227,9 +228,10 @@ void PassengerPrecomputedTable::AddBoardEdges(uint32_t station, uint32_t to, uin
 	this->building_graph->range_edges.push_back({states.front().second, states.back().second + 1, excluded});
 }
 
-void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates, bool optimized, bool integrated, bool hyperpath, bool revisit_dominance, bool continuation_witness, bool flat_storage)
+void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates, bool optimized, bool integrated, bool hyperpath, bool revisit_dominance, bool continuation_witness, bool flat_storage, PassengerAircraftCost aircraft_cost)
 {
 	*this = {}; this->building_graph = std::make_shared<GraphSnapshot>(); this->graph = this->building_graph; this->cargo = cargo; this->building_graph->estimates = estimates; this->building_graph->optimized = optimized; this->building_graph->integrated = optimized && integrated;
+	this->building_graph->aircraft_cost = aircraft_cost;
 	this->building_graph->flat_storage = hyperpath && flat_storage;
 	this->building_graph->hyperpath = hyperpath; this->building_graph->transfer_cost = transfer >= 0 && transfer <= INT64_MAX / 2 ? 2 * transfer : 0;
 	this->building_graph->revisit_dominance = revisit_dominance;
@@ -301,6 +303,10 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			if (!capacity) { this->unsupported |= s->timetable.period == 0; continue; }
 			if ((this->building_graph->estimates ? s->timetable.Circuit() : s->timetable.period) <= 0 || s->timetable.stops.size() < 2) { this->unsupported = true; continue; }
 			auto key = PatternKey(*s);
+			if (!this->building_graph->aircraft_cost.IsDefault()) {
+				key.push_back(s->IsAircraft());
+				for (const auto &stop : s->timetable.stops) key.push_back(stop.intermediate_wait);
+			}
 			/* A strategy distinguishes actual services, even when their stop
 			 * patterns coincide. This makes exclusion remove exactly the arriving
 			 * OrderList's frequency, while retaining its identical neighbours. */
@@ -321,7 +327,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			Pattern p;
 			const auto &t = members.front()->timetable;
 			p.circuit = std::max(t.Circuit(), members.front()->uncertain_dispatch_period);
-			p.estimated = t.period == 0;
+			p.estimated = t.period == 0; p.aircraft = members.front()->IsAircraft();
 			if (p.estimated) ++this->diagnostic.estimated_patterns; else ++this->diagnostic.certified_patterns;
 			uint64_t seats = 0;
 			size_t unknown_fleet = 0;
@@ -472,12 +478,15 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 				if (!(stop.forced & mask)) this->AddEdge(o.arrival, o.departure, stop.departure - stop.arrival, EdgeKind::Ride);
 				if (!stop.continues) continue;
 				size_t next = (i + 1) % t.stops.size();
-				int64_t travel = std::max<int64_t>(1, t.stops[next].arrival - stop.departure + (next == 0 ? t.Circuit() : 0));
+				int64_t duration = t.stops[next].arrival - stop.departure + (next == 0 ? t.Circuit() : 0);
+				int64_t travel = std::max<int64_t>(1, duration);
 				uint32_t distance = 0;
 				if (const auto *a = Station::GetIfValid(stop.station)) if (const auto *b = Station::GetIfValid(t.stops[next].station)) distance = DistanceManhattan(a->xy, b->xy);
 				int64_t uncertainty = TravelUncertainty(travel, t.stops[next].travel_quality);
+				o.travel_cost = travel;
+				if (representatives[p]->IsAircraft()) o.travel_cost += this->building_graph->aircraft_cost.Adjustment(duration - t.stops[next].intermediate_wait);
 				o.travel = travel; o.uncertainty = uncertainty; o.distance = distance;
-				this->AddEdge(o.departure, this->building_graph->occurrences[pattern.occurrences[next]].arrival, travel + uncertainty, EdgeKind::Ride, INVALID, distance, uncertainty);
+				this->AddEdge(o.departure, this->building_graph->occurrences[pattern.occurrences[next]].arrival, o.travel_cost + uncertainty, EdgeKind::Ride, INVALID, distance, uncertainty, travel);
 			}
 		}
 		if (this->building_graph->hyperpath && this->building_graph->revisit_dominance) {
@@ -497,10 +506,10 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 					uint32_t id = pattern.occurrences[k % pattern.occurrences.size()];
 					const auto &o = this->building_graph->occurrences[id];
 					const auto &to = this->building_graph->occurrences[pattern.occurrences[(k + 1) % pattern.occurrences.size()]];
-					if (!o.continues || to.forced || cost > INT64_MAX - o.travel ||
-							cost + o.travel > INT64_MAX - o.uncertainty || cost + o.travel + o.uncertainty > INT64_MAX - to.dwell) {
+					if (!o.continues || to.forced || cost > INT64_MAX - o.travel_cost ||
+							cost + o.travel_cost > INT64_MAX - o.uncertainty || cost + o.travel_cost + o.uncertainty > INT64_MAX - to.dwell) {
 						next.clear(); cost = 0;
-					} else cost += o.travel + o.uncertainty + to.dwell;
+					} else cost += o.travel_cost + o.uncertainty + to.dwell;
 					auto found = next.find(o.station);
 					if (k < pattern.occurrences.size() && o.board && found != next.end() && found->second.first != id && this->building_graph->occurrences[found->second.first].board) {
 						/* Road orders can request different bay/drive-through directions at
@@ -541,7 +550,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 				this->building_graph->hot_edges.range[at] = edge.range;
 				this->building_graph->hot_edges.from[at] = edge.from; this->building_graph->hot_edges.cost[at] = edge.cost;
 				this->building_graph->hot_edges.legs[at] = edge.kind == EdgeKind::Board || edge.kind == EdgeKind::Section;
-				this->building_graph->cold_edges[at] = {edge.occurrence, edge.distance, edge.uncertainty, edge.kind};
+				this->building_graph->cold_edges[at] = {edge.occurrence, edge.distance, edge.riding, edge.kind};
 			}
 			this->diagnostic.logical_edges = this->building_graph->edges.size();
 			for (const auto &range : this->building_graph->range_edges) this->diagnostic.logical_edges += range.end - range.begin - (range.excluded >= range.begin && range.excluded < range.end);
@@ -635,12 +644,12 @@ void PassengerPrecomputedTable::ContractGraph(size_t &nodes)
 	 * have no surviving predecessor and are simply unreachable from any seed. */
 	for (const auto &edge : this->building_graph->edges) {
 		if (remove[edge.from]) continue;
-		int64_t cost = edge.cost, uncertainty = edge.uncertainty;
+		int64_t cost = edge.cost, riding = edge.riding;
 		uint32_t to = edge.to;
 		while (remove[to]) {
 			const auto &next = this->building_graph->edges[successor[to]];
-			if (edge.kind != EdgeKind::Ride || cost > INT64_MAX - next.cost || uncertainty > INT64_MAX - next.uncertainty) return;
-			cost += next.cost; uncertainty += next.uncertainty; to = next.to;
+			if (edge.kind != EdgeKind::Ride || cost > INT64_MAX - next.cost || riding > INT64_MAX - next.riding) return;
+			cost += next.cost; riding += next.riding; to = next.to;
 		}
 	}
 	uint32_t count = 0;
@@ -650,7 +659,7 @@ void PassengerPrecomputedTable::ContractGraph(size_t &nodes)
 		if (remove[edge.from]) continue;
 		while (remove[edge.to]) {
 			const auto &next = this->building_graph->edges[successor[edge.to]];
-			edge.cost += next.cost; edge.uncertainty += next.uncertainty;
+			edge.cost += next.cost; edge.riding += next.riding;
 			edge.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(edge.distance) + next.distance));
 			edge.to = next.to;
 		}
@@ -666,12 +675,12 @@ void PassengerPrecomputedTable::ContractGraph(size_t &nodes)
 PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members,
 		int64_t transfer, size_t &nodes, uint64_t &envelope, uint64_t memory, bool cooperative, bool &success)
 {
-	struct Path { uint32_t board, alight; int64_t riding; uint32_t distance; int64_t uncertainty; };
+	struct Path { uint32_t board, alight; int64_t riding; uint32_t distance; int64_t uncertainty; int64_t adjustment; };
 	struct Prefix { std::vector<Path> paths; };
 	/* Intern all directed stop prefixes. Timings, order numbers and the circuit
 	 * outside the section are deliberately absent from compatibility; every
 	 * physical stop and this cargo's exchange/forced flags remain in the key. */
-	using Key = std::tuple<uint32_t, StationID, uint8_t>;
+	using Key = std::tuple<uint32_t, StationID, uint8_t, bool>;
 	std::map<Key, uint32_t> index;
 	std::vector<Prefix> prefixes;
 	std::map<StationID, std::set<uint32_t>> starters;
@@ -687,12 +696,12 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 			uint32_t board = pattern.occurrences[start]; const auto &b = this->building_graph->occurrences[board];
 			if (!b.board || starters[b.station].size() < 2) continue;
 			uint32_t prefix = INVALID, distance = 0;
-			int64_t uncertainty = 0;
+			int64_t uncertainty = 0, adjustment = 0;
 			for (size_t length = 0; length < t.stops.size(); ++length) {
 				if (cooperative) co_await std::suspend_always{};
 				size_t stop = (start + length) % t.stops.size();
 				uint32_t alight = pattern.occurrences[stop]; const auto &a = this->building_graph->occurrences[alight];
-				Key key{prefix, a.station, uint8_t((a.board ? 1 : 0) | (a.alight ? 2 : 0) | (a.forced ? 4 : 0))};
+				Key key{prefix, a.station, uint8_t((a.board ? 1 : 0) | (a.alight ? 2 : 0) | (a.forced ? 4 : 0)), !this->building_graph->aircraft_cost.IsDefault() && pattern.aircraft};
 				auto found = index.find(key);
 				if (found == index.end()) {
 					if (prefixes.size() >= INVALID || !Product(1, 256, envelope, memory)) co_return;
@@ -701,15 +710,17 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 				if (length == 0) continue;
 				const auto &previous = t.stops[(stop + t.stops.size() - 1) % t.stops.size()];
 				if (!previous.continues) break;
-				int64_t travel = std::max<int64_t>(1, t.stops[stop].arrival - previous.departure + (stop == 0 ? t.Circuit() : 0));
+				int64_t duration = t.stops[stop].arrival - previous.departure + (stop == 0 ? t.Circuit() : 0);
+				int64_t travel = std::max<int64_t>(1, duration);
 				uncertainty += TravelUncertainty(travel, t.stops[stop].travel_quality);
+				if (members[p].front()->IsAircraft()) adjustment += this->building_graph->aircraft_cost.Adjustment(duration - t.stops[stop].intermediate_wait);
 				if (const auto *x = Station::GetIfValid(previous.station)) if (const auto *y = Station::GetIfValid(a.station)) {
 					distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(distance) + DistanceManhattan(x->xy, y->xy)));
 				}
 				if (a.alight && a.station != b.station) {
 					if (!Product(1, 64, envelope, memory)) co_return;
 					int64_t riding = t.stops[stop].arrival - t.stops[start].departure + (stop < start ? t.Circuit() : 0);
-					prefixes[prefix].paths.push_back({board, alight, riding, distance, uncertainty});
+					prefixes[prefix].paths.push_back({board, alight, riding, distance, uncertainty, adjustment});
 				}
 				if (a.forced) break;
 			}
@@ -839,7 +850,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 						2 * transfer, EdgeKind::Alight, path.alight);
 			}
 			uint32_t id = static_cast<uint32_t>(this->building_graph->section_rides.size());
-			int64_t cost = path.riding + path.uncertainty + wait + risk;
+			int64_t cost = path.riding + path.adjustment + path.uncertainty + wait + risk;
 			this->building_graph->section_rides.push_back({path.board, path.alight, path.riding, wait, cost});
 			if (this->building_graph->integrated) this->AddBoardEdges(station, this->building_graph->landings[path.alight], board.pattern, cost, EdgeKind::Section, id, path.distance);
 			else {
@@ -1095,6 +1106,8 @@ struct PassengerPrecomputedTable::DestinationWorkerPool {
 							operations += owner->graph->hyperpath ? owner->graph->SearchHyperpath(workspace, 4096) : owner->graph->SearchDestination(workspace, 4096);
 							if (owner->quantum_hook) owner->quantum_hook(job->destination, operations);
 						}
+						/* Finishing a Hyperpath row is serial-length work too; the simulation thread replays its effects. */
+						if (owner->graph->hyperpath && workspace.finishing_row && !cancelled()) owner->graph->PrepareHyperpathFinish(workspace);
 					}
 					if (owner->hook) owner->hook(job->destination, true);
 				}
@@ -1453,92 +1466,153 @@ size_t PassengerPrecomputedTable::SearchHyperpath(DestinationWorkspace &work, si
 	return this->graph->SearchHyperpath(work, allowance);
 }
 
+template <typename Effect>
+size_t PassengerPrecomputedTable::GraphSnapshot::FinishHyperpathRow(DestinationWorkspace &work, size_t steps, PassengerPrecomputedDiagnostic &diagnostic, Effect &&effect) const
+{
+	size_t used = 0;
+	while (used < steps) {
+		if (work.prepared.labels.size() < this->waiting_state_count) {
+			uint32_t state = static_cast<uint32_t>(work.prepared.labels.size());
+			work.prepared.labels.push_back(this->SearchLabel(work, state));
+			if (state < this->stations.size() && this->SearchCost(work, state) != INT64_MAX) effect(FINISH_REACHABLE, state, used);
+			++used; continue;
+		}
+		if (work.finishing >= this->waiting_state_count) break; // Only the publication remains.
+		uint32_t state = static_cast<uint32_t>(work.finishing);
+		const auto &candidates = work.strategy.candidates[state];
+		if (work.strategy.offset == 0) {
+			++diagnostic.candidate_histogram[candidates.size()];
+			uint32_t base = this->waiting_station[state];
+			if (base != state && candidates == work.strategy.candidates[base] && this->SearchCost(work, state) == this->SearchCost(work, base)) {
+				work.prepared.indices.push_back(work.prepared.indices[base]); ++work.finishing; ++used; continue;
+			}
+			if (this->flat_storage) {
+				uint32_t previous = this->PreviousPattern(state);
+				bool full = state == base;
+				/* The ordinary difference is base minus the incoming service,
+				 * plus every addition. Keep an exact full payload if a future
+				 * recurrence violates that inclusion property. */
+				if (!full) for (uint32_t board : work.strategy.candidates[base]) if (this->occurrences[board].pattern != previous && !std::binary_search(candidates.begin(), candidates.end(), board)) { full = true; break; }
+				if (!full) for (uint32_t board : candidates) if (this->occurrences[board].pattern == previous) { full = true; break; }
+				work.prepared.indices.push_back(static_cast<uint32_t>(work.prepared.flat_policies.size()));
+				work.prepared.flat_policies.push_back({this->SearchCost(work, state), work.strategy.sums[state].Wait(), static_cast<uint32_t>(work.prepared.flat_candidates.size()), full ? FlatPolicy::FULL : 0});
+			} else {
+				work.prepared.indices.push_back(static_cast<uint32_t>(work.prepared.policies.size()));
+				work.prepared.policies.push_back({this->SearchCost(work, state), work.strategy.sums[state].Wait(), {}});
+				work.prepared.policies.back().candidates.reserve(candidates.size());
+				work.prepared_candidate_bytes += work.prepared.policies.back().candidates.capacity() * 4;
+			}
+			++work.strategy.offset; ++used; continue;
+		}
+		if (work.strategy.offset <= candidates.size()) {
+			uint32_t board = candidates[work.strategy.offset++ - 1];
+			/* A shared state equals its base, marked in both planes. */
+			effect(state < this->stations.size() ? FINISH_MARK_BASE : FINISH_MARK_ANY, board, used);
+			if (this->flat_storage) {
+				auto &policy = work.prepared.flat_policies.back(); const auto &base = work.strategy.candidates[this->waiting_station[state]];
+				if ((policy.count & FlatPolicy::FULL) || !std::binary_search(base.begin(), base.end(), board)) {
+					size_t capacity = work.prepared.flat_candidates.capacity(); work.prepared.flat_candidates.push_back(board); ++policy.count;
+					work.prepared_candidate_bytes += (work.prepared.flat_candidates.capacity() - capacity) * 4;
+				}
+			} else work.prepared.policies.back().candidates.push_back(board);
+			++used; continue;
+		}
+		++diagnostic.policy_count; diagnostic.candidate_count += candidates.size();
+		diagnostic.max_candidates = std::max(diagnostic.max_candidates, candidates.size());
+		auto bytes = this->flat_storage ? sizeof(FlatPolicy) + (work.prepared.flat_policies.back().count & FlatPolicy::MASK) * 4 : sizeof(Policy) + candidates.size() * 4;
+		if (state < this->stations.size()) diagnostic.base_policy_bytes += bytes;
+		else diagnostic.difference_policy_bytes += bytes;
+		++work.finishing; work.strategy.offset = 0; ++used;
+	}
+	return used;
+}
+
+void PassengerPrecomputedTable::GraphSnapshot::ExactFlatPayloads(DestinationWorkspace &work)
+{
+	auto exact = [](auto &working, auto &buffer) { buffer.swap(working); working.assign(buffer.begin(), buffer.end()); buffer.clear(); };
+	exact(work.prepared.flat_policies, work.flat_policy_buffer); exact(work.prepared.flat_candidates, work.flat_candidate_buffer);
+	work.prepared_candidate_bytes = work.prepared.flat_candidates.capacity() * 4;
+}
+
+void PassengerPrecomputedTable::GraphSnapshot::PrepareHyperpathFinish(DestinationWorkspace &work) const
+{
+	/* Record every effect in order. A repeated mark of the same plane of this row sets no new
+	 * bit, so only the first is kept; the first mark of the table still allocates the masks. */
+	work.finish_effects.clear(); work.finish_touched.clear();
+	if (work.finish_marked.size() != this->occurrences.size()) work.finish_marked.assign(this->occurrences.size(), 0);
+	work.finish_steps = this->FinishHyperpathRow(work, SIZE_MAX, work.finish_diagnostic, [&](uint8_t kind, uint32_t value, size_t step) {
+		if (kind != FINISH_REACHABLE && value < work.finish_marked.size()) {
+			const uint8_t level = kind == FINISH_MARK_BASE ? 2 : 1;
+			uint8_t &marked = work.finish_marked[value];
+			if (marked >= level) return;
+			if (marked == 0) work.finish_touched.push_back(value);
+			marked = level;
+		}
+		work.finish_effects.push_back({step, value, kind});
+	});
+	for (uint32_t occurrence : work.finish_touched) work.finish_marked[occurrence] = 0;
+	work.finish_touched.clear();
+	if (this->flat_storage) ExactFlatPayloads(work);
+	work.finish_applied = 0; work.finish_effect = 0; work.finish_prepared = true;
+}
+
 size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::function<void(StationID)> &published, uint workers)
 {
 	const auto started = Clock::now(); size_t used = 0;
+	auto apply = [&](uint8_t kind, uint32_t value) {
+		if (kind == GraphSnapshot::FINISH_REACHABLE) {
+			auto &destinations = this->reachable_destinations[value]; size_t capacity = destinations.capacity();
+			destinations.push_back(this->graph->stations[this->destination]); this->reachable_bytes += (destinations.capacity() - capacity) * sizeof(StationID);
+		} else {
+			this->MarkBoardingCandidate(value, kind == GraphSnapshot::FINISH_MARK_BASE);
+		}
+	};
 	try {
 		while (used < allowance && !this->Finished()) {
 			if (!this->work.finishing_row) {
 				const size_t searched = this->AdvanceSearch(allowance - used, workers);
 				used += searched; if (searched == 0 && !this->work.finishing_row) break; continue;
 			}
-			++used;
-			if (this->work.finishing_row) {
-				if (this->work.prepared.labels.size() < this->graph->waiting_state_count) {
-					uint32_t state = static_cast<uint32_t>(this->work.prepared.labels.size());
-					this->work.prepared.labels.push_back(this->SearchLabel(this->work, state));
-					if (state < this->graph->stations.size() && this->SearchCost(this->work, state) != INT64_MAX) {
-						auto &destinations = this->reachable_destinations[state]; size_t capacity = destinations.capacity();
-						destinations.push_back(this->graph->stations[this->destination]); this->reachable_bytes += (destinations.capacity() - capacity) * sizeof(StationID);
+			if (this->work.finish_prepared) {
+				/* Finished by a worker: the same Work, and the same effects at the same positions. */
+				if (this->work.finish_applied < this->work.finish_steps) {
+					const size_t end = this->work.finish_applied + std::min(allowance - used, this->work.finish_steps - this->work.finish_applied);
+					const auto &effects = this->work.finish_effects;
+					for (; this->work.finish_effect < effects.size() && effects[this->work.finish_effect].step < end; ++this->work.finish_effect) {
+						apply(effects[this->work.finish_effect].kind, effects[this->work.finish_effect].value);
 					}
+					used += end - this->work.finish_applied; this->work.finish_applied = end;
 					continue;
 				}
-				if (this->work.finishing < this->graph->waiting_state_count) {
-					uint32_t state = static_cast<uint32_t>(this->work.finishing);
-					const auto &candidates = this->work.strategy.candidates[state];
-					if (this->work.strategy.offset == 0) {
-						++this->diagnostic.candidate_histogram[candidates.size()];
-						uint32_t base = this->graph->waiting_station[state];
-						if (base != state && candidates == this->work.strategy.candidates[base] && this->SearchCost(this->work, state) == this->SearchCost(this->work, base)) {
-							this->work.prepared.indices.push_back(this->work.prepared.indices[base]); ++this->work.finishing; continue;
-						}
-						if (this->graph->flat_storage) {
-							uint32_t previous = this->PreviousPattern(state);
-							bool full = state == base;
-							/* The ordinary difference is base minus the incoming service,
-							 * plus every addition. Keep an exact full payload if a future
-							 * recurrence violates that inclusion property. */
-							if (!full) for (uint32_t board : this->work.strategy.candidates[base]) if (this->graph->occurrences[board].pattern != previous && !std::binary_search(candidates.begin(), candidates.end(), board)) { full = true; break; }
-							if (!full) for (uint32_t board : candidates) if (this->graph->occurrences[board].pattern == previous) { full = true; break; }
-							this->work.prepared.indices.push_back(static_cast<uint32_t>(this->work.prepared.flat_policies.size()));
-							this->work.prepared.flat_policies.push_back({this->SearchCost(this->work, state), this->work.strategy.sums[state].Wait(), static_cast<uint32_t>(this->work.prepared.flat_candidates.size()), full ? FlatPolicy::FULL : 0});
-						} else {
-							this->work.prepared.indices.push_back(static_cast<uint32_t>(this->work.prepared.policies.size()));
-							this->work.prepared.policies.push_back({this->SearchCost(this->work, state), this->work.strategy.sums[state].Wait(), {}});
-							this->work.prepared.policies.back().candidates.reserve(candidates.size());
-							this->work.prepared_candidate_bytes += this->work.prepared.policies.back().candidates.capacity() * 4;
-						}
-						++this->work.strategy.offset; continue;
-					}
-					if (this->work.strategy.offset <= candidates.size()) {
-						uint32_t board = candidates[this->work.strategy.offset++ - 1];
-						assert(this->EvaluateRide(this->work.prepared, board, this->graph->stations[this->destination]).cost ==
-								this->SearchCost(this->work, this->graph->occurrences[board].departure) + this->graph->patterns[this->graph->occurrences[board].pattern].risk);
-						this->MarkBoardingCandidate(board, state < this->graph->stations.size()); // A shared state equals its base, marked in both planes.
-						if (this->graph->flat_storage) {
-							auto &policy = this->work.prepared.flat_policies.back(); const auto &base = this->work.strategy.candidates[this->graph->waiting_station[state]];
-							if ((policy.count & FlatPolicy::FULL) || !std::binary_search(base.begin(), base.end(), board)) {
-								size_t capacity = this->work.prepared.flat_candidates.capacity(); this->work.prepared.flat_candidates.push_back(board); ++policy.count;
-								this->work.prepared_candidate_bytes += (this->work.prepared.flat_candidates.capacity() - capacity) * 4;
-							}
-						} else this->work.prepared.policies.back().candidates.push_back(board);
-						continue;
-					}
-					++this->diagnostic.policy_count; this->diagnostic.candidate_count += candidates.size();
-					this->diagnostic.max_candidates = std::max(this->diagnostic.max_candidates, candidates.size());
-					auto bytes = this->graph->flat_storage ? sizeof(FlatPolicy) + (this->work.prepared.flat_policies.back().count & FlatPolicy::MASK) * 4 : sizeof(Policy) + candidates.size() * 4;
-					if (state < this->graph->stations.size()) this->diagnostic.base_policy_bytes += bytes;
-					else this->diagnostic.difference_policy_bytes += bytes;
-					++this->work.finishing; this->work.strategy.offset = 0; continue;
-				}
-				if (this->graph->flat_storage) {
-					auto exact = [](auto &working, auto &buffer) { buffer.swap(working); working.assign(buffer.begin(), buffer.end()); buffer.clear(); };
-					exact(this->work.prepared.flat_policies, this->work.flat_policy_buffer); exact(this->work.prepared.flat_candidates, this->work.flat_candidate_buffer);
-					this->work.prepared_candidate_bytes = this->work.prepared.flat_candidates.capacity() * 4;
-				}
-				this->work.prepared.bytes = this->work.prepared.labels.capacity() * sizeof(Label) + this->work.prepared.indices.capacity() * 4 +
-						this->work.prepared.policies.capacity() * sizeof(Policy) + this->work.prepared.flat_policies.capacity() * sizeof(FlatPolicy) + this->work.prepared_candidate_bytes;
-				this->hyperpath_row_bytes += this->work.prepared.bytes;
-				if (this->boarding_mask_words == 0) this->MarkBoardingCandidate(INVALID, false); // Allocate even if no row had a candidate yet.
-				if (this->boarding_mask_words != 0) this->published_rows[this->destination / 64] |= uint64_t{1} << (this->destination % 64);
-				this->rows.push_back(std::move(this->work.prepared));
-				this->work.prepared_candidate_bytes = 0;
-				if (published) published(this->graph->stations[this->destination]);
-				++this->destination; this->diagnostic.destinations = this->destination;
-				if (!this->Finished()) this->StartDestination();
+			} else if (!this->graph->HyperpathRowFinished(this->work)) {
+				used += this->graph->FinishHyperpathRow(this->work, allowance - used, this->diagnostic, [&](uint8_t kind, uint32_t value, size_t) {
+					assert(kind == GraphSnapshot::FINISH_REACHABLE || this->EvaluateRide(this->work.prepared, value, this->graph->stations[this->destination]).cost ==
+							this->SearchCost(this->work, this->graph->occurrences[value].departure) + this->graph->patterns[this->graph->occurrences[value].pattern].risk);
+					apply(kind, value);
+				});
 				continue;
 			}
-
+			++used;
+			if (this->work.finish_prepared) {
+				++this->parallel_diagnostic.finished_rows; this->parallel_diagnostic.finish_effects += this->work.finish_effects.size();
+				const auto &d = this->work.finish_diagnostic;
+				for (const auto &[size, count] : d.candidate_histogram) this->diagnostic.candidate_histogram[size] += count;
+				this->diagnostic.policy_count += d.policy_count; this->diagnostic.candidate_count += d.candidate_count;
+				this->diagnostic.max_candidates = std::max(this->diagnostic.max_candidates, d.max_candidates);
+				this->diagnostic.base_policy_bytes += d.base_policy_bytes; this->diagnostic.difference_policy_bytes += d.difference_policy_bytes;
+			} else if (this->graph->flat_storage) {
+				GraphSnapshot::ExactFlatPayloads(this->work);
+			}
+			this->work.prepared.bytes = this->work.prepared.labels.capacity() * sizeof(Label) + this->work.prepared.indices.capacity() * 4 +
+					this->work.prepared.policies.capacity() * sizeof(Policy) + this->work.prepared.flat_policies.capacity() * sizeof(FlatPolicy) + this->work.prepared_candidate_bytes;
+			this->hyperpath_row_bytes += this->work.prepared.bytes;
+			if (this->boarding_mask_words == 0) this->MarkBoardingCandidate(INVALID, false); // Allocate even if no row had a candidate yet.
+			if (this->boarding_mask_words != 0) this->published_rows[this->destination / 64] |= uint64_t{1} << (this->destination % 64);
+			this->rows.push_back(std::move(this->work.prepared));
+			this->work.prepared_candidate_bytes = 0;
+			if (published) published(this->graph->stations[this->destination]);
+			++this->destination; this->diagnostic.destinations = this->destination;
+			if (!this->Finished()) this->StartDestination();
 		}
 	} catch (const std::bad_alloc &) { FatalError("Insufficient memory for passenger strategies."); }
 	this->CollectSearchCounters();
@@ -1646,19 +1720,21 @@ void PassengerPrecomputedTable::ReleaseDestination(StationID destination)
 		this->retirement_watermark = destination;
 	}
 	if (this->graph->hyperpath) {
-		for (auto it = this->local_policies.begin(); it != this->local_policies.end();) {
-			if (std::get<0>(it->first) == destination) {
-				size_t bytes = 128 + it->second.candidates.capacity() * 4;
-				this->local_policy_bytes -= bytes; this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
-				it = this->local_policies.erase(it);
-			} else ++it;
+		/* Both caches are keyed by destination first: erase that range only. */
+		for (auto it = this->local_policies.lower_bound({destination, 0, OrderListID::Begin()}); it != this->local_policies.end() && std::get<0>(it->first) == destination;) {
+			size_t bytes = 128 + it->second.candidates.capacity() * 4;
+			this->local_policy_bytes -= bytes; this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
+			it = this->local_policies.erase(it);
+		}
+		for (auto it = this->station_choices.lower_bound({destination, 0}); it != this->station_choices.end() && it->first.first == destination;) {
+			size_t bytes = 128 + it->second.capacity() * sizeof(it->second[0]);
+			this->local_policy_bytes -= bytes; this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
+			it = this->station_choices.erase(it);
 		}
 	}
-	for (auto it = this->expanded_policies.begin(); it != this->expanded_policies.end();) {
-		if (it->first.first == destination) {
-			size_t bytes = 128 + it->second.capacity() * 4; this->expanded_policy_bytes -= bytes; this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
-			it = this->expanded_policies.erase(it);
-		} else ++it;
+	for (auto it = this->expanded_policies.lower_bound({destination, 0}); it != this->expanded_policies.end() && it->first.first == destination;) {
+		size_t bytes = 128 + it->second.capacity() * 4; this->expanded_policy_bytes -= bytes; this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
+		it = this->expanded_policies.erase(it);
 	}
 	if (destination.base() >= this->graph->station_index.size()) return;
 	uint32_t row = this->graph->station_index[destination.base()];
@@ -1830,9 +1906,14 @@ std::span<const uint32_t> PassengerPrecomputedTable::FlatPayload(const Row &row,
 
 uint32_t PassengerPrecomputedTable::PreviousPattern(uint32_t state) const
 {
-	uint32_t station = this->graph->waiting_station[state];
+	return this->graph->PreviousPattern(state);
+}
+
+uint32_t PassengerPrecomputedTable::GraphSnapshot::PreviousPattern(uint32_t state) const
+{
+	uint32_t station = this->waiting_station[state];
 	if (state == station) return INVALID;
-	const auto &waits = this->graph->waiting_states[station];
+	const auto &waits = this->waiting_states[station];
 	assert(!waits.empty() && state >= waits.front().second);
 	size_t at = state - waits.front().second;
 	assert(at < waits.size() && waits[at].second == state);
@@ -1976,16 +2057,13 @@ bool PassengerPrecomputedTable::DisplayCandidates(StationID origin, StationID de
 	return false;
 }
 
-const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(const Row &row, StationID destination, uint32_t state, OrderListID failed) const
+const std::vector<std::pair<int64_t, uint32_t>> &PassengerPrecomputedTable::StationChoices(const Row &row, StationID destination, uint32_t station) const
 {
-	auto key = std::tuple(destination, state, failed);
-	auto found = this->local_policies.find(key);
-	if (found != this->local_policies.end()) return found->second;
-	const auto started = Clock::now();
+	auto key = std::pair(destination, station);
+	auto found = this->station_choices.find(key);
+	if (found != this->station_choices.end()) return found->second;
 	std::vector<std::pair<int64_t, uint32_t>> choices;
-	for (uint32_t board : this->graph->station_boarding[this->graph->waiting_station[state]]) {
-		const auto &o = this->graph->occurrences[board];
-		if (state != this->graph->waiting_station[state] && this->StateFor(this->graph->waiting_station[state], o.pattern) == state) continue;
+	for (uint32_t board : this->graph->station_boarding[station]) {
 		auto label = this->EvaluateRide(row, board, destination);
 		if (!this->graph->revisits.empty() && this->graph->revisits[board].next != INVALID && this->DominatedRevisit(board,
 				label.cost, this->EvaluateRide(row, this->graph->revisits[board].next, destination).cost) &&
@@ -1993,11 +2071,36 @@ const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(
 		if (label.cost != INT64_MAX) choices.emplace_back(label.cost, board);
 	}
 	std::sort(choices.begin(), choices.end());
+	if (this->station_choices.size() >= 16384) {
+		/* Evict the next key rather than always the lowest destinations. Residency is derived. */
+		auto victim = this->station_choices.upper_bound(key);
+		if (victim == this->station_choices.end()) victim = this->station_choices.begin();
+		size_t bytes = 128 + victim->second.capacity() * sizeof(choices[0]);
+		this->local_policy_bytes -= bytes; this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
+		this->station_choices.erase(victim);
+	}
+	size_t bytes = 128 + choices.capacity() * sizeof(choices[0]);
+	this->local_policy_bytes += bytes; this->diagnostic.bytes += bytes;
+	return this->station_choices.emplace(key, std::move(choices)).first->second;
+}
+
+const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(const Row &row, StationID destination, uint32_t state, OrderListID failed) const
+{
+	auto key = std::tuple(destination, state, failed);
+	auto found = this->local_policies.find(key);
+	if (found != this->local_policies.end()) return found->second;
+	const auto started = Clock::now();
+	/* Every state and failed carrier of a station shares its rides' costs: evaluate them once.
+	 * Filtering a sorted list keeps the order of the former per-state sort exactly. */
+	const uint32_t station = this->graph->waiting_station[state];
+	const auto &choices = this->StationChoices(row, destination, station);
 	Policy policy;
 	auto compute = [&](bool exclude) {
 		PassengerStrategy sum; policy.candidates.clear();
 		for (auto [cost, board] : choices) {
-			const auto &p = this->graph->patterns[this->graph->occurrences[board].pattern];
+			const auto &o = this->graph->occurrences[board];
+			if (state != station && this->StateFor(station, o.pattern) == state) continue;
+			const auto &p = this->graph->patterns[o.pattern];
 			if (exclude && p.members.front().id == failed) continue;
 			if (sum.Add(cost, PassengerStrategy::Frequency(p.wait))) policy.candidates.push_back(board);
 		}
@@ -2007,9 +2110,13 @@ const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(
 	if (policy.candidates.empty()) compute(false); // Preserve reachability when there is no alternative.
 	std::sort(policy.candidates.begin(), policy.candidates.end());
 	if (this->local_policies.size() >= 4096) {
-		size_t bytes = 128 + this->local_policies.begin()->second.candidates.capacity() * 4;
+		/* Evict the next key rather than always the lowest destinations. An evicted policy is only
+		 * "unknown" to ContainsCached, so residency never changes a decision. */
+		auto victim = this->local_policies.upper_bound(key);
+		if (victim == this->local_policies.end()) victim = this->local_policies.begin();
+		size_t bytes = 128 + victim->second.candidates.capacity() * 4;
 		this->local_policy_bytes -= bytes; this->diagnostic.bytes -= std::min(this->diagnostic.bytes, bytes);
-		this->local_policies.erase(this->local_policies.begin());
+		this->local_policies.erase(victim);
 	}
 	size_t bytes = 128 + policy.candidates.capacity() * 4;
 	this->local_policy_bytes += bytes; this->diagnostic.bytes += bytes;
@@ -2047,8 +2154,8 @@ PassengerPrecomputedTable::Label PassengerPrecomputedTable::EvaluateRide(const R
 			if (cost > INT64_MAX - from.dwell) break;
 			cost += from.dwell; riding += from.dwell;
 		}
-		if (cost > INT64_MAX - from.travel || cost + from.travel > INT64_MAX - from.uncertainty) break;
-		cost += from.travel + from.uncertainty; riding += from.travel;
+		if (cost > INT64_MAX - from.travel_cost || cost + from.travel_cost > INT64_MAX - from.uncertainty) break;
+		cost += from.travel_cost + from.uncertainty; riding += from.travel;
 		distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(distance) + from.distance));
 		at = (at + 1) % stops.size(); const auto &to = this->graph->occurrences[stops[at]];
 		if (!to.alight) continue;
@@ -2278,8 +2385,18 @@ void PassengerPrecomputedTable::GraphSnapshot::StartDestination(DestinationWorks
 		work.strategy.events.Reset(); work.strategy.last = 0; work.strategy.board_edge = INVALID;
 		work.strategy.witness_edge = INVALID;
 		work.strategy.sums.clear(); work.strategy.settled.clear();
+		if (this->flat_storage) {
+			/* After StartDestination the grown storage is in the row, not the buffer. A workspace
+			 * that travels between the main thread and a worker restarts in that state; keep the
+			 * larger allocation instead of growing the next row from empty on the main thread. */
+			if (work.prepared.flat_policies.capacity() > work.flat_policy_buffer.capacity()) work.flat_policy_buffer.swap(work.prepared.flat_policies);
+			if (work.prepared.flat_candidates.capacity() > work.flat_candidate_buffer.capacity()) work.flat_candidate_buffer.swap(work.prepared.flat_candidates);
+			work.flat_policy_buffer.clear(); work.flat_candidate_buffer.clear();
+		}
 		work.prepared = {};
 		work.prepared_candidate_bytes = 0;
+		work.finish_prepared = false; work.finish_effects.clear(); work.finish_diagnostic = {};
+		work.finish_steps = work.finish_applied = work.finish_effect = 0;
 		if (this->flat_storage) {
 			work.prepared.indices.reserve(this->waiting_state_count);
 			/* Grow in the working buffers only once per build, not once per row. */
@@ -2368,7 +2485,7 @@ size_t PassengerPrecomputedTable::GraphSnapshot::SearchDestination(DestinationWo
 				next.board = ride.board; next.alight = ride.alight;
 				next.first_wait = ride.waiting; next.waiting += ride.waiting; next.riding += ride.riding;
 			}
-			if (edge.kind == EdgeKind::Ride) next.riding += edge.cost - edge.uncertainty;
+			if (edge.kind == EdgeKind::Ride) next.riding += edge.riding;
 			if (edge.kind == EdgeKind::Alight) { next.board = INVALID; next.alight = edge.occurrence; next.waiting += edge.cost / 2; }
 			this->SetSearchLabel(work, edge.from, next); work.queue.emplace(next.cost, next.legs, edge.from);
 		}
@@ -2415,7 +2532,7 @@ size_t PassengerPrecomputedTable::GraphSnapshot::SearchHyperpath(DestinationWork
 			uint32_t edge = work.strategy.witness_edge, board = this->cold_edges[edge].occurrence;
 			const auto &first = this->occurrences[board]; const auto &stops = this->patterns[first.pattern].occurrences;
 			const auto &from = this->occurrences[work.strategy.witness_at];
-			int64_t step = from.travel + from.uncertainty;
+			int64_t step = from.travel_cost + from.uncertainty;
 			if (work.strategy.witness_at != board) step += from.dwell;
 			work.strategy.witness_cost += step; // Bounded by the precomputed, checked departure-to-departure delta.
 			work.strategy.witness_at = work.strategy.witness_at == stops.back() ? stops.front() : work.strategy.witness_at + 1;
@@ -2477,7 +2594,7 @@ size_t PassengerPrecomputedTable::GraphSnapshot::SearchHyperpath(DestinationWork
 			auto label = this->SearchLabel(work, work.expanding); label.cost += cost;
 			if (label.cost >= this->SearchCost(work, from)) continue;
 			label.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(label.distance) + cold.distance));
-			if (cold.kind == EdgeKind::Ride) label.riding += cost - cold.uncertainty;
+			if (cold.kind == EdgeKind::Ride) label.riding += cold.riding;
 			if (cold.kind == EdgeKind::Alight) { label.board = INVALID; label.alight = cold.occurrence; label.waiting += cost / 2; }
 			this->SetSearchLabel(work, from, label); this->PushHyperpath(work, label.cost, 1, from); continue;
 		}
@@ -2569,7 +2686,7 @@ size_t PassengerPrecomputedTable::GraphSnapshot::RelaxIncoming(DestinationWorksp
 					const auto &ride = this->section_rides[edge.occurrence];
 					next.board = ride.board; next.alight = ride.alight;
 					next.first_wait = ride.waiting; next.waiting += ride.waiting; next.riding += ride.riding;
-				} else if (edge.kind == EdgeKind::Ride) next.riding += edge_cost - edge.uncertainty;
+				} else if (edge.kind == EdgeKind::Ride) next.riding += edge.riding;
 				else if (edge.kind == EdgeKind::Alight) { next.board = INVALID; next.alight = edge.occurrence; next.waiting += edge_cost / 2; }
 				materialized = true;
 			}

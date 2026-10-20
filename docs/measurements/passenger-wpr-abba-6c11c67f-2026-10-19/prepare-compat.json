@@ -1,0 +1,7 @@
+{
+  "original_sha256": "77cc792aad71ae0feace516a1d9db83a630f87501385dc8684f8f7684167e48c",
+  "copy_sha256": "f42d27d446a2f7bdfb3f3bf30445f59f3c53a8b8e927688c51ecd9c604e6356d",
+  "before": "    anchor = '        const auto started = std::chrono::steady_clock::now();'",
+  "after": "    anchor = '        bool ready = false;\\n        const auto started = std::chrono::steady_clock::now();'",
+  "product_sources_unchanged": true
+}

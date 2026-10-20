@@ -1,0 +1,62 @@
+{
+  "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-recordings-88cb61e3-2026-10-18",
+  "immutable_trace_links": true,
+  "matching_binary_and_pdb_copied": true,
+  "files": {
+    "baseline/legacy/cpu.etl": {
+      "bytes": 2400190464,
+      "sha256": "db56897ba54f5094d60e59ec24d8e0d95319f96982b24017526bb9ae89c10642",
+      "method": "NTFS hard link; survives removal of the worktree link",
+      "read_only": true
+    },
+    "baseline/hyperpath/cpu.etl": {
+      "bytes": 1364197376,
+      "sha256": "5d3853d6c91dd3e032175e845b96d0ee355af1efb44ebdbcfbfe6289247e0069",
+      "method": "NTFS hard link; survives removal of the worktree link",
+      "read_only": true
+    },
+    "baseline/Release/openttd.exe": {
+      "bytes": 14174208,
+      "sha256": "8507d0db3e99e8fe510e2ae6c49ab5ae955658a8052da28574db207a46128623",
+      "method": "copy"
+    },
+    "baseline/Release/openttd.pdb": {
+      "bytes": 143454208,
+      "sha256": "8b4f5537cac426d535401aaf95c26ff6f2fdc30e53a7c704e90cbec51b0ca2f9",
+      "method": "copy"
+    },
+    "baseline/cpu-sampled.wpaProfile": {
+      "bytes": 4034,
+      "sha256": "5092304c54ce1f2d1e34f73cc09c6d8b91513a7aba76e6c16fd1f4403067682c",
+      "method": "copy"
+    },
+    "candidate/legacy/cpu.etl": {
+      "bytes": 2437939200,
+      "sha256": "7cdb01c8b074ffc5f424f7764e382e68e0f6717f8fa536c0d3d9c8f2c6b4ac2c",
+      "method": "NTFS hard link; survives removal of the worktree link",
+      "read_only": true
+    },
+    "candidate/hyperpath/cpu.etl": {
+      "bytes": 1343225856,
+      "sha256": "2b5895f597a5c9d7bce7a8fe6cadd619195a668635d700703a9406def59cb8d0",
+      "method": "NTFS hard link; survives removal of the worktree link",
+      "read_only": true
+    },
+    "candidate/Release/openttd.exe": {
+      "bytes": 14159872,
+      "sha256": "3e97379a69efed86f3c3c4d251d63268c22618b54207bd29e9b0a1192ea244f0",
+      "method": "copy"
+    },
+    "candidate/Release/openttd.pdb": {
+      "bytes": 143306752,
+      "sha256": "0be9830c3068a7b8c4374cefa4831681ab2321fa9b046feca8320d4987137a8f",
+      "method": "copy"
+    },
+    "candidate/cpu-sampled.wpaProfile": {
+      "bytes": 4034,
+      "sha256": "5092304c54ce1f2d1e34f73cc09c6d8b91513a7aba76e6c16fd1f4403067682c",
+      "method": "copy"
+    }
+  },
+  "traces_read_only": true
+}

@@ -1,0 +1,173 @@
+{
+  "canonical": {
+    "legacy": {
+      "equal": true,
+      "fields": 24,
+      "differences": {},
+      "input_sha256": "02e4ea48dbed6116a5db569509e0c3fcda98c21090f8e22382c527caec22b671"
+    },
+    "hyperpath": {
+      "equal": true,
+      "fields": 24,
+      "differences": {},
+      "input_sha256": "3e8cfab5e70b3843c56b989891ab327bc75daa72ee7f5b232250d86eb6fade7e"
+    }
+  },
+  "control": {
+    "legacy": {
+      "old_ms_per_tick": {
+        "untouched": 9.486378808593765,
+        "touched": 13.133466503906234,
+        "heap": 4.872844970703123
+      },
+      "new_ms_per_tick": {
+        "untouched": 9.7632227539063,
+        "touched": 13.206360742187476,
+        "heap": 4.956277832031261
+      },
+      "machine_factor": 1.0291833112400846,
+      "raw_delta_ms_per_tick": 0.4331710449219166,
+      "corrected_delta_ms_per_tick": -0.358688960856977,
+      "corrected_touched_delta": -0.3015826228172038,
+      "corrected_heap_delta": -0.05710633803977583
+    },
+    "hyperpath": {
+      "old_ms_per_tick": {
+        "untouched": 8.703358349609392,
+        "touched": 4.6835684570312495,
+        "heap": 0.9809001953124997
+      },
+      "new_ms_per_tick": {
+        "untouched": 8.300267773437568,
+        "touched": 4.44477016601562,
+        "heap": 0.8538984375000009
+      },
+      "machine_factor": 0.9536856280093403,
+      "raw_delta_ms_per_tick": -0.768890624999953,
+      "corrected_delta_ms_per_tick": -0.10847782277058471,
+      "corrected_touched_delta": -0.02294441544499204,
+      "corrected_heap_delta": -0.085533407325591
+    }
+  },
+  "functions": [
+    {
+      "mode": "hyperpath",
+      "function": "openttd.exe!StateGameLoop",
+      "machine_factor": 0.9536856280093403,
+      "inclusive_old_ms_per_tick": 14.367827002,
+      "inclusive_new_ms_per_tick": 13.598936377,
+      "inclusive_raw_delta": -0.7688906250000009,
+      "inclusive_raw_percent": -5.351474686415503,
+      "inclusive_corrected_ms_per_tick": 14.259349179231641,
+      "inclusive_corrected_delta": -0.10847782276835893,
+      "inclusive_corrected_percent": -0.7550050731628288,
+      "exclusive_old_ms_per_tick": 0.0,
+      "exclusive_new_ms_per_tick": 0.000491797,
+      "exclusive_raw_delta": 0.000491797,
+      "exclusive_raw_percent": null,
+      "exclusive_corrected_ms_per_tick": 0.0005156804145476578,
+      "exclusive_corrected_delta": 0.0005156804145476578,
+      "exclusive_corrected_percent": null
+    },
+    {
+      "mode": "hyperpath",
+      "function": "openttd.exe!PassengerServiceDatabase::Tick",
+      "machine_factor": 0.9536856280093403,
+      "inclusive_old_ms_per_tick": 0.162612402,
+      "inclusive_new_ms_per_tick": 0.142155469,
+      "inclusive_raw_delta": -0.020456932999999983,
+      "inclusive_raw_percent": -12.580180077531832,
+      "inclusive_corrected_ms_per_tick": 0.1490590450615533,
+      "inclusive_corrected_delta": -0.013553356938446698,
+      "inclusive_corrected_percent": -8.334762153286867,
+      "exclusive_old_ms_per_tick": 0.0,
+      "exclusive_new_ms_per_tick": 0.0,
+      "exclusive_raw_delta": 0.0,
+      "exclusive_raw_percent": null,
+      "exclusive_corrected_ms_per_tick": 0.0,
+      "exclusive_corrected_delta": 0.0,
+      "exclusive_corrected_percent": null
+    },
+    {
+      "mode": "hyperpath",
+      "function": "openttd.exe!PassengerServiceDatabase::TickPrecomputed",
+      "machine_factor": 0.9536856280093403,
+      "inclusive_old_ms_per_tick": 0.074237451,
+      "inclusive_new_ms_per_tick": 0.063486279,
+      "inclusive_raw_delta": -0.01075117199999999,
+      "inclusive_raw_percent": -14.482140557331357,
+      "inclusive_corrected_ms_per_tick": 0.06656939890403615,
+      "inclusive_corrected_delta": -0.007668052095963843,
+      "inclusive_corrected_percent": -10.329088610496395,
+      "exclusive_old_ms_per_tick": 0.000488184,
+      "exclusive_new_ms_per_tick": 0.000489063,
+      "exclusive_raw_delta": 8.789999999999623e-07,
+      "exclusive_raw_percent": 0.1800550612064189,
+      "exclusive_corrected_ms_per_tick": 0.0005128136417666663,
+      "exclusive_corrected_delta": 2.4629641766666256e-05,
+      "exclusive_corrected_percent": 5.04515546733737
+    },
+    {
+      "mode": "legacy",
+      "function": "openttd.exe!StateGameLoop",
+      "machine_factor": 1.0291833112400846,
+      "inclusive_old_ms_per_tick": 27.492690283,
+      "inclusive_new_ms_per_tick": 27.925861328,
+      "inclusive_raw_delta": 0.43317104499999814,
+      "inclusive_raw_percent": 1.5755862396189313,
+      "inclusive_corrected_ms_per_tick": 27.134001322224652,
+      "inclusive_corrected_delta": -0.35868896077534984,
+      "inclusive_corrected_percent": -1.3046702853854342,
+      "exclusive_old_ms_per_tick": 0.000487988,
+      "exclusive_new_ms_per_tick": 0.0,
+      "exclusive_raw_delta": -0.000487988,
+      "exclusive_raw_percent": -100.0,
+      "exclusive_corrected_ms_per_tick": 0.0,
+      "exclusive_corrected_delta": -0.000487988,
+      "exclusive_corrected_percent": -100.0
+    },
+    {
+      "mode": "legacy",
+      "function": "openttd.exe!PassengerServiceDatabase::Tick",
+      "machine_factor": 1.0291833112400846,
+      "inclusive_old_ms_per_tick": 0.150885303,
+      "inclusive_new_ms_per_tick": 0.16556001,
+      "inclusive_raw_delta": 0.014674707000000009,
+      "inclusive_raw_percent": 9.72573650861146,
+      "inclusive_corrected_ms_per_tick": 0.16086542425616412,
+      "inclusive_corrected_delta": 0.009980121256164126,
+      "inclusive_corrected_percent": 6.614375991387389,
+      "exclusive_old_ms_per_tick": 0.000486963,
+      "exclusive_new_ms_per_tick": 0.0,
+      "exclusive_raw_delta": -0.000486963,
+      "exclusive_raw_percent": -100.0,
+      "exclusive_corrected_ms_per_tick": 0.0,
+      "exclusive_corrected_delta": -0.000486963,
+      "exclusive_corrected_percent": -100.0
+    },
+    {
+      "mode": "legacy",
+      "function": "openttd.exe!PassengerServiceDatabase::TickPrecomputed",
+      "machine_factor": 1.0291833112400846,
+      "inclusive_old_ms_per_tick": 0.068374268,
+      "inclusive_new_ms_per_tick": 0.079113721,
+      "inclusive_raw_delta": 0.010739452999999996,
+      "inclusive_raw_percent": 15.70686358207154,
+      "inclusive_corrected_ms_per_tick": 0.07687038852648535,
+      "inclusive_corrected_delta": 0.008496120526485351,
+      "inclusive_corrected_percent": 12.42590345023562,
+      "exclusive_old_ms_per_tick": 0.000976807,
+      "exclusive_new_ms_per_tick": 0.000488037,
+      "exclusive_raw_delta": -0.0004887699999999999,
+      "exclusive_raw_percent": -50.037520206141025,
+      "exclusive_corrected_ms_per_tick": 0.00047419832275744344,
+      "exclusive_corrected_delta": -0.0005026086772425564,
+      "exclusive_corrected_percent": -51.454246052962006
+    }
+  ],
+  "previous_input_comparable": false,
+  "old_historical_hyperpath_reference_ms_per_tick": {
+    "StepHyperpath": 2.95458042,
+    "TickPrecomputed": 3.010732959
+  }
+}

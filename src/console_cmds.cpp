@@ -5027,12 +5027,18 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 				events.hyperpath_walk_nanoseconds[2] / 1000, events.hyperpath_walk_groups[2]);
 		IConsolePrint(CC_DEFAULT, "Passenger hyperpath lookup: rebuilds={}; indexed_groups={}; validated_groups={}; violations={}",
 				events.hyperpath_lookup_rebuilds, events.hyperpath_lookup_indexed_groups, events.hyperpath_index_validated, events.hyperpath_index_violations);
+		IConsolePrint(CC_DEFAULT, "Passenger hyperpath memo: hits={}; validated={}; conservative={}; violations={}; lookup_duplicates={}",
+				events.hyperpath_memo_hits, events.hyperpath_memo_validated, events.hyperpath_memo_conservative, events.hyperpath_memo_violations,
+				events.hyperpath_lookup_duplicates);
 	}
 	for (CargoType cargo : EnumRange(NUM_CARGO)) if (IsCargoInClass(cargo, CargoClass::Passengers)) {
 		const auto p = GetPassengerServiceDatabase().GetPrecomputedDiagnostic(cargo);
 		IConsolePrint(CC_DEFAULT, "Precomputed passenger routes: cargo={}; patterns={}; stations={}; states={}; edges={}; destinations={}; bytes={}; envelope={}; build_ns={}; operations={}; queries={}; query_ns={}; hits={}; missing={}; no_route={}",
 			cargo, p.patterns, p.stations, p.states, p.edges, p.destinations, p.bytes, p.envelope, p.build_nanoseconds, p.operations, p.queries, p.query_nanoseconds, p.hits, p.missing, p.no_route);
 		IConsolePrint(CC_DEFAULT, "Precomputed common sections: cargo={}; sections={}; concrete_rides={}", cargo, p.shared_sections, p.section_rides);
+		const auto w = GetPassengerServiceDatabase().GetPrecomputedParallelDiagnostic(cargo);
+		IConsolePrint(CC_DEFAULT, "Precomputed parallel rows: cargo={}; workers={}; cache_hits={}; serial_rows={}; finished_rows={}; finish_effects={}; throttles={}",
+			cargo, w.workers, w.cache_hits, w.serial_rows, w.finished_rows, w.finish_effects, w.throttles);
 		IConsolePrint(CC_DEFAULT, "Precomputed timetable certainty: cargo={}; certified_patterns={}; estimated_patterns={}", cargo, p.certified_patterns, p.estimated_patterns);
 		IConsolePrint(CC_DEFAULT, "Precomputed retained routes: cargo={}; destinations={}; bytes={}; envelope={}",
 				cargo, p.retained_destinations, p.retained_bytes, p.retained_envelope);

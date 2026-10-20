@@ -184,6 +184,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		capture = nullptr;
 	}
 	PassengerServiceGraph graph;
+	graph.aircraft_cost = PassengerAircraftCost::Current();
 	graph.cargo = cargo; graph.start = graph.end = now; graph.scope = scope;
 	limits.work = std::min<size_t>(limits.work, 1 << 24);
 	limits.services = std::min<size_t>(limits.services, 65536);
@@ -199,7 +200,7 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 	graph.end += limits.horizon;
 	size_t budget = limits.work, remaining_visits = limits.total_visits;
 	size_t resident_bound = 0;
-	static_assert(3 * sizeof(PassengerPredictedVisit) + 6 * sizeof(VisitID) <= 320);
+	static_assert(3 * sizeof(PassengerPredictedVisit) + 6 * sizeof(VisitID) + sizeof(int64_t) <= 320);
 	static_assert(3 * sizeof(Trip) + 3 * sizeof(size_t) + 128 <= 1024);
 	size_t predicting_visits = 0;
 	PassengerGraphStage stage = PassengerGraphStage::Discovery;
@@ -471,7 +472,9 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 		graph.service_index.emplace(service.id, graph.services.size());
 		graph.services.push_back(std::move(service));
 		Service &stored = graph.services.back();
+		bool can_board = scope && scope->onboard_service == stored.id, can_alight = false;
 		for (const Stop &stop : stored.stops) {
+			can_board |= stop.can_board; can_alight |= stop.can_alight;
 			if (!stop.can_board && !stop.can_alight) continue;
 			auto &ids = graph.station_services[stop.station];
 			if (ids.empty() || ids.back() != stored.id) ids.push_back(stored.id);
@@ -494,6 +497,12 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 					v->vehicle_flags.Test(VehicleFlag::ScheduledDispatch), capacity, operation, {} };
 			trip.occupants = occupants; trip.current_free = capacity - std::min(capacity, occupants);
 			trip.type = v->type;
+			/* Scope selection includes the onboard service even on a dead-end excursion.
+			 * Only the actual OD corridor can justify discount-driven horizon extension.
+			 * Do not require a predicted flight here: its first departure can be beyond end.
+			 * An unscoped graph may also serve an onboard query at a NoLoad stop. */
+			if (graph.aircraft_cost.scale < 100 && trip.type == VehicleType::Aircraft && operation == Operation::Running && capacity != 0 &&
+					can_alight && (!scope || (can_board && (stored.id != scope->onboard_service || selection.onboard_on_corridor)))) graph.has_aircraft_discount = true;
 			trip.prediction.start = trip.prediction.complete_until = now;
 			trip.prediction.stopped_at = now;
 			if (operation == Operation::Running && capacity == 0 && v->current_order.IsRefit()) {
@@ -594,6 +603,12 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 				++graph.diagnostic.prediction_stops[static_cast<size_t>(trip.prediction.stop)];
 				graph.diagnostic.maximum_unpredicted_ticks = std::max<Ticks>(graph.diagnostic.maximum_unpredicted_ticks, (graph.end - trip.prediction.complete_until).base());
 			}
+			if (trip.type == VehicleType::Aircraft && !graph.aircraft_cost.IsDefault()) {
+				trip.aircraft_adjustments.resize(trip.prediction.visits.size());
+				for (size_t i = 1; i < trip.prediction.visits.size(); ++i) {
+					trip.aircraft_adjustments[i] = trip.aircraft_adjustments[i - 1] + graph.aircraft_cost.Adjustment(trip.prediction.visits[i].movement_from_previous.base());
+				}
+			}
 			const size_t trip_index = graph.trips.size();
 			stored.trips.push_back(trip_index); graph.trips.push_back(std::move(trip));
 			const Trip &saved = graph.trips.back();
@@ -625,7 +640,8 @@ PassengerServiceGraph PassengerServiceGraph::Build(CargoType cargo, StateTicks n
 				p.schedules.capacity() * sizeof(DispatchSchedule) + service.trips.capacity() * sizeof(size_t);
 		for (const auto &schedule : service.schedules) graph.diagnostic.allocation_bytes += schedule.GetScheduledDispatch().capacity() * sizeof(DispatchSlot);
 	}
-	for (const auto &trip : graph.trips) graph.diagnostic.allocation_bytes += trip.prediction.visits.capacity() * sizeof(PassengerPredictedVisit);
+	for (const auto &trip : graph.trips) graph.diagnostic.allocation_bytes += trip.prediction.visits.capacity() * sizeof(PassengerPredictedVisit) +
+			trip.aircraft_adjustments.capacity() * sizeof(int64_t);
 	auto map_bytes = [](const auto &map) { return map.size() * (sizeof(typename std::decay_t<decltype(map)>::value_type) + 4 * sizeof(void *)); };
 	graph.diagnostic.allocation_bytes += map_bytes(graph.service_index);
 	for (const auto &[station, ids] : graph.station_services) graph.diagnostic.allocation_bytes += 96 + ids.capacity() * sizeof(OrderListID);

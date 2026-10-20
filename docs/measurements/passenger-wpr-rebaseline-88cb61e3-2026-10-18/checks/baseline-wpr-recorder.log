@@ -1,0 +1,12 @@
+﻿2026-10-18T14:10:55.2475249+09:00 wpr -start CPU
+2026-10-18T14:10:55.5320326+09:00 wpr -marker legacy-begin -flush
+2026-10-18T14:11:54.5855478+09:00 wpr -marker legacy-end -flush
+2026-10-18T14:11:54.6817984+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-rebaseline-88cb61e3\baseline\legacy\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.
+2026-10-18T14:21:57.6599888+09:00 wpr -start CPU
+2026-10-18T14:21:57.9098266+09:00 wpr -marker hyperpath-begin -flush
+2026-10-18T14:22:30.7492345+09:00 wpr -marker hyperpath-end -flush
+2026-10-18T14:22:30.8438311+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-rebaseline-88cb61e3\baseline\hyperpath\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.

@@ -1,0 +1,18 @@
+Waiting for idle host: openttd:45492
+Waiting for idle host: quiet interval (60s)
+Beginning legacy ordinary WPR
+Traceback (most recent call last):
+  File "C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-8ff4834d\measure.py", line 33, in <module>
+    subprocess.run([sys.executable,'-B',str(ROOT/'utils/passenger_precomputed_real_map.py'),'run',
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        str(WORK/'Release/openttd.exe'),str(package),str(WORK/mode),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        '--hyperpath-filter-mode','index','--main-thread-affinity-mask','1','--lang',str(WORK/'lang'),'--wpr-profile'],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        cwd=ROOT,env=env,stdout=out,stderr=subprocess.STDOUT,check=True)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\bebe\AppData\Local\Programs\Python\Python313\Lib\subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe', '-B', 'C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py', 'run', 'C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-8ff4834d\\Release\\openttd.exe', 'C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-rebaseline-88cb61e3\\seeds\\legacy', 'C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-8ff4834d\\legacy', '--ticks', '2048', '--timeout', '2400', '--measurement-wait', '2400', '--resume', '--precomputed', '--no-hyperpath', '--warm-precomputed', '--wait-background-ready', '--hyperpath-filter-mode', 'index', '--main-thread-affinity-mask', '1', '--lang', 'C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-8ff4834d\\lang', '--wpr-profile']' returned non-zero exit status 1.

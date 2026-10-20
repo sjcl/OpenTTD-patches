@@ -1,0 +1,6 @@
+{
+  "base_commit": "88cb61e3756cdd88021bc87b8dd779a4c93473d5",
+  "identifier_only_change": true,
+  "original_header_sha256": "a1651273a980894cc4b447c90d0a5bf2a59df766b4023588c97fa950ea16814c",
+  "patched_header_sha256": "ab2eb6cb5acff8e3b5f32031455cd156b76b74c8ec2c69053e04740b6e535a01"
+}

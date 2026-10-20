@@ -1,0 +1,33 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+    "-B",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+    "run",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-validate-6aeaff68-2026-10-19\\Release\\openttd.exe",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-validate-6aeaff68-2026-10-19\\input",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-validate-6aeaff68-2026-10-19\\validate",
+    "--ticks",
+    "2048",
+    "--timeout",
+    "2400",
+    "--measurement-wait",
+    "2400",
+    "--resume",
+    "--wait-saved-replay",
+    "--precomputed",
+    "--hyperpath",
+    "--warm-precomputed",
+    "--wait-background-ready",
+    "--hyperpath-filter-mode",
+    "validate",
+    "--main-thread-affinity-mask",
+    "1",
+    "--lang",
+    "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-validate-6aeaff68-2026-10-19\\lang",
+    "--validation-only"
+  ],
+  "correctness_only": true,
+  "wpr": false,
+  "scope": "Exactly one real-map run; concurrent PGO training is recorded, not stopped; no performance claims."
+}

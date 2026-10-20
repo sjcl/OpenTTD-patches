@@ -1,0 +1,329 @@
+{
+  "baseline_commit": "97cdc0ad4c9493daea0db6079e90a03924d96b56",
+  "current_commit": "0b8a21c0f3dc9a24ca0d9d3581c19fb9c207e684",
+  "same_input": true,
+  "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+  "canonical": {
+    "legacy": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    },
+    "hyperpath": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    }
+  },
+  "correction_is_estimate": true,
+  "recorder_settings": {
+    "legacy": {
+      "old": "Memory",
+      "new": "File",
+      "reason": "The completed Memory trace lacked its legacy-begin marker; only File retake is accepted"
+    },
+    "hyperpath": {
+      "old": "File",
+      "new": "File"
+    },
+    "profiles": {
+      "memory": {
+        "same_profile_settings_ignoring_element_order": true,
+        "command": [
+          "wpr",
+          "-exportprofile",
+          "CPU",
+          "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\cpu-memory.wprp"
+        ],
+        "system_buffers": 4781,
+        "event_buffers": 20
+      },
+      "file": {
+        "same_profile_settings_ignoring_element_order": true,
+        "command": [
+          "wpr",
+          "-exportprofile",
+          "CPU",
+          "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-0b8a21c0\\cpu-file.wprp",
+          "-filemode"
+        ],
+        "system_buffers": 20,
+        "event_buffers": 20
+      }
+    },
+    "baseline": "97cdc0ad",
+    "same_recorder_configuration_per_mode": false,
+    "hyperpath_preflight": "Same one-second paused preflight and ready marker before begin",
+    "legacy_preflight": "File retake: same one-second paused preflight and ready marker as Hyperpath",
+    "same_recorder_configuration_hyperpath": false,
+    "legacy_recording_difference": {
+      "old_system_buffers": 4781,
+      "new_system_buffers": 1024,
+      "old_event_buffers": 20,
+      "new_event_buffers": 128,
+      "recording_mode_difference": true,
+      "cpu_profile_provider_settings_verified": true
+    },
+    "buffer_adjustment": {
+      "changes": {
+        "./Profiles/SystemCollector/Buffers": {
+          "old": 20,
+          "new": 1024
+        },
+        "./Profiles/EventCollector/Buffers": {
+          "old": 20,
+          "new": 128
+        }
+      },
+      "all_other_profile_settings_identical": true,
+      "reason": "Default Hyperpath File trace reported 2024287 dropped events. Use the previously proven 1024/128 buffer counts."
+    },
+    "current_system_buffers": 1024,
+    "current_event_buffers": 128,
+    "same_cpu_sampling_provider_keywords_and_stacks": true,
+    "hyperpath_recording_difference": {
+      "logging_mode_unchanged": "File",
+      "old_system_buffers": 20,
+      "new_system_buffers": 1024,
+      "old_event_buffers": 20,
+      "new_event_buffers": 128,
+      "reason": "Default File trace dropped 2024287 events"
+    }
+  },
+  "reference_files": {
+    "docs/measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/control-97cdc0ad/legacy/save-integrity.json": "0499f5b19ca1f5522674574c48ee8e4d15c338346dc62b674747ef12c6ca2417",
+    "docs/measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/control-97cdc0ad/legacy/process.json": "d78adaf80c5b4c780ab75fef207b821f0feceb13b046b646b1ebbee578709faa",
+    "docs/measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/control-97cdc0ad/legacy-functions.csv": "b9446fefd66e1d675c65eaccc5bb7f428185f040defc3fceb145272884b94966",
+    "docs/measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/control-97cdc0ad/hyperpath/save-integrity.json": "4c1fa2a8ef91d6b1493078e629723cfa705cc99f286cbf5e9e771c74defbbcd6",
+    "docs/measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/control-97cdc0ad/hyperpath/process.json": "3bafab3f2f6289b1952f1027c8716494936456b6932f2aa8ee1163411f1350bc",
+    "docs/measurements/passenger-wpr-coach-memo-0b8a21c0-2026-10-19/control-97cdc0ad/hyperpath-functions.csv": "9c7ae857dc3790700c31bd25447a23960d24807ef009d388a43b27950d189262"
+  },
+  "focus": {
+    "legacy": {
+      "MayUseHyperpathPolicy": {
+        "mode": "legacy",
+        "function": "openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy",
+        "machine_factor": 1.0763495378354675,
+        "canonical_equal": true,
+        "logging_mode_old": "File",
+        "logging_mode_new": "File",
+        "matched_cpu_only_profile": true,
+        "inclusive_old_ms_per_tick": 1.530620703,
+        "inclusive_new_ms_per_tick": 1.068822607,
+        "inclusive_raw_percent": -30.170642216904607,
+        "inclusive_new_adjusted_ms_per_tick": 0.9930069827961239,
+        "inclusive_adjusted_percent": -35.12390229337413,
+        "inclusive_old_samples": 3136,
+        "inclusive_new_samples": 2189,
+        "exclusive_old_ms_per_tick": 0.237241016,
+        "exclusive_new_ms_per_tick": 0.153793848,
+        "exclusive_raw_percent": -35.17400549321539,
+        "exclusive_new_adjusted_ms_per_tick": 0.1428846695184898,
+        "exclusive_adjusted_percent": -39.77235811598033,
+        "exclusive_old_samples": 486,
+        "exclusive_new_samples": 315
+      },
+      "StepHyperpath": {
+        "mode": "legacy",
+        "function": "openttd.exe!PassengerPrecomputedTable::StepHyperpath",
+        "machine_factor": 1.0763495378354675,
+        "canonical_equal": true,
+        "logging_mode_old": "File",
+        "logging_mode_new": "File",
+        "matched_cpu_only_profile": true,
+        "inclusive_old_ms_per_tick": 0.0,
+        "inclusive_new_ms_per_tick": 0.0,
+        "inclusive_raw_percent": null,
+        "inclusive_new_adjusted_ms_per_tick": 0.0,
+        "inclusive_adjusted_percent": null,
+        "inclusive_old_samples": 0,
+        "inclusive_new_samples": 0,
+        "exclusive_old_ms_per_tick": 0.0,
+        "exclusive_new_ms_per_tick": 0.0,
+        "exclusive_raw_percent": null,
+        "exclusive_new_adjusted_ms_per_tick": 0.0,
+        "exclusive_adjusted_percent": null,
+        "exclusive_old_samples": 0,
+        "exclusive_new_samples": 0
+      },
+      "loading_walk": {
+        "mode": "legacy",
+        "function": "openttd.exe!StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoLoad>'::`2'::<lambda_1> >",
+        "machine_factor": 1.0763495378354675,
+        "canonical_equal": true,
+        "logging_mode_old": "File",
+        "logging_mode_new": "File",
+        "matched_cpu_only_profile": true,
+        "inclusive_old_ms_per_tick": 2.87357666,
+        "inclusive_new_ms_per_tick": 2.367355273,
+        "inclusive_raw_percent": -17.616421863615784,
+        "inclusive_new_adjusted_ms_per_tick": 2.1994298225469926,
+        "inclusive_adjusted_percent": -23.460200204055358,
+        "inclusive_old_samples": 5887,
+        "inclusive_new_samples": 4848,
+        "exclusive_old_ms_per_tick": 0.009759961,
+        "exclusive_new_ms_per_tick": 0.013199756,
+        "exclusive_raw_percent": 35.24394206083406,
+        "exclusive_new_adjusted_ms_per_tick": 0.012263447454573754,
+        "exclusive_adjusted_percent": 25.650578466181926,
+        "exclusive_old_samples": 20,
+        "exclusive_new_samples": 27
+      }
+    },
+    "hyperpath": {
+      "MayUseHyperpathPolicy": {
+        "mode": "hyperpath",
+        "function": "openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy",
+        "machine_factor": 1.0975679020371418,
+        "canonical_equal": true,
+        "logging_mode_old": "File",
+        "logging_mode_new": "File",
+        "matched_cpu_only_profile": true,
+        "inclusive_old_ms_per_tick": 0.693738916,
+        "inclusive_new_ms_per_tick": 0.638974902,
+        "inclusive_raw_percent": -7.894038050476048,
+        "inclusive_new_adjusted_ms_per_tick": 0.5821734589851162,
+        "inclusive_adjusted_percent": -16.081764254794074,
+        "inclusive_old_samples": 1421,
+        "inclusive_new_samples": 1309,
+        "exclusive_old_ms_per_tick": 0.115711377,
+        "exclusive_new_ms_per_tick": 0.080685742,
+        "exclusive_raw_percent": -30.269828177742617,
+        "exclusive_new_adjusted_ms_per_tick": 0.07351321212131219,
+        "exclusive_adjusted_percent": -36.46846660435803,
+        "exclusive_old_samples": 237,
+        "exclusive_new_samples": 165
+      },
+      "StepHyperpath": {
+        "mode": "hyperpath",
+        "function": "openttd.exe!PassengerPrecomputedTable::StepHyperpath",
+        "machine_factor": 1.0975679020371418,
+        "canonical_equal": true,
+        "logging_mode_old": "File",
+        "logging_mode_new": "File",
+        "matched_cpu_only_profile": true,
+        "inclusive_old_ms_per_tick": 0.722365771,
+        "inclusive_new_ms_per_tick": 0.455520654,
+        "inclusive_raw_percent": -36.94044315397109,
+        "inclusive_new_adjusted_ms_per_tick": 0.4150273100684983,
+        "inclusive_adjusted_percent": -42.54609967275176,
+        "inclusive_old_samples": 1478,
+        "inclusive_new_samples": 932,
+        "exclusive_old_ms_per_tick": 0.263967187,
+        "exclusive_new_ms_per_tick": 0.27327002,
+        "exclusive_raw_percent": 3.524238412253866,
+        "exclusive_new_adjusted_ms_per_tick": 0.2489777803202854,
+        "exclusive_adjusted_percent": -5.678511352138093,
+        "exclusive_old_samples": 540,
+        "exclusive_new_samples": 559
+      },
+      "loading_walk": {
+        "mode": "hyperpath",
+        "function": "openttd.exe!StationCargoList::VisitBoardingCandidates<`StationCargoList::ShiftIndexedJourneyCargo<CargoLoad>'::`2'::<lambda_1> >",
+        "machine_factor": 1.0975679020371418,
+        "canonical_equal": true,
+        "logging_mode_old": "File",
+        "logging_mode_new": "File",
+        "matched_cpu_only_profile": true,
+        "inclusive_old_ms_per_tick": 1.987849854,
+        "inclusive_new_ms_per_tick": 1.853993262,
+        "inclusive_raw_percent": -6.733737547161855,
+        "inclusive_new_adjusted_ms_per_tick": 1.689183200928976,
+        "inclusive_adjusted_percent": -15.024608245438642,
+        "inclusive_old_samples": 4071,
+        "inclusive_new_samples": 3798,
+        "exclusive_old_ms_per_tick": 0.011248437,
+        "exclusive_new_ms_per_tick": 0.009819092,
+        "exclusive_raw_percent": -12.707054322302735,
+        "exclusive_new_adjusted_ms_per_tick": 0.008946227364863045,
+        "exclusive_adjusted_percent": -20.4669291843565,
+        "exclusive_old_samples": 23,
+        "exclusive_new_samples": 20
+      }
+    }
+  },
+  "step_vector_reallocation": {
+    "legacy": {
+      "old": {
+        "inclusive_ms_per_tick": 0.0,
+        "samples": 0,
+        "frames": {}
+      },
+      "new": {
+        "inclusive_ms_per_tick": 0.0,
+        "samples": 0,
+        "frames": {}
+      },
+      "new_adjusted_ms_per_tick": 0.0,
+      "raw_percent": null,
+      "adjusted_percent": null,
+      "predicate": "StateGameLoop and StepHyperpath exact frames, then std::vector frame containing realloc. Each stack counted once."
+    },
+    "hyperpath": {
+      "old": {
+        "inclusive_ms_per_tick": 0.25505576171875,
+        "samples": 522,
+        "frames": {
+          "openttd.exe!std::vector<PassengerStrategy,std::allocator<PassengerStrategy> >::_Emplace_reallocate<>": {
+            "inclusive_ms_per_tick": 0.0009765625,
+            "samples": 2
+          },
+          "openttd.exe!std::vector<std::vector<unsigned int,std::allocator<unsigned int> >,std::allocator<std::vector<unsigned int,std::allocator<unsigned int> > > >::_Emplace_reallocate<>": {
+            "inclusive_ms_per_tick": 0.00048828125,
+            "samples": 1
+          },
+          "openttd.exe!std::vector<_POOLCUE,std::allocator<_POOLCUE> >::_Emplace_reallocate<_POOLCUE const &>": {
+            "inclusive_ms_per_tick": 0.02058603515625,
+            "samples": 42
+          },
+          "openttd.exe!std::vector<std::tuple<__int64,unsigned int,unsigned int>,std::allocator<std::tuple<__int64,unsigned int,unsigned int> > >::_Emplace_reallocate<std::tuple<__int64,unsigned int,unsigned int> const &>": {
+            "inclusive_ms_per_tick": 0.0009679687500000001,
+            "samples": 2
+          },
+          "openttd.exe!std::vector<LinkGraph::EdgeRoute,std::allocator<LinkGraph::EdgeRoute> >::_Emplace_reallocate<LinkGraph::EdgeRoute const &>": {
+            "inclusive_ms_per_tick": 0.22323920898437505,
+            "samples": 457
+          },
+          "openttd.exe!std::vector<PoolID<StationIDTag>,std::allocator<PoolID<StationIDTag> > >::_Emplace_reallocate<PoolID<StationIDTag> const &>": {
+            "inclusive_ms_per_tick": 0.008797705078125,
+            "samples": 18
+          }
+        }
+      },
+      "new": {
+        "inclusive_ms_per_tick": 0.020999218750000003,
+        "samples": 43,
+        "frames": {
+          "openttd.exe!std::vector<PassengerStrategy,std::allocator<PassengerStrategy> >::_Emplace_reallocate<>": {
+            "inclusive_ms_per_tick": 0.0009748535156250001,
+            "samples": 2
+          },
+          "openttd.exe!std::vector<std::vector<unsigned int,std::allocator<unsigned int> >,std::allocator<std::vector<unsigned int,std::allocator<unsigned int> > > >::_Emplace_reallocate<>": {
+            "inclusive_ms_per_tick": 0.00048828125,
+            "samples": 1
+          },
+          "openttd.exe!std::vector<_POOLCUE,std::allocator<_POOLCUE> >::_Emplace_reallocate<_POOLCUE const &>": {
+            "inclusive_ms_per_tick": 0.00048818359375,
+            "samples": 1
+          },
+          "openttd.exe!std::vector<std::tuple<__int64,unsigned int,unsigned int>,std::allocator<std::tuple<__int64,unsigned int,unsigned int> > >::_Emplace_reallocate<std::tuple<__int64,unsigned int,unsigned int> const &>": {
+            "inclusive_ms_per_tick": 0.001477197265625,
+            "samples": 3
+          },
+          "openttd.exe!std::vector<PoolID<StationIDTag>,std::allocator<PoolID<StationIDTag> > >::_Emplace_reallocate<PoolID<StationIDTag> const &>": {
+            "inclusive_ms_per_tick": 0.009747265625,
+            "samples": 20
+          },
+          "openttd.exe!std::vector<LinkGraph::EdgeRoute,std::allocator<LinkGraph::EdgeRoute> >::_Emplace_reallocate<LinkGraph::EdgeRoute const &>": {
+            "inclusive_ms_per_tick": 0.007823437499999999,
+            "samples": 16
+          }
+        }
+      },
+      "new_adjusted_ms_per_tick": 0.019132500787445026,
+      "raw_percent": -91.76681263403262,
+      "adjusted_percent": -92.49869884980586,
+      "predicate": "StateGameLoop and StepHyperpath exact frames, then std::vector frame containing realloc. Each stack counted once."
+    }
+  }
+}

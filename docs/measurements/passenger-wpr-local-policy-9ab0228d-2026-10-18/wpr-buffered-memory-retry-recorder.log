@@ -1,0 +1,7 @@
+﻿2026-10-19T00:33:54.3838819+09:00 wpr -start C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-9ab0228d\cpu-memory-large-events.wprp!CPU
+2026-10-19T00:33:56.3049324+09:00 wpr -marker hyperpath-ready -flush
+2026-10-19T00:33:56.4007991+09:00 wpr -marker hyperpath-begin -flush
+2026-10-19T00:34:53.7759299+09:00 wpr -marker hyperpath-end -flush
+2026-10-19T00:34:53.8966321+09:00 wpr -stop C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-9ab0228d\hyperpath\cpu.etl
+Press Ctrl+C to cancel the stop operation.
+The trace was successfully saved.

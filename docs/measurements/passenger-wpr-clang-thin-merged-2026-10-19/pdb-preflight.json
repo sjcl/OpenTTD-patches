@@ -1,0 +1,36 @@
+{
+  "commands": [
+    [
+      "C:\\Program Files\\LLVM\\bin\\llvm-pdbutil.exe",
+      "dump",
+      "--symbols",
+      "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-clang-thin-2026-10-19\\Release\\openttd.pdb"
+    ]
+  ],
+  "matches": {
+    "StateGameLoop": [
+      " 74524 | S_GPROC32 [size = 76] `StateGameLoop_LinkGraphPauseControl`",
+      "176560 | S_GPROC32 [size = 56] `StateGameLoop`"
+    ],
+    "CanBoard": [
+      "257584 | S_GPROC32 [size = 80] `PassengerJourneyLoadingContext::CanBoard`",
+      "287368 | S_LPROC32 [size = 88] `PassengerJourneyLoadingContext::CanBoardUncached`",
+      "         inlinee: 0x175A9 (CanBoard)"
+    ],
+    "MayUseHyperpathPolicy": [
+      "339852 | S_GPROC32 [size = 96] `PassengerJourneyLoadingContext::MayUseHyperpathPolicy`",
+      "346480 | S_UDT [size = 76] `PassengerJourneyLoadingContext::MayUseHyperpathPolicy::<lambda_10>`",
+      "346560 | S_LPROC32 [size = 456] `PassengerJourneyLoadingContext::MayUseHyperpathPolicy::<lambda_10>::operator()<std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::tuple<std::tuple<PoolID<VehicleIDTag>,CargoType,unsigned short,unsigned long long,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned long long,std::array<unsigned int,2> >,bool> > > > >`"
+    ],
+    "PlanPrecomputed": [
+      "259548 | S_GPROC32 [size = 84] `PassengerServiceDatabase::PlanPrecomputed`"
+    ],
+    "VisitBoardingCandidates": [
+      "         inlinee = 0x19061 (VisitBoardingCandidates), parent = 481624, end = 553972",
+      "         inlinee = 0x1918F (VisitBoardingCandidates), parent = 561616, end = 633964",
+      "         inlinee: 0x191EF (VisitBoardingCandidates)"
+    ]
+  },
+  "all_required_names_present": true,
+  "method": "Native llvm-pdbutil module symbols and, when needed, inlinee IDs; no DIA registry dependency or forced noinline."
+}

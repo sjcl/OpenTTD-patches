@@ -1,0 +1,37 @@
+[
+  {
+    "pid": 109636,
+    "parent_pid": 103792,
+    "cpu_delta_seconds": 0.0,
+    "action": "stopped owned idle orphan after baseline build",
+    "ignored_child": "conhost.exe"
+  },
+  {
+    "pid": 85116,
+    "parent_pid": 103792,
+    "cpu_delta_seconds": 0.0,
+    "action": "stopped owned idle orphan after baseline build",
+    "ignored_child": "conhost.exe"
+  },
+  {
+    "pid": 82872,
+    "parent_pid": 103792,
+    "cpu_delta_seconds": 0.0,
+    "action": "stopped owned idle orphan after baseline build",
+    "ignored_child": "conhost.exe"
+  },
+  {
+    "pid": 90264,
+    "parent_pid": 103792,
+    "cpu_delta_seconds": 0.0,
+    "action": "stopped owned idle orphan after baseline build",
+    "ignored_child": "conhost.exe"
+  },
+  {
+    "pid": 137124,
+    "parent_pid": 103792,
+    "cpu_delta_seconds": 0.0,
+    "action": "stopped owned idle orphan after baseline build",
+    "ignored_child": "conhost.exe"
+  }
+]

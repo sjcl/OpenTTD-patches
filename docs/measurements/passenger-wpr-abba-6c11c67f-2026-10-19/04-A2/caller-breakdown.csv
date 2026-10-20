@@ -1,0 +1,16 @@
+parent,child,legacy_ms_per_tick,hyperpath_ms_per_tick,delta_ms_per_tick
+openttd.exe!RunPassengerWaitingEvents,openttd.exe!StationCargoList::RoutePassengerJourneys,0.749045752,0.766919531,0.017873779
+openttd.exe!RunPassengerWaitingEvents,openttd.exe!_Query_perf_counter,0.000000000,0.001951904,0.001951904
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!PassengerServiceDatabase::IsCurrent,0.012211230,0.013678711,0.001467480
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,ntoskrnl.exe!KiInterruptDispatchNoLockNoEtw,0.000000000,0.000492285,0.000492285
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,[self],0.000000000,0.000488672,0.000488672
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,ntoskrnl.exe!KiInterruptDispatch,0.000000000,0.000488184,0.000488184
+openttd.exe!RunPassengerWaitingEvents,[self],0.001462988,0.001471436,0.000008447
+openttd.exe!RunPassengerWaitingEvents,openttd.exe!StationCargoList::UpdatePassengerRoutingSchedule,0.000488379,0.000000000,-0.000488379
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,openttd.exe!_Query_perf_counter,0.000488428,0.000000000,-0.000488428
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,ntoskrnl.exe!KiDpcInterrupt,0.000489453,0.000000000,-0.000489453
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,"openttd.exe!std::tuple<std::tuple<PoolID<VehicleIDTag>,CargoType,unsigned short,unsigned long long,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned long long,std::array<unsigned int,2> >::_Three_way_compare<std::tuple<PoolID<VehicleIDTag>,CargoType,unsigned short,unsigned long long,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned long long,std::array<unsigned int,2> >",0.060532031,0.042004443,-0.018527588
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,"openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy::<lambda_10>::operator()<std::_Tree_iterator<std::_Tree_val<std::_Tree_simple_types<std::pair<const std::tuple<std::tuple<PoolID<VehicleIDTag>,CargoType,unsigned short,unsigned long long,PoolID<StationIDTag>,PoolID<StationIDTag>,PoolID<OrderListIDTag>,PoolID<OrderListIDTag> >,PoolID<OrderListIDTag>,unsigned long long,std::array<unsigned int,2> >,bool> > > > >",0.348598340,0.265108936,-0.083489404
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,[self],0.261674316,0.168921289,-0.092753027
+openttd.exe!PassengerJourneyLoadingContext::MayUseHyperpathPolicy,openttd.exe!PassengerJourneyLoadingContext::RetiredPlan,0.431153076,0.118643115,-0.312509961
+openttd.exe!PassengerServiceDatabase::PreparePrecomputed,openttd.exe!PassengerPrecomputedTable::PrepareGraph,1.575719971,0.008305713,-1.567414258

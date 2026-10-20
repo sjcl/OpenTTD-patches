@@ -1,0 +1,24 @@
+Number of Processors : 32
+CPU Speed            : 4300 MHz
+OS Version           : 10.00.00.00
+OS Build Number      : 26200
+Clock type           : PerfCounter
+Boot time            : 2026/09/16:21:03:39.5000000
+Native Pointer Size  : 8 (64bit)
+Start time (UTC)     : 2026/10/19:15:11:53.0912497
+End time (UTC)       : 2026/10/19:15:12:50.4581967  (+         0:00:00:57.3669470)
+Total # Lost Buffers : 0
+Total # Lost Events  : 0
+
+Number of Traces     : 1
+
+Trace name: C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-abba-6c11c67f-2026-10-19\02-B1\legacy\cpu.etl
+    Log file mode        : Sequential Relogged
+    Pointer size         : 8 (64bit)
+    Start time (UTC)     : 2026/10/19:15:11:53.0912497
+    End time (UTC)       : 2026/10/19:15:12:50.4581967  (+         0:00:00:57.3669470)
+    Start time (Local)   : 2026/10/20:00:11:53.0912497
+    End time (Local)     : 2026/10/20:00:12:50.4581967
+    # Lost Buffers       : 0
+    # Lost Events        : 0
+

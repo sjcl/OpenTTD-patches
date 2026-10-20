@@ -1,0 +1,19 @@
+{
+  "mode": "hyperpath",
+  "marker_begin_us": 2174567,
+  "marker_end_us": 55267072,
+  "game_pid": 78420,
+  "valid": true,
+  "overlapping_competing_processes": [],
+  "relevant_processes": [
+    {
+      "name": "openttd.exe",
+      "pid": 78420,
+      "start_us": null,
+      "end_us": null,
+      "own_game": true,
+      "overlaps_window": true
+    }
+  ],
+  "method": "Kernel process lifetimes in ETL; MIN/MAX denote trace boundaries. Match the runner build/test/game names, excluding only the measured openttd.exe PID. Units are microseconds."
+}

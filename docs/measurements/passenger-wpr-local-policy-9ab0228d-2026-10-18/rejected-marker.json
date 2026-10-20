@@ -1,0 +1,7 @@
+{
+  "reason": "Missing hyperpath-begin in the ETL marks table",
+  "performance_accepted": false,
+  "canonical_equal": true,
+  "archived_directory": "C:\\Users\\bebe\\.codex\\worktrees\\8621\\OpenTTD-patches\\build-wpr-9ab0228d\\rejected-missing-begin-marker",
+  "action": "Retake Hyperpath only from the same input and binary; preserve valid Legacy capture"
+}

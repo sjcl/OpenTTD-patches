@@ -1,0 +1,1 @@
+﻿Current Profile Interval = 10000 [1.0000ms]

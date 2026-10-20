@@ -1,0 +1,14 @@
+{
+  "legacy": {
+    "exact_ticks": 2048,
+    "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+    "simulation_timing_valid": true,
+    "canonical_equality_required": false
+  },
+  "hyperpath": {
+    "exact_ticks": 2048,
+    "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+    "simulation_timing_valid": true,
+    "canonical_equality_required": false
+  }
+}

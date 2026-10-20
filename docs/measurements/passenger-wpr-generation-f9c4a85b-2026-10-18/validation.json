@@ -1,0 +1,113 @@
+{
+  "product_commit": "f9c4a85b721073bbf86747f4a4cec7ac5ccd2f89",
+  "same_input_between_modes": true,
+  "input_changed_since_previous": true,
+  "canonical_equality_checked": false,
+  "input_not_converted": true,
+  "native_tests": 763,
+  "native_assertions": 10586649,
+  "runs": {
+    "legacy": {
+      "exact_ticks": 2048,
+      "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+      "simulation_timing_valid": true,
+      "whole_process_timing_valid": true,
+      "phase_contamination": [],
+      "kernel_window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": {},
+      "canonical_equality_checked": false,
+      "payments_valid": true,
+      "raw_csv_hashes_match": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 66665702400,
+          "stack_samples": 66656,
+          "exclusive_total_ns": 66665702400,
+          "exclusive_samples": 66656
+        },
+        "main": {
+          "stack_total_ns": 64155960900,
+          "stack_samples": 64149,
+          "exclusive_total_ns": 64155960900,
+          "exclusive_samples": 64149
+        },
+        "simulation_stack": {
+          "stack_total_ns": 54383354700,
+          "stack_samples": 54377,
+          "exclusive_total_ns": 54383354700,
+          "exclusive_samples": 54377
+        }
+      },
+      "unavailable_stack": {
+        "all": {
+          "ns": 769241200,
+          "samples": 769
+        },
+        "main": {
+          "ns": 736245700,
+          "samples": 736
+        }
+      },
+      "wpa_invalid_event_warning": [
+        "Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:\n         Event#: 32363153 (T#0:#32363153)\n         TimeStamp:   87266270, Process: 66280, Thread: 64252, Cpu:   4\n         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}\n         ClassicEventDescriptor: 0x0c  0x00 0x0002\n         MofLength: 112"
+      ],
+      "invalid_event_times_us": [
+        87266270
+      ],
+      "invalid_events_outside_markers": true
+    },
+    "hyperpath": {
+      "exact_ticks": 2048,
+      "input_sha256": "916cfa88eab18342199ec0c77f0c15c5477c961be7fa60d71e2d22a1b878992a",
+      "simulation_timing_valid": true,
+      "whole_process_timing_valid": true,
+      "phase_contamination": [],
+      "kernel_window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": {},
+      "canonical_equality_checked": false,
+      "payments_valid": true,
+      "raw_csv_hashes_match": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 64632344800,
+          "stack_samples": 64616,
+          "exclusive_total_ns": 64632344800,
+          "exclusive_samples": 64616
+        },
+        "main": {
+          "stack_total_ns": 58940378700,
+          "stack_samples": 58930,
+          "exclusive_total_ns": 58940378700,
+          "exclusive_samples": 58930
+        },
+        "simulation_stack": {
+          "stack_total_ns": 55406536800,
+          "stack_samples": 55397,
+          "exclusive_total_ns": 55406536800,
+          "exclusive_samples": 55397
+        }
+      },
+      "unavailable_stack": {
+        "all": {
+          "ns": 912227400,
+          "samples": 912
+        },
+        "main": {
+          "ns": 850207900,
+          "samples": 850
+        }
+      },
+      "wpa_invalid_event_warning": [
+        "Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:\n         Event#: 29957986 (T#0:#29957986)\n         TimeStamp:   81427464, Process: 122280, Thread: 90372, Cpu:   5\n         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}\n         ClassicEventDescriptor: 0x0c  0x00 0x0002\n         MofLength: 112"
+      ],
+      "invalid_event_times_us": [
+        81427464
+      ],
+      "invalid_events_outside_markers": true
+    }
+  }
+}

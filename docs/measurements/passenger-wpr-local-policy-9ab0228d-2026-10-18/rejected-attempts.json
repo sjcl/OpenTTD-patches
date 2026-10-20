@@ -1,0 +1,29 @@
+[
+  {
+    "performance_accepted": false,
+    "reason": "hyperpath-begin missing from ETL marks",
+    "original_etl_bytes": 5053087744,
+    "canonical_equal": true,
+    "retake_validated": true,
+    "thin_evidence_preserved": true,
+    "discarded_run_deleted": true
+  },
+  {
+    "performance_accepted": false,
+    "reason": "hyperpath-begin missing from ETL marks",
+    "original_etl_bytes": 5042601984,
+    "canonical_equal": true,
+    "retake_validated": true,
+    "thin_evidence_preserved": true,
+    "discarded_run_deleted": true
+  },
+  {
+    "performance_accepted": false,
+    "reason": "hyperpath-begin missing from ETL marks",
+    "original_etl_bytes": 5232394240,
+    "canonical_equal": true,
+    "retake_validated": true,
+    "thin_evidence_preserved": true,
+    "discarded_run_deleted": true
+  }
+]

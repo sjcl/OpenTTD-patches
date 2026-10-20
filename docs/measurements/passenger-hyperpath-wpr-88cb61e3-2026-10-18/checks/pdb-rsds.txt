@@ -1,0 +1,185 @@
+Microsoft (R) COFF/PE Dumper Version 14.44.35227.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+
+Dump of file C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-88cb61e3\Release\openttd.exe
+
+PE signature found
+
+File Type: EXECUTABLE IMAGE
+
+FILE HEADER VALUES
+            8664 machine (x64)
+               7 number of sections
+        6AD3C03F time date stamp Sun Oct 18 03:36:47 2026
+               0 file pointer to symbol table
+               0 number of symbols
+              F0 size of optional header
+              22 characteristics
+                   Executable
+                   Application can handle large (>2GB) addresses
+
+OPTIONAL HEADER VALUES
+             20B magic # (PE32+)
+           14.44 linker version
+          9EA400 size of code
+          4B6400 size of initialized data
+               0 size of uninitialized data
+          96F8F0 entry point (000000014096F8F0) WinMainCRTStartup
+            1000 base of code
+       140000000 image base (0000000140000000 to 0000000140EA5FFF)
+            1000 section alignment
+             200 file alignment
+            6.00 operating system version
+            0.00 image version
+            6.00 subsystem version
+               0 Win32 version
+          EA6000 size of image
+             400 size of headers
+               0 checksum
+               2 subsystem (Windows GUI)
+            8160 DLL characteristics
+                   High Entropy Virtual Addresses
+                   Dynamic base
+                   NX compatible
+                   Terminal Server Aware
+          100000 size of stack reserve
+            1000 size of stack commit
+          100000 size of heap reserve
+            1000 size of heap commit
+               0 loader flags
+              10 number of directories
+               0 [       0] RVA [size] of Export Directory
+          BEE084 [     140] RVA [size] of Import Directory
+          E89000 [    AB40] RVA [size] of Resource Directory
+          E23000 [   64914] RVA [size] of Exception Directory
+               0 [       0] RVA [size] of Certificates Directory
+          E94000 [   11374] RVA [size] of Base Relocation Directory
+          B20330 [      54] RVA [size] of Debug Directory
+               0 [       0] RVA [size] of Architecture Directory
+               0 [       0] RVA [size] of Global Pointer Directory
+          B20500 [      28] RVA [size] of Thread Storage Directory
+          B201F0 [     140] RVA [size] of Load Configuration Directory
+               0 [       0] RVA [size] of Bound Import Directory
+          9EC000 [     A78] RVA [size] of Import Address Table Directory
+               0 [       0] RVA [size] of Delay Import Directory
+               0 [       0] RVA [size] of COM Descriptor Directory
+               0 [       0] RVA [size] of Reserved Directory
+
+
+SECTION HEADER #1
+   .text name
+  9EA290 virtual size
+    1000 virtual address (0000000140001000 to 00000001409EB28F)
+  9EA400 size of raw data
+     400 file pointer to raw data (00000400 to 009EA7FF)
+       0 file pointer to relocation table
+       0 file pointer to line numbers
+       0 number of relocations
+       0 number of line numbers
+60000020 flags
+         Code
+         Execute Read
+
+SECTION HEADER #2
+  .rdata name
+  2042A6 virtual size
+  9EC000 virtual address (00000001409EC000 to 0000000140BF02A5)
+  204400 size of raw data
+  9EA800 file pointer to raw data (009EA800 to 00BEEBFF)
+       0 file pointer to relocation table
+       0 file pointer to line numbers
+       0 number of relocations
+       0 number of line numbers
+40000040 flags
+         Initialized Data
+         Read Only
+
+  Debug Directories
+
+        Time Type        Size      RVA  Pointer
+    -------- ------- -------- -------- --------
+    6AD3C03F cv            73 00B4C28C   B4AA8C    Format: RSDS, {3FC8337B-D97C-428B-AD8D-297EF1901C72}, 1, C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-88cb61e3\Release\openttd.pdb
+    6AD3C03F feat          14 00B4C300   B4AB00    Counts: Pre-VC++ 11.00=0, C/C++=1165, /GS=1097, /sdl=0, guardN=368
+    6AD3C03F coffgrp      46C 00B4C314   B4AB14
+
+SECTION HEADER #3
+   .data name
+  2313C0 virtual size
+  BF1000 virtual address (0000000140BF1000 to 0000000140E223BF)
+  111800 size of raw data
+  BEEC00 file pointer to raw data (00BEEC00 to 00D003FF)
+       0 file pointer to relocation table
+       0 file pointer to line numbers
+       0 number of relocations
+       0 number of line numbers
+C0000040 flags
+         Initialized Data
+         Read Write
+
+SECTION HEADER #4
+  .pdata name
+   64914 virtual size
+  E23000 virtual address (0000000140E23000 to 0000000140E87913)
+   64A00 size of raw data
+  D00400 file pointer to raw data (00D00400 to 00D64DFF)
+       0 file pointer to relocation table
+       0 file pointer to line numbers
+       0 number of relocations
+       0 number of line numbers
+40000040 flags
+         Initialized Data
+         Read Only
+
+SECTION HEADER #5
+.fptable name
+     100 virtual size
+  E88000 virtual address (0000000140E88000 to 0000000140E880FF)
+     200 size of raw data
+  D64E00 file pointer to raw data (00D64E00 to 00D64FFF)
+       0 file pointer to relocation table
+       0 file pointer to line numbers
+       0 number of relocations
+       0 number of line numbers
+C0000040 flags
+         Initialized Data
+         Read Write
+
+SECTION HEADER #6
+   .rsrc name
+    AB40 virtual size
+  E89000 virtual address (0000000140E89000 to 0000000140E93B3F)
+    AC00 size of raw data
+  D65000 file pointer to raw data (00D65000 to 00D6FBFF)
+       0 file pointer to relocation table
+       0 file pointer to line numbers
+       0 number of relocations
+       0 number of line numbers
+40000040 flags
+         Initialized Data
+         Read Only
+
+SECTION HEADER #7
+  .reloc name
+   11374 virtual size
+  E94000 virtual address (0000000140E94000 to 0000000140EA5373)
+   11400 size of raw data
+  D6FC00 file pointer to raw data (00D6FC00 to 00D80FFF)
+       0 file pointer to relocation table
+       0 file pointer to line numbers
+       0 number of relocations
+       0 number of line numbers
+42000040 flags
+         Initialized Data
+         Discardable
+         Read Only
+
+  Summary
+
+      232000 .data
+        1000 .fptable
+       65000 .pdata
+      205000 .rdata
+       12000 .reloc
+        B000 .rsrc
+      9EB000 .text

@@ -1,0 +1,17 @@
+{
+  "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-recordings-8ff4834d-2026-10-18\\converted-inputs.zip",
+  "bytes": 81587754,
+  "sha256": "faf784600ee93d3e8fc6d776326571d7b1052c7b2784f92b00ba527bf4a6455a",
+  "input_hashes": {
+    "legacy": "de7d27c10998a09da118d7448d654c40bde1df4c64c7219cab6e9637136815c0",
+    "hyperpath": "413a8b765d2b70b4920d30538b2a4ec34b2e89b702804c4c6b1ffe11f148711a"
+  },
+  "shared_assets_backup": {
+    "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\17\\01a14897-d705-7e72-a972-7f5e9758a329\\passenger-wpr-inputs-88cb61e3-2026-10-18.zip",
+    "bytes": 519158266,
+    "sha256": "a33468e8b2774fe34d593cf05ff1e846d7382da190431647e48ba888a24de994",
+    "verified_entries": 257,
+    "shared_assets_stored_once": true
+  },
+  "verified_converted_saves": true
+}

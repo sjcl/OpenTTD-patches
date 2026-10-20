@@ -1,0 +1,118 @@
+{
+  "product_commit": "97cdc0ad4c9493daea0db6079e90a03924d96b56",
+  "baseline_commit": "9ab0228db17178ef931de961305ebec544162f6a",
+  "same_input": true,
+  "canonical_equality_checked": true,
+  "canonical": {
+    "legacy": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    },
+    "hyperpath": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    }
+  },
+  "native_tests": 763,
+  "native_assertions": 10586649,
+  "runs": {
+    "legacy": {
+      "exact_ticks": 2048,
+      "kernel_window_valid": true,
+      "canonical_equal": true,
+      "canonical_fields": 24,
+      "payments_valid": true,
+      "raw_csv_hashes_match": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": {},
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 67581873600,
+          "stack_samples": 67575,
+          "exclusive_total_ns": 67581873600,
+          "exclusive_samples": 67575
+        },
+        "main": {
+          "stack_total_ns": 65057010700,
+          "stack_samples": 65051,
+          "exclusive_total_ns": 65057010700,
+          "exclusive_samples": 65051
+        },
+        "simulation_stack": {
+          "stack_total_ns": 52934832200,
+          "stack_samples": 52930,
+          "exclusive_total_ns": 52934832200,
+          "exclusive_samples": 52930
+        }
+      },
+      "unavailable_stack": {
+        "all": {
+          "ns": 953959300,
+          "samples": 953
+        },
+        "main": {
+          "ns": 915867700,
+          "samples": 915
+        }
+      },
+      "invalid_event_times_us": [
+        91102495
+      ],
+      "invalid_events_outside_markers": true
+    },
+    "hyperpath": {
+      "exact_ticks": 2048,
+      "kernel_window_valid": true,
+      "canonical_equal": true,
+      "canonical_fields": 24,
+      "payments_valid": true,
+      "raw_csv_hashes_match": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "unresolved_product_functions": {},
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 65273250300,
+          "stack_samples": 65260,
+          "exclusive_total_ns": 65273250300,
+          "exclusive_samples": 65260
+        },
+        "main": {
+          "stack_total_ns": 59366104300,
+          "stack_samples": 59358,
+          "exclusive_total_ns": 59366104300,
+          "exclusive_samples": 59358
+        },
+        "simulation_stack": {
+          "stack_total_ns": 54869578900,
+          "stack_samples": 54862,
+          "exclusive_total_ns": 54869578900,
+          "exclusive_samples": 54862
+        }
+      },
+      "unavailable_stack": {
+        "all": {
+          "ns": 1030162900,
+          "samples": 1030
+        },
+        "main": {
+          "ns": 957416000,
+          "samples": 957
+        }
+      },
+      "invalid_event_times_us": [
+        84692836,
+        84704067,
+        84704103,
+        84704141,
+        84708782,
+        84717327,
+        85095604
+      ],
+      "invalid_events_outside_markers": true
+    }
+  }
+}

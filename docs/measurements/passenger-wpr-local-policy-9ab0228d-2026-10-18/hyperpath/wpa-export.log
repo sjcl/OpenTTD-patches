@@ -1,0 +1,256 @@
+Cannot use file stream for [C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-9ab0228d\tools\wpt\Windows Kits\10\Windows Performance Toolkit\wpaexporter.deps.json]: No such file or directory
+[Microsoft.Performance.SDK.Runtime.Discovery.AssemblyExtensionDiscovery]: Verbose - Process assemblies: successfully parsed C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-9ab0228d\tools\wpt\Windows Kits\10\Windows Performance Toolkit\CustomDataSources\XPerf\PluginLoadExclusions with 69 exclusions.
+[Microsoft.Performance.SDK.Runtime.Discovery.AssemblyExtensionDiscovery]: Verbose - Process assemblies: excluding file 'C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-9ab0228d\tools\wpt\Windows Kits\10\Windows Performance Toolkit\CustomDataSources\XPerf\SimpleInjector.dll'.
+[Microsoft.Performance.SDK.Runtime.Discovery.AssemblyExtensionDiscovery]: Information - Loaded all in 338ms
+Microsoft (R) Windows Performance Analyzer Version 11.7.395.48728
+Copyright (C) 2026 Microsoft Corporation.  All rights reserved.
+
+
+[Microsoft.Performance.Shell.WpaApplication]: Information - Associating `.ETL` with `Event Tracing for Windows - 4e06112c-31c0-4631-b686-a5fefeee27e3 (C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-9ab0228d\tools\wpt\Windows Kits\10\Windows Performance Toolkit\CustomDataSources\XPerf\Microsoft.Performance.XPerfPlugin.dll)`
+[Microsoft.Performance.Shell.WpaApplication]: Information - Registering tables for `Event Tracing for Windows - 4e06112c-31c0-4631-b686-a5fefeee27e3 (C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-9ab0228d\tools\wpt\Windows Kits\10\Windows Performance Toolkit\CustomDataSources\XPerf\Microsoft.Performance.XPerfPlugin.dll)`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `ActivitiesTable [60578268-c574-4c17-9097-9c607b0b6c82 - Activities]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `AppStateTable [fff01bce-d67a-4d33-82b2-c993a0e82da9 - Application State]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `BackgroundTaskTable [639f2500-02d6-4cf5-ab26-9c22e43d5d02 - Background Task]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `CommitLifetimesTable [e6a4a964-3a87-46ef-9762-f9d9b9208051 - VirtualAlloc Commit LifeTimes]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `COMTable [07fda28b-adcc-4385-815d-68ca09682390 - COM Call Summary Table]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `DCompIELayerAllocsTable [a4306f4c-5e03-4c1d-a3d2-0bfbe520813f - DComp IELayer Allocations]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `DCompSurfaceAllocsTable [9086928c-c5c2-413c-a22f-1e7c36f9b307 - DComp Surface Allocations]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `DiskIOTable [12c5387c-58ca-45d4-a5c6-450475c30e06 - Disk Usage]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `DpcIsrTable [79926001-a767-4658-9d56-cdbfc8140de9 - DPC/ISR]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `DxFramesTable [f28941cc-d4e6-4968-8beb-c519563f1dcf - DX Frames]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `FileIOTable [e2a7d340-0dbd-4f24-8b26-e5388eeaf562 - File I/O]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `FullHeapTable [1a64d983-f796-45f8-aa64-ac50b95d0e45 - Heap Allocations]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `GenericEventsTable [04f69f98-176e-4d1c-b44e-97f734996ab8 - Generic Events]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `HandleTable [7b47975b-040d-4901-9a3f-e410228e30df - Handles]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `HeapSnapshotDiffsTable [18fe1bac-a7d7-471d-a3d7-2abce0eb50cd - Heap Snapshots Diff]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `HeapSnapshotTable [463048cb-2f2b-480d-8e94-a54f3fd88080 - Heap Snapshot]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `HardwarePowerTable [8fa4ed15-1687-4f8b-9afd-a46c281e3a5a - Hardware Power]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `HyperVContextSwitchTable [26d790f4-2a88-4000-81a1-bead54903285 - Hyper-V Context Switches]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `HyperVExternalInterruptTable [6632dcc8-f666-447a-8b0f-3510ed398a20 - Hyper-V External Interrupts]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `HyperVHypercallTable [2471239f-047b-416d-b904-3d2c50e4174d - Hyper-V Hypercalls]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `HyperVMSRTable [a4582885-0523-49d4-9f68-ab723ee9e795 - Hyper-V MSR]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `JsHeapSnapshotTable [3de2a774-cbee-47ae-8ad1-1f9a03a5f8b6 - JavaScript Heap Snapshots]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `JsMergeDiffTable [851eeff6-c123-4da6-abfd-1cf1baf1d5bf - JS Merge Diff]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `LowFragmentationHeapTable [54a0f0af-ac5d-4285-8276-ec3bf6b9b495 - Low Fragmentation Heap]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `MemInfoWsTable [3dd69094-4675-4607-9fb4-0042b9e1a610 - Virtual Memory Snapshots]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `NPUUtilTable [df96d890-391e-43d1-bedf-5bb377838c4f - NPU Utilization]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `OSHygieneTable [50bc51e6-2160-4ffd-93c1-6da51d179a5c - Wake Activity Source]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `PoolTable [bbc8f512-a49b-451a-90fc-8497f20cfad7 - Pool Graphs]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `RegistryHiveTable [e099ddc5-d18a-4c98-9003-19ced20b9f35 - Registry Hive]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `RegistryTable [e97b189d-b977-4e41-9448-8c214c166f84 - Registry]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `ServiceTable [9745a443-5ba5-4305-aebe-493f04c7fc96 - Services]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `StacksTable [ca513049-5ae4-4470-8e13-330db7bd49cc - Stacks]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `TcpIpEventsTable [21214383-88f8-4603-9eac-2a6422756b11 - TcpIp Events]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `ThreadPoolCallbackTable [ecfccafb-0eb5-4aa5-a90b-745a3122d488 - Thread Pool Callback]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `ThreadPoolPoolTable [3925f6e1-01cb-482d-b41d-80db173ac779 - Thread Pool Pool]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `ThreadPoolTimeTable [61aa3d36-0604-4ca5-8b99-577aeb7d4ee5 - Thread Pool Timer]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `TotalCommitTable [260d346a-7457-4ccc-9931-c0c39ed685cd - Total Commit]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `TraceLoggingTable [bc84c7f5-2307-4842-944f-39b7daab7df4 - Trace Logging]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `VidMmAllocDetailsTable [6ba1792e-30ce-4073-a03c-839858d8200e - VidMm Allocation Details]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `VidMmAllocsTable [3af7a87a-36a2-4571-91d0-337cac67125d - VidMm Allocations]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `WppTraceTable [3ddcb98d-884e-4389-8797-80c84832c0b0 - WPP Trace]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `ThreadLifetimesTable [a20f1ccd-d67f-4cdf-a186-0fd3f6535f18 - Thread Lifetimes]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `RegionsTable [1ce7fd53-2344-4ea8-acd6-1a0722a51427 - Regions of Interest]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `HiberDiagTable [fa200443-7ecf-4abc-a654-c76c81f27ec2 - Hiberfile Diagnostic]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `DripsTable [47d3d0d5-b151-4a2e-a805-5e229fd69f8d - Drips]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `CpuSamplingTable [b855361e-7be0-4bc8-a754-3e8507715ca5 - CPU Usage (Sampled)]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `TaggedCpuUsageTable [4237fcb5-808e-4868-ae15-96772fb57e41 - CPU Usage (Attributed)]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `c1718a41-aad0-477a-ba79-79180815eeb1 - Energy Estimation Engine (by Process)`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `df254596-da34-459d-8ec8-3c1e19fb168b - Energy Estimation Engine (by Component)`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `e0687818-9e02-4938-9462-d4e228ef7330 - Energy Estimation Engine (by Emi)`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `790bbf20-3de8-4801-8cd4-9de3a4684c77 - Energy Estimation Engine (System and App State)`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `b859d131-dfb5-4605-be19-810b298b6975 - GPU Utilization (FM)`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `59915b43-429b-4d83-9b37-a2b0c6565592 - GPU Work`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `a6a19e99-a04c-4569-9dfa-7ffa72f61a4f - Dwm Frame Details`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `21383122-63d6-4f2c-bdcd-0b8e5c34c694 - Html Frame Details`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `e62570c0-7e0c-429f-b403-17a16e25daf0 - Xaml Frame Details`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `fa9405de-5ed7-480a-b2e7-a3dc2c823ef4 - Hyper-V - Logical\Virtual Processor`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `bb0c3dc7-cc83-435f-93c5-75ceba28f6cc - Hyper-V - Hypervisor Events`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `fc30d120-8b87-4b86-8fc4-56865fb06fb5 - Hyper-V - VTL switch Events`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `3a7f8c21-9d4e-4b5a-8f2c-1e6d7a9b8c4d - Hyper-V - MM Allocation Events`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `958b5bc5-127a-4007-8391-3ce4f97b99da - Last Branch Records`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `00c2282d-6788-482d-8528-36c079eabbd5 - Resident Set`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `8de479a5-1f67-4166-b42a-48e9a7f061bb - C++ Build Insights - Build Explorer`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `63447673-9927-4379-a417-419845a5b53b - C++ Build Insights - Files`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `f48ed1b4-e7d6-4567-ab2e-2639142d8e42 - C++ Build Insights - Functions`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `3a692a2a-3572-4ea2-a373-dafec86d5103 - C++ Build Insights - Template Instantiations`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `f3f9ade9-8670-4885-aed9-69e8ef5b7567 - Rail Voltage MilliVolt`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `9f139d56-3e73-41f3-b0dd-d748427bc2af - Component Frequency KHz`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `c10e1b04-afb9-4e6b-a2f7-32babf95b08f - Devices Preventing Platform Idle`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `f5fa1ccb-1115-46f1-943b-e43bbe49fb46 - CS Summary Table`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `1fa85300-2351-4a29-9bb0-dc52c6390780 - Device Dstate`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `c0455219-9b7c-450a-a2c8-829bb2faac9d - PoFx Component FState`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `cb85d4d1-7c17-47df-81a8-909c7a491670 - PoFx Device Power Requirement`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `8a988d05-09f7-4556-8fc0-6e6337929eef - PoFx Component PState`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `7a719ad8-1b6a-4315-bbdd-58f25ae244fb - PDC Notification Phase`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `848d19c2-eeff-4a9c-8699-7a3f893b5756 - LP Events`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `f0b52614-f391-4038-8811-d42610f95413 - PDC Resiliency Activity`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `05d86277-7e64-4117-ba99-7619c202c90e - Platform Idle State`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `2d4ab567-8796-47b9-b26d-fc8af967ddc9 - Coordinated Idle State`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `80e91307-c207-4416-b159-809426c68f6e - Idle State Selection`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `ada56442-1641-416d-8eb0-54b8909bf7f7 - Platform Idle State Entry Restraint`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `a7e3971d-237e-49ae-ae58-c89d43b544b2 - ThermalZone Device throttle`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `7551272a-91f8-4a43-853a-17f031218ed2 - ThermalZone Temperature`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `bf0c68f4-725d-4d5c-a95e-adad0b311b26 - ThermalZone Cooling policy`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `fce16142-6b09-4a07-ae04-416b2a69c5b1 - Thermal Zone Fan Activation`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `51dba6e1-eeba-4230-a152-ff5bed7dd696 - Battery Drain`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `b6fe3898-a7b0-42fb-90ec-84fbf31afc61 - System Latency Tolerance`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `fb56303e-21bc-4a8b-88d4-1e3711881fdb - SPM Scenarios`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `28d4d9ad-5391-4cde-9597-3f96bd58f9fc - SPM Clients`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `5b7a27f5-0354-4948-8416-5d1e60d0f068 - Processor Profiles`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `25199f8c-2853-4b32-922a-09d36959ebf5 - Power Request`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `96d89ef6-46df-4af9-91ef-e1de90053a41 - SleepStudy Blocker Activity`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `b03432fe-78a8-4174-9cf7-fcbed093ff3f - SleepStudy Collection Activity`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `9efb3633-1420-4c86-aedf-42ca0db6faba - SleepStudy Session Activity`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `6827d8e9-79ea-4782-bce5-62afd2a77c99 - Timer Resolution`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `5f5dc039-1901-464b-9260-a03801fde9c2 - Processor Utility`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `2513fe15-6fe6-4279-aace-338307d1f63d - Processor Utilization`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `0fa1415e-10f0-40c3-a32a-5e1b9d0f49ea - Processor Parking State`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `49ea9934-6513-42ea-acb1-f4440f84664f - Core Parking Instantaneous Concurrency`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `6eb7d9a5-fbcd-42b9-b2d4-18445e14e1ff - Core Parking Concurrency`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `69a8bf19-110a-40d8-bfb2-12fa8a5dff45 - Core Parking State`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `be78b753-5471-4a6c-9b4f-80d5d5e0dc2d - Core Parking Cap State`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `d0b4b788-cf4e-40f0-973f-7abc33e53f08 - Processor Performance`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `bb7beac5-55df-4c09-a2c2-f313dd29ce3d - Processor Frequency`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `50856918-ed01-4edb-9daa-70ba9360b891 - Processor Constraints`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `cab9e4b2-ae91-4779-a527-d2f8dd3ec207 - Processor Qos Class`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `2957b89a-4505-4996-9c52-b1006227b29e - Processor Performance Tuning`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `8316454a-bce8-49df-a1d9-54700d628627 - Hypervisor Processor Performance`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `89c0d2f4-1c7e-4f69-94b6-1407156cdcc0 - Hypervisor Processor Frequency`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `d461818e-7671-412a-8a75-6936b91c8f5a - Hypervisor Processor Utility`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `7c82ea93-aa68-4c14-939b-0a576e230053 - Hypervisor Processor Utilization`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `9efd425a-2bb5-4eb2-9f2f-cd291af0dd37 - Hypervisor Processor Constraints`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `e5bfd79c-a7f4-4078-8474-3e25841c7ab1 - Hypervisor Processor Performance Tuning`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `0d06b7fd-f875-44bd-8feb-e412df2d141c - Processor Hardware Debug Parameter`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `869b21d2-9a54-444e-801d-188112fb0235 - UMDF IO Requests`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `2e4d8a3c-0f69-4e6a-9123-d2815937a549 - KMDF IO Requests`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `bb8724ae-bb5f-4f8d-8ae3-f0e40c4b7ff1 - PnP Power Callbacks`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `4fc0828a-4555-480c-b485-6561cd0d0482 - Wininet Download Details`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `01d8caa6-9268-435d-b7b7-39193b3eac9f - COM Calls`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `04109c2c-d66b-46cf-8fd7-a7ea67c64cb0 - Services - From Core4`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `0588f34c-77f0-48a3-a4fd-2e0a462ea764 - Heap Extents`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `05d63291-60a7-4fc7-a655-3bb6f5a2dad6 - Memory Utilization - Working Set`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `0d63da12-a68a-4ea8-8a12-dadd30f0fa1d - Virtual Allocations`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `18e98e3d-3088-44a5-b444-4440ba1beeca - Hyper V - PPM Idle Events`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `1fe3bbaa-6738-41b9-941e-7a6825821b35 - Mini-Filter Delays`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `24d87055-643a-4424-af3b-275593bf0f72 - Heap Allocations`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `2adccbce-775d-4d71-bc88-df317d004293 - PMC Rollovers`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `2cdb7bc6-69a8-4c9c-8201-daa316025083 - UI Threads`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `31119377-4dc0-4c74-808d-3f45d34b6008 - CPU Scheduling`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `31b88db9-1be9-42fa-9452-3cd560899212 - Windows Logon`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `3a132119-8b3d-4d55-87c4-601e096e70c8 - Process Table - From Core4`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `3b77a6f0-391f-4d84-9ee9-67e7bae59fd1 - Registry - From Core4`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `3bc03cbc-93e0-4ffb-89ae-f80c8c03f568 - Ready Boot`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `3c18eb9c-2211-4988-bf94-bb029e4ce96e - Window in Focus`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `4902925e-ee1d-412e-8939-87b75e37e9b9 - Hardware-Power: Power`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `5279a15b-e0ad-4ec4-8d80-a8bc6bb8b7c8 - File I/O - From Core4`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `5600eb08-e870-44f2-8729-fb4da8857b96 - DPC CPU Usage`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `6173f05c-704f-4efc-98f6-63224020a95f - Disk I/O Counts`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `67e2e7b2-7e85-44ea-8650-4d2144aeb116 - Hardware-Power: Voltage`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `6bf3da99-5ed7-4f94-b820-5ce9cf22d201 - IPI Information`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `6bf3da99-5ed7-4f94-b820-5ce9cf22d202 - Hypercall Kernel Stack`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `6db6771a-503a-4e79-808d-f580abddceda - Wait Classification`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `70e6050d-3064-46ef-9c86-78ba91f7b145 - Service Events`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `7c60aeff-a47f-4ba8-942c-d2b154087ab9 - Hard Faults`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `7ccef571-f72c-4bfa-891d-3106b7bbe54a - Ready Boot Events`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `7e2aa9c7-4042-487d-8a50-3f300ce56492 - Ready Boot Disk Usage`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `7f34dc09-2807-4201-a8d1-b03c16086b6c - CPU Usage (Sampled without Stacks) - From Core4`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `8168377f-791b-443f-a9ee-92bd49fb548e - CPU Idle States (Aggregate)`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `822d92fd-65a4-49d3-837a-29eb27b9f888 - Hardware-Power: Current`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `84255312-bf75-49e3-ab62-fa6acc6a10da - Disk Details`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `898b49c2-5da7-46e7-b61c-f46363eee1d4 - Simple Page Fault Table`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `8d943a59-1562-425a-a65e-3932e457258b - CPU Idle States`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `8e0ce60b-8642-4ea3-b4f1-6c9db9461507 - GroupMasks Information`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `920e6241-3dea-46c4-8e4f-04ce08f62c0a - UI Delays`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `96560002-ea30-4a11-af10-52b51dbdb2a6 - Page Faults`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `9a1b4aeb-79ae-4d4f-94ba-502706837870 - ExtResidentSet`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `9cfb2296-2c89-45af-a5bd-23b4885dcbab - CPU Frequency`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `9eb10327-d846-4955-99aa-1f4f58cf86ed - Ready Boot Event Pattern`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `a1df89f9-5b2a-449e-aaab-1bcc3fd25c84 - Images`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `a3a3bf45-7ee8-45eb-95c1-0369c31420ce - Ready Boot Cache Size`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `a4a4ee28-f3e3-43f0-8b35-6fc4e37e8675 - Disk Usage - From Core4`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `a826b5d9-51f9-42a3-8e7e-4ca36ccf33a6 - VTL Change`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `b0b4901b-0981-4842-b282-2a9904c53280 - System Power Source`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `b67968c2-6e59-4cb1-888c-3202613cb022 - Registry Base+Remainder`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `cb079a8b-de14-4516-9f83-6c5695b0845a - Memory Utilization`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `cbbd1db6-d7e2-4410-8784-f3df48ad56a5 - Device I/O`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `d5d92665-9d48-4efb-a720-c8b1415006ea - Interrupt CPU Usage`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `d5e0e25f-00fb-4cf5-bd33-d7a63dad7f0d - Low Fragmentation Heap`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `da13748b-71c7-4ba1-a61d-6ae4e527e261 - Boot Phases`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `df65c5fb-bbb0-4be8-8b81-5dfd0a6d07b5 - Should Yield Processor`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `e1d4ae3d-ba26-4de6-a29b-015720ce4311 - Context Switch`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `e24fd7fc-3c84-4d81-93b7-b690e4a24d11 - CPU Usage (Sampled) - From Core4`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `ec60ccb2-4409-444e-98fa-792c5b3c36da - Marks`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `f05d032f-f475-4f4f-bbf6-c24c2b594f0f - Pool Allocations`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `f5f4400d-b5d0-425a-afc0-c29f0f32377b - Hyper V - PPM Platform State Change Events`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `faa52878-623e-4f74-9ed9-a65e379ccdd5 - Threads`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `DisplayTable [9cfce8f6-dd6a-456e-b86f-3acd541e9d22 - Display]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `FlightIdTable [e99019df-cfb2-4ba1-bc22-3f5d19138267 - Flight Id]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `GeneralTable [ec91190c-6097-4935-aeec-d36b12289afa - General]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `IrqTable [d0e52bb1-d12e-445b-aa5f-930c98336552 - IRQ]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `NetworkTable [48278312-e70e-4e30-b4b1-d9cd414c5a94 - Network]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `OpticalTable [c9ad6121-ba43-40fe-ba19-699a020cedce - Optical]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `PnpTable [fedb0a36-5e3e-470f-bf7d-342d970505f2 - PnP]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `PowerPolicyTable [5e6733c5-803c-47fb-8798-85d3e402babf - Power Settings]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `ServicesTable [9112fa99-422a-489c-9361-e015467602ea - Services]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `StorageTable [b5fc55e0-d103-409f-aeb7-ca52a8dc95a9 - Storage]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `TracesTable [952f573c-c896-4a27-b12e-96fb84628b91 - Traces]`
+[Microsoft.Performance.Shell.WpaApplication]: Information - --> Register table `TraceStatsTable [b44f0dc4-f9fe-4aec-938e-7d0fd50cee92 - Trace Statistics]`
+Error: Could not GetFileStream for C:\Users\bebe\AppData\Local\Windows Performance Analyzer\MyPresets.wpaPresets. Exception: System.IO.FileNotFoundException: Could not find file 'C:\Users\bebe\AppData\Local\Windows Performance Analyzer\MyPresets.wpaPresets'.
+File name: 'C:\Users\bebe\AppData\Local\Windows Performance Analyzer\MyPresets.wpaPresets'
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at Microsoft.Performance.Shell.WpaProfileSerializer.GetFileStream(String profilePath, FileMode fileMode, FileAccess fileAccess, FileShare fileShare, Boolean showErrorDialog, Int32 attempts, Int32 msTimeout)
+
+
+Warning: EventSink {39cda801-59d8-472d-bc00-601a4150c4c4} signaled an Invalid Event:
+         Event#: 64085159 (T#0:#64085159)
+         TimeStamp:   85642733, Process: 122704, Thread: 19828, Cpu:  12
+         ProviderId: {a669021c-c450-4609-a035-5af59af4df18}
+         EventDescriptor: 0x0096 0x0001 0x2a   0x00    0x00    0x05  0x0000000000020000
+         UserDataLength: 21
+
+Warning: EventSink {39cda801-59d8-472d-bc00-601a4150c4c4} signaled an Invalid Event:
+         Event#: 64212047 (T#0:#64212047)
+         TimeStamp:   85655248, Process: 122704, Thread: 19828, Cpu:  16
+         ProviderId: {a669021c-c450-4609-a035-5af59af4df18}
+         EventDescriptor: 0x0096 0x0001 0x2a   0x00    0x00    0x05  0x0000000000020000
+         UserDataLength: 21
+
+Warning: EventSink {39cda801-59d8-472d-bc00-601a4150c4c4} signaled an Invalid Event:
+         Event#: 64212336 (T#0:#64212336)
+         TimeStamp:   85655279, Process: 122704, Thread: 19828, Cpu:  16
+         ProviderId: {a669021c-c450-4609-a035-5af59af4df18}
+         EventDescriptor: 0x0096 0x0001 0x2a   0x00    0x00    0x05  0x0000000000020000
+         UserDataLength: 21
+
+Warning: EventSink {39cda801-59d8-472d-bc00-601a4150c4c4} signaled an Invalid Event:
+         Event#: 64212637 (T#0:#64212637)
+         TimeStamp:   85655311, Process: 122704, Thread: 19828, Cpu:  16
+         ProviderId: {a669021c-c450-4609-a035-5af59af4df18}
+         EventDescriptor: 0x0096 0x0001 0x2a   0x00    0x00    0x05  0x0000000000020000
+         UserDataLength: 21
+
+Warning: EventSink {39cda801-59d8-472d-bc00-601a4150c4c4} signaled an Invalid Event:
+         Event#: 64255995 (T#0:#64255995)
+         TimeStamp:   85660465, Process: 122704, Thread: 19828, Cpu:  18
+         ProviderId: {a669021c-c450-4609-a035-5af59af4df18}
+         EventDescriptor: 0x0096 0x0001 0x2a   0x00    0x00    0x05  0x0000000000020000
+         UserDataLength: 21
+
+Warning: EventSink {39cda801-59d8-472d-bc00-601a4150c4c4} signaled an Invalid Event:
+         Event#: 64318856 (T#0:#64318856)
+         TimeStamp:   85668089, Process: 122704, Thread: 19828, Cpu:  12
+         ProviderId: {a669021c-c450-4609-a035-5af59af4df18}
+         EventDescriptor: 0x0096 0x0001 0x2a   0x00    0x00    0x05  0x0000000000020000
+         UserDataLength: 21
+
+Warning: EventSink {13399e05-4afd-48fd-ba25-6b673a7a2b92} signaled an Invalid Event:
+         Event#: 65147260 (T#0:#65147260)
+         TimeStamp:   86034888, Process: 109896, Thread: 120940, Cpu:  15
+         ClassicEventGuid: {01853a65-418f-4f36-aefc-dc0f1d2fd235}
+         ClassicEventDescriptor: 0x0c  0x00 0x0002
+         MofLength: 112
+Exporting Profile: C:\Users\bebe\.codex\worktrees\8621\OpenTTD-patches\build-wpr-9ab0228d\cpu-sampled.wpaProfile
+file:///C:/Users/bebe/.codex/worktrees/8621/OpenTTD-patches/build-wpr-9ab0228d/hyperpath/cpu.etl - Exporting time range 2223ms to 65363ms

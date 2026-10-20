@@ -1,0 +1,41 @@
+{
+  "legacy": {
+    "97cdc0ad": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    },
+    "0b8a21c0": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    },
+    "8f829b8c": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    }
+  },
+  "hyperpath": {
+    "97cdc0ad": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    },
+    "0b8a21c0": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    },
+    "8f829b8c": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    },
+    "6aeaff68_validate": {
+      "equal": true,
+      "fields": 24,
+      "differences": {}
+    }
+  }
+}

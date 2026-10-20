@@ -1,0 +1,15 @@
+{
+  "profile": "CPU",
+  "baseline_logging_mode": "Memory",
+  "current_logging_mode": "File",
+  "same_system_provider_keywords_and_stacks": true,
+  "same_event_providers": true,
+  "same_collector_provider_references": true,
+  "baseline_system_buffer_count": 4781,
+  "current_system_buffer_count": 20,
+  "baseline_event_buffer_count": 20,
+  "current_event_buffer_count": 20,
+  "reason": "Three memory traces missed begin markers; only a complete file-mode trace will be used for Hyperpath timing",
+  "timing_comparison_has_recording_mode_difference": true,
+  "documentation": "https://learn.microsoft.com/en-us/windows-hardware/test/wpt/wpr-command-line-options"
+}
