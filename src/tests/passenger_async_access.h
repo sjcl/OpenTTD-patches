@@ -56,6 +56,7 @@ struct PassengerPrecomputedTestAccess {
 		table.local_policies.clear();
 	}
 	static size_t LocalPolicies(const PassengerPrecomputedTable &table) { return table.local_policies.size(); }
+	static bool AcceptLocalPolicyCost(int64_t original, int64_t alternative) { return PassengerPrecomputedTable::AcceptLocalPolicyCost(original, alternative); }
 };
 
 struct PassengerServiceDatabaseTestAccess {

@@ -191,7 +191,13 @@ private:
 		uint32_t board = INVALID, alight = INVALID, legs = 0, distance = 0;
 		bool operator==(const Label &) const = default;
 	};
-	struct Policy { int64_t cost = INT64_MAX, wait = 0; std::vector<uint32_t> candidates; };
+	struct Policy {
+		int64_t cost = INT64_MAX, wait = 0;
+		std::vector<uint32_t> candidates;
+		/** Local cache only: an empty set aliases the stored policy, including its reachability.
+		 * It never represents a separately computed unreachable local policy. cost/wait are the stored values. */
+		bool UsesStoredPolicy() const { return this->candidates.empty(); }
+	};
 	struct FlatPolicy {
 		int64_t cost = INT64_MAX, wait = 0;
 		uint32_t offset = 0, count = 0;
@@ -255,6 +261,7 @@ private:
 	void ExpandPolicy(const Row &row, uint32_t state, std::vector<uint32_t> &result) const;
 	std::span<const uint32_t> RowCandidates(const Row &row, StationID destination, uint32_t state) const;
 	const Policy &LocalPolicy(const Row &row, StationID destination, uint32_t state, OrderListID failed) const;
+	static bool AcceptLocalPolicyCost(int64_t original, int64_t alternative);
 	std::vector<Row> rows;
 	std::vector<std::vector<StationID>> reachable_destinations; ///< Inverse published rows; no waiting-packet dependency.
 	std::vector<std::vector<StationID>> retirement_survivors; ///< Only destinations absent from the frozen replacement.
