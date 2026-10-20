@@ -130,6 +130,7 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
   - MSVC STL は clang-cl でも同じで、**map/set は既定コンストラクタでもメモリを確保する**。
   - pool allocator（`std::pmr`）は候補。
 - Legacy モード: 保存された Hyperpath 意図を Legacy の表で計画し直すコスト（`RetiredPlan` 約 0.41）。モードを切り替えた直後の過渡状態に特有で、Legacy の表がある間は共有キャッシュを使えない。
+  - 55f1cfe0 では 0.391 → 0.461 に増えた。機械語は同一で、増えたのは self だけ。原因（lookup 回数かキャッシュミスか）は未確定（[補遺](measurements/passenger-wpr-abba-55f1cfe0-2026-10-20/analysis/README.md)）。
 
 ## 7. 未着手の案
 
