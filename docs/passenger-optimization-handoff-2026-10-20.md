@@ -40,6 +40,14 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
      - `MayUseHyperpathPolicy`: 0.52 → 0.27 ms/tick
      - `SharedHyperpathPlan` の self: 0.053 → 0.003 ms/tick
 
+### jgrpp-ya の merge（2026-10-20）
+
+- 55f1cfe0 の確認後に jgrpp-ya（fbed7bf9 まで）を merge し、このブランチを jgrpp-ya にも merge した。
+- jgrpp-ya の 112a3d38 は挙動を変える（容量迂回のコストが元の 2 倍以上なら、failed-carrier の local policy をやめて保存済み方策を使う）。**merge 後の版の canonical は 6c11c67f・55f1cfe0 と一致しない見込み。** 以後の最適化の基準は、merge 後の版で取り直す。
+- merge 後、112a3d38 の新しいテスト「Hyperpath rejected detours retain boarding failures and every original carrier」が失敗した。
+  - 原因: a968222f の `Board` 共有キャッシュにヒットすると `table.Board` が呼ばれず、追い出された failed-carrier の local policy が作り直されない。そのため display が `Unavailable` になっていた。
+  - 修正: failed carrier があるときは共有キャッシュを通さない（`CachedHyperpathMembership` と同じ方針）。`Board` の答えは同じで、local policy が残るかどうかも a968222f より前と同じになる。
+
 ## 3. 計測の基準（2026-10-19 から）
 
 - **リリース構成**: LLVM 23.1.3 の ThinLTO（clang-cl/LLD）。ユーザーの [Windows 既定ビルド](windows-default-build-2026-10-19.md)。
@@ -146,7 +154,8 @@ Claude（claude.ai のクラウドセッション）から Claude Code セッシ
 - 派生キャッシュを作るときは、**入力のうち保存されない可変状態をすべて洗い出す**。0d99a67f の不一致はこれで起きた。
 - `LocalPolicy` は 4096 件の上限で退避される。そのため事前フィルターの答えは「unknown → 保守的に通す」ことがあり、validate ではこれを `conservative` として数える。
 - テストは cross-mode 等価、sliced 構築、serial/parallel の公開一致の 3 系統が強い。**キャッシュや再生の変更では、わざと壊した改変（mutation）で、テストがそれを検出することを必ず確かめる。**
-- 表構築の digest ベンチ: `openttd_test "[.hyperpath-build-cpu]"`。期待値は hyperpath `75f6c7b724013583`、legacy `575548db5660677a`。表の中身を変えない変更では不変であること。
+- 表構築の digest ベンチ: `openttd_test "[.hyperpath-build-cpu]"`。期待値は hyperpath `cd999757a6c5fbc5`、legacy `575548db5660677a`。表の中身を変えない変更では不変であること。
+  - hyperpath の digest は failed-carrier の local policy も含む。jgrpp-ya の 112a3d38（容量迂回のコストが 2 倍以上なら保存済み方策を使う）を merge して `75f6c7b724013583` から変わった。legacy は不変。
 - Linux の参考ビルドは GCC、Release、assert ON、`ninja openttd_test openttd`。全テストは 782 件。clang 18 による構文チェックも使った（Windows のビルドは clang-cl 23）。
 
 ## 9. 計測記録の索引
