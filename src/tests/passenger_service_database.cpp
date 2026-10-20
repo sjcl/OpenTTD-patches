@@ -2950,7 +2950,7 @@ TEST_CASE("Hyperpath does not board an express for a local-only destination", "[
 TEST_CASE("Hyperpath capacity failures change the local policy and copy through packet splits", "[passenger][hyperpath][replan][save]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
-	auto *fast = f.Train({Stop(A), Stop(D)}); auto *slow = f.Train({Stop(A, 220), Stop(D, 220)});
+	auto *fast = f.Train({Stop(A), Stop(D)}); auto *slow = f.Train({Stop(A, 20), Stop(D, 220)});
 	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
 	fast->cargo.Append(f.Packet(100));
 	auto *packet = f.Packet(20); const auto id = packet->index;
@@ -2972,6 +2972,61 @@ TEST_CASE("Hyperpath capacity failures change the local policy and copy through 
 	CHECK_FALSE(slow->cargo.Packets()->front()->GetPassengerBoardingFailure().Present());
 	CHECK(CargoPacket::Get(id)->GetPassengerBoardingFailure().count == 3);
 	CHECK(CargoPacket::Get(id)->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+}
+
+TEST_CASE("Hyperpath rejected detours retain boarding failures and every original carrier", "[passenger][hyperpath][capacity-cost][boarding][determinism]")
+{
+	using Mode = PassengerServiceDatabase::HyperpathFilterMode;
+	for (bool multiple : {false, true}) for (Mode mode : {Mode::Off, Mode::Index, Mode::Validate}) {
+		CAPTURE(multiple, static_cast<int>(mode));
+		Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+		auto *fast = f.Train({Stop(A), Stop(D)});
+		auto *other = multiple ? f.Train({Stop(A, 207), Stop(D, 205)}) : f.Train({Stop(A, 258), Stop(D, 258)});
+		auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+		db.SetHyperpathBoardingFilterMode(mode);
+		fast->cargo.Append(f.Packet(100));
+		auto *packet = f.Packet(20);
+		REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+		const auto intent = packet->GetPassengerJourney();
+		StationCargoList waiting; waiting.passenger_index_cargo = PAX; waiting.Append(packet, D);
+		PassengerJourneyLoadingContext loading;
+		for (uint8_t count = 1; count <= 3; ++count) {
+			++_state_ticks; waiting.RecordCapacityMiss(std::array{D}, fast, PAX, loading);
+			CHECK(packet->GetPassengerBoardingFailure().count == count);
+		}
+		const auto failure = packet->GetPassengerBoardingFailure();
+		REQUIRE(packet->GetPassengerFailedService(_state_ticks) == fast->orders->index);
+		const auto &table = PassengerServiceDatabaseTestAccess::Table(db, PAX);
+		const auto saved = db.Save(); GameRandomSeedChecker seeds;
+		for (unsigned epoch = 0; epoch < 2; ++epoch) {
+			PassengerPrecomputedTestAccess::EvictLocalPolicies(table);
+			PassengerJourneyLoadingContext fresh;
+			REQUIRE(waiting.HasCargoFor(std::array{D}, fast, &fresh, PAX));
+			CHECK(waiting.HasCargoFor(std::array{D}, other, &fresh, PAX) == multiple);
+			CHECK(packet->GetPassengerJourney() == intent); CHECK(packet->GetPassengerBoardingFailure() == failure);
+			std::vector<PassengerPrecomputedTable::DisplayCandidate> displayed; size_t work = 4096;
+			REQUIRE(db.HyperpathDisplayCandidates(PAX, intent, OrderListID::Invalid(), fast->orders->index, displayed, work));
+			CHECK(displayed.size() == (multiple ? 2 : 1));
+			CHECK(std::any_of(displayed.begin(), displayed.end(), [&](const auto &c) { return c.service == fast->orders->index; }));
+			CHECK(db.Save() == saved); CHECK(seeds.Check());
+		}
+		// The successful part clears its failure; the waiting remainder keeps the saturated record.
+		fast->cargo.Truncate();
+		REQUIRE(waiting.Load(5, &fast->cargo, std::array{D}, TileIndex{0}, fast, &loading) == 5);
+		CHECK_FALSE(fast->cargo.Packets()->front()->GetPassengerBoardingFailure().Present());
+		CHECK(packet->GetPassengerBoardingFailure() == failure);
+		_state_ticks = failure.since + failure.Hold(intent.waiting_limit);
+		CHECK(packet->GetPassengerFailedService(_state_ticks) == OrderListID::Invalid());
+		BeginPassengerJourneyTick();
+		waiting.RoutePassengerJourneys(PAX, A, true);
+		CHECK_FALSE(packet->GetPassengerBoardingFailure().Present());
+		PassengerJourneyLoadingContext after_expiry;
+		REQUIRE(waiting.Load(15, &fast->cargo, std::array{D}, TileIndex{0}, fast, &after_expiry) == 15);
+		CHECK(waiting.AvailableCount() == 0);
+		for (const auto *loaded : *fast->cargo.Packets()) CHECK_FALSE(loaded->GetPassengerBoardingFailure().Present());
+		CHECK(GetPassengerWaitingEventDiagnostic().hyperpath_memo_violations == 0);
+		CHECK(GetPassengerWaitingEventDiagnostic().hyperpath_index_violations == 0);
+	}
 }
 
 TEST_CASE("Hyperpath capacity misses do not depend on pending-index residency", "[passenger][hyperpath][replan][determinism]")
@@ -2999,7 +3054,7 @@ TEST_CASE("Hyperpath capacity misses do not depend on pending-index residency", 
 TEST_CASE("Hyperpath reservations retain failures until physical boarding and restore a shared policy on return", "[passenger][hyperpath][boarding][reservation]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
-	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 220), Stop(D, 220)});
+	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 20), Stop(D, 220)});
 	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
 	fast->cargo.Append(f.Packet(100));
 	auto *packet = f.Packet(20); PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, D));
@@ -5265,7 +5320,7 @@ TEST_CASE("Hyperpath conservative membership cannot mutate a rejected binding or
 TEST_CASE("Hyperpath cold local membership defers evaluation until the FIFO cohort is selected", "[passenger][hyperpath][boarding][replan]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
-	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 220), Stop(D, 220)});
+	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 20), Stop(D, 220)});
 	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
 	auto *packet = f.Packet(20); PassengerJourneyActiveContext context(nullptr, A);
 	REQUIRE(context.PlanWaiting(*packet, PAX, D));
@@ -5290,7 +5345,7 @@ TEST_CASE("Hyperpath cold local membership defers evaluation until the FIFO coho
 TEST_CASE("Hyperpath membership memo releases a retired policy before replanning", "[passenger][hyperpath][boarding][generation]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
-	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 220), Stop(D, 220)});
+	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 20), Stop(D, 220)});
 	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
 	auto *packet = f.Packet(); PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, D));
 	const auto old = packet->GetPassengerJourney(); PassengerJourneyLoadingContext loading;
@@ -5319,7 +5374,9 @@ TEST_CASE("Hyperpath long-headway capacity failure adapts at the first full depa
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
 	auto *fast = f.Train({Stop(A, 11800), Stop(D, 100)});
 	PeriodicTrain *alternative = nullptr;
-	SECTION("Use a slower alternative") { alternative = f.Train({Stop(A, 16000), Stop(D, 16000)}); }
+	bool reroute = false;
+	SECTION("Use a slower alternative below twice the cost") { alternative = f.Train({Stop(A, 2000), Stop(D, 7000)}); reroute = true; }
+	SECTION("Retain the original policy above twice the cost") { alternative = f.Train({Stop(A, 16000), Stop(D, 16000)}); }
 	SECTION("Restore reachability when there is no alternative") {}
 	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
 	fast->cargo.Append(f.Packet(100));
@@ -5333,7 +5390,7 @@ TEST_CASE("Hyperpath long-headway capacity failure adapts at the first full depa
 	CHECK(GetPassengerWaitingEventDiagnostic().capacity_missed_packets == diagnostic.capacity_missed_packets + 1);
 	CHECK(packet->GetPassengerFailedService(_state_ticks) == fast->orders->index);
 	CHECK(packet->GetPassengerBoardingFailure().since == NOW);
-	if (alternative != nullptr) {
+	if (reroute) {
 		CHECK_FALSE(waiting.HasCargoFor(std::array{D}, fast, &loading, PAX));
 		REQUIRE(waiting.Load(20, &alternative->cargo, std::array{D}, TileIndex{0}, alternative, &loading) == 20);
 	} else {
