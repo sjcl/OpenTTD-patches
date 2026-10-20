@@ -290,3 +290,18 @@ WindowsのPythonでハッシュ対象のレポートを生成する場合は `wr
 この比較系列のpush先は `sjcl` の `merge/hyperpath-with-table-build`。現在のremote/branchを確認し、force pushせず、push後にremoteのcommit IDを照合する。
 
 今後この手順を変更して成功した場合は、採用profile・版との互換性・失敗からの復旧方法を本書へ反映する。
+
+## 10. ロード・途中参加後の待機時間を対象にする場合
+
+通常tickが対象外と指定されたら、上記の2,048 tick測定を追加しない。実GUIの停止中準備と参加の初回syncを終点にし、StateTicks不変を採用条件にする。
+[g1c42420afでの待機計測](passenger-waiting-real-g1c42420af-2026-10-20.md)と[再現スクリプト](measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/)が実例。Win32 GDIの製品ゲームスレッド・GUI周期で、`PreparePrecomputed` / `StepLoad`の観測と初回syncの完了だけをコピーTUに追加した。
+
+- プロセス作成→準備完了と、旅客準備API開始→完了を分ける。前者にはアセット初期化・ファイル読み込み・参加転送も含む。起動済みアプリのクリックだけの時間と呼ばない。
+- tightな`while (PreparePrecomputed())`だけでGUIの待機時間を代表させない。実GUI周期を使い、描画方式・解像度・表示／非表示・ゲームスレッド設定を揃える。通常tickへ進む直前で計時を止める。
+- 実際のロード待ちでは、ロードされたCargoDist背景計算も並行し得る。人工的な背景完了待ちを加えたAPI単独測定と、製品の実待機を混ぜない。worker CPUは名前を付けたPAX workerのOS CPU時間で識別し、プロセス全CPUと区別する。
+- 元セーブが旧内部形式で再取得される場合は、初回構築と旧世代復元を区別する。復元用の派生入力は、同じマップ・同じtickで旧世代行と保存Workを保持して作り、両版で共用する。入力変更後の比較基準も同条件で採る。
+- 専用サーバーは、保存済みの`PauseMode::Error`があるセーブを`afterload`の早い段階で拒否する。サーバー起動後のconsole hookでは間に合わない。計測用の独立コピーで既存の計測用`unpause`を明示的に実行し、0 tickで再保存する方法を使った場合は、その操作・警告・保存前後のcanonicalとWorkの一致を残す。元セーブの書換え、セーブのbyte patch、専用サーバーの拒否判定を外す対応はしない。
+- 参加は製品の`ClientPassengerPrepared`送信だけで完了とせず、初回sync成功による参加ダイアログ閉鎖まで確認する。loopbackか別PCか、観戦か新会社登録か、ホストの状態も記録する。
+- GUIがreadyファイルを書いてすぐ終了する場合がある。監視側は子の終了後もready/canonicalを読めるようにし、競合census・peakを途中から保存する。計時済みファイルが揃っているのに、終了を先に見たという理由だけで測り直さない。
+
+この待機計測ではGUI／syncの時計と`GetThreadTimes`等を使用できる。2,048 tickのWPR集計用採用条件をそのまま適用しない。待機区間のWPRを追加採取する場合は、同じkernel専用profileと短いpilotの欠落0・両マーカーを先に確認する。canonical一致とfilter validate成功は引き続き別判定とする。

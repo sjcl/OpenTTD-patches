@@ -28,6 +28,7 @@ struct PassengerPeriodicStop {
 	bool continues = true; ///< Safe order traversal from this occurrence to the next, including wraparound.
 	uint8_t travel_quality = 0; ///< Incoming segment: 0 declared, 1 recorded, 2 distance estimate.
 	uint8_t boarding_facility = 0; ///< v14 captured road-order access: 0 unknown, 1 any direction, 2..5 a specific direction.
+	int64_t intermediate_wait = 0; ///< Incoming segment waypoint/depot waits, excluded from aircraft scaling.
 	bool operator==(const PassengerPeriodicStop &) const = default;
 };
 
@@ -67,6 +68,14 @@ struct PassengerPeriodicService {
 	size_t dispatch_stop = 0;
 	std::vector<uint32_t> dispatch_slots; ///< Certified only for a single physical vehicle with enough turnaround time.
 	int64_t uncertain_dispatch_period = 0; ///< Declared dispatch circuit, without claiming slots/fleet ownership.
+	std::vector<int64_t> aircraft_adjustments; ///< Derived outgoing-segment prefix; never serialized.
+	void BuildAircraftCosts(PassengerAircraftCost cost);
+	bool IsAircraft() const { return !this->vehicles.empty() && this->vehicles.front().type == VehicleType::Aircraft; }
+	int64_t AircraftAdjustment(size_t from, size_t to) const
+	{
+		return this->aircraft_adjustments.empty() ? 0 : this->aircraft_adjustments[to] - this->aircraft_adjustments[from] +
+				(to <= from ? this->aircraft_adjustments.back() : 0);
+	}
 	bool operator==(const PassengerPeriodicService &) const = default;
 };
 
@@ -165,8 +174,18 @@ public:
 	bool PreparePrecomputed(); ///< Initial trees or replacement graph barrier: one slice, without advancing StateTicks.
 	bool IsPreparingPrecomputed() const;
 	PassengerPrecomputedProgress GetPrecomputedProgress() const; ///< O(NUM_CARGO), no diagnostic copies or worker reads.
+	struct PreparationDiagnostic {
+		std::array<uint64_t, 8> phase_nanoseconds{}; ///< Time inside slices, including result waits; indexed by progress Phase.
+		std::array<uint64_t, 8> phase_wall_nanoseconds{}; ///< Also includes GUI/network intervals between active slices.
+		std::chrono::steady_clock::time_point last_slice_end{};
+		PassengerPrecomputedProgress::Phase last_phase = PassengerPrecomputedProgress::Phase::Disabled;
+		uint64_t main_cpu_nanoseconds = 0, slices = 0;
+		size_t restored_destinations = 0, retained_destinations = 0;
+	};
+	const PreparationDiagnostic &GetPreparationDiagnostic() const { return this->preparation_diagnostic; }
 	uint64_t GetPrecomputedPreparationNanoseconds() const { return this->precomputed_preparation_nanoseconds; }
 	void DiscardPrecomputed();
+	bool UpdateAircraftCosts(); ///< Cost-only invalidation; leaves captured timetables and phases intact.
 	bool PrecomputedFinished() const;
 	bool HasRejectedPrecomputedMemory() const
 	{ return std::any_of(this->precomputed.begin(), this->precomputed.end(), [](const auto &table) { return table.MemoryRejected(); }); }
@@ -236,7 +255,7 @@ public:
 		result.retained_destinations = old.destinations; result.retained_bytes = old.bytes; result.retained_envelope = old.envelope;
 		return result;
 	}
-	PassengerParallelBuildDiagnostic GetPrecomputedParallelDiagnostic(CargoType cargo) const { return this->precomputed[cargo].GetParallelDiagnostic(); } ///< Current generation only.
+	PassengerParallelBuildDiagnostic GetPrecomputedParallelDiagnostic(CargoType cargo, bool retained = false) const { return (retained ? this->retained_precomputed : this->precomputed)[cargo].GetParallelDiagnostic(); }
 	PassengerHyperpathMemoryDiagnostic InspectPrecomputedMemory(CargoType cargo, bool retained = false) const
 	{ return (retained ? this->retained_precomputed[cargo] : this->precomputed[cargo]).InspectMemory(); }
 	uint64_t GetPublishedRevision() const { return this->published_revision; }
@@ -317,6 +336,8 @@ public:
 private:
 	friend struct PassengerServiceDatabaseTestAccess;
 	friend class PassengerSchedulePlanner;
+	PassengerAircraftCost aircraft_cost, precomputed_aircraft_cost, retained_precomputed_aircraft_cost;
+	bool legacy_aircraft_times = false;
 	PassengerSchedulePlanner schedule;
 	std::array<PassengerPrecomputedTable, NUM_CARGO> precomputed;
 	std::array<PassengerPrecomputedTable, NUM_CARGO> retained_precomputed;
@@ -332,14 +353,17 @@ private:
 	uint64_t precomputed_policy_generation = 0, retained_precomputed_policy_generation = 0;
 	uint64_t boarding_revision = 0; ///< Event-local validation invalidation; never saved or used for simulation admission.
 	uint64_t precomputed_preparation_nanoseconds = 0; ///< Local elapsed observation, never saved or used for admission.
+	PreparationDiagnostic preparation_diagnostic;
+	size_t capture_quantum = 64, graph_quantum = 1024; ///< Local coroutine resumption granularity only.
 	PassengerBuildTask preparation_capture;
 	PassengerBuildTask TickBuild(size_t allowance, bool build_precomputed, bool cooperative);
 	bool cooperative_graph = false, load_graph_refreshed = false, load_current_graph_started = false;
+	bool preparation_step = false; ///< Scoped to the stopped-simulation preparation entry point, never ordinary Tick.
 	void BeginPrecomputed(int64_t transfer);
 	void BuildPrecomputedTables();
 	void ClearRetainedPrecomputed();
 	void BuildPrecomputedTables(std::array<PassengerPrecomputedTable, NUM_CARGO> &tables,
-			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool hyperpath, bool cooperative = false);
+			const std::map<OrderListID, PassengerPeriodicService> &snapshot, int64_t transfer, uint64_t remaining, bool hyperpath, bool cooperative, PassengerAircraftCost aircraft_cost);
 	using Dependencies = std::map<StationID, uint64_t>;
 	struct JourneyPolicy {
 		std::vector<std::pair<StationID, int64_t>> lower_bounds; ///< Relaxed reverse adjacent-stop distances, never winning routes.
@@ -437,7 +461,7 @@ private:
 	JourneyPolicy CompilePolicy(CargoType cargo, StationID origin, StationID destination, PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, Dependencies &dependencies) const;
 	PassengerPeriodicPlan PlanInternal(CargoType cargo, StationID origin, StationID destination, StateTicks ready,
 			PassengerJourneyLimits limits, PassengerJourneyEvaluation evaluation, OrderListID excluded, bool prune_services, bool legacy_structures = false, bool anytime = true, bool validate_completes = true);
-	bool ServiceCannotImprove(const PassengerPeriodicTimetable &pattern, size_t boarding, CargoType cargo,
+	bool ServiceCannotImprove(const PassengerPeriodicService &service, size_t boarding, CargoType cargo,
 			StationID destination, int64_t cost, bool transfer, int64_t best, const JourneyPolicy &policy, PassengerJourneyEvaluation evaluation);
 };
 

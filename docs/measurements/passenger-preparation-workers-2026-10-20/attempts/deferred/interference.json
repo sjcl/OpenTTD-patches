@@ -1,0 +1,10 @@
+{
+  "run": "1-legacy-0-initial-reference",
+  "utc": "2026-10-19T18:20:50.295359+00:00",
+  "processes": [
+    {
+      "pid": 113848,
+      "exe": "openttd_test.exe"
+    }
+  ]
+}

@@ -17,6 +17,8 @@
 #include "../gfx_func.h"
 #include "../gfxinit.h"
 #include "../progress.h"
+#include "../passenger_service_database.h"
+#include "../openttd.h"
 #include "../rev.h"
 #include "../thread.h"
 #include "../window_func.h"
@@ -40,7 +42,16 @@ void VideoDriver::GameLoop()
 		/* Avoid next_game_tick getting behind more and more if it cannot keep up. */
 		if (this->next_game_tick < now - ALLOWED_DRIFT * interval) this->next_game_tick = now;
 
+		const auto slices = GetPassengerServiceDatabase().GetPreparationDiagnostic().slices;
 		::GameLoop();
+		/* Only accelerate a loop which actually ran local preparation. A peer
+		 * waiting for the host/barrier, a download or a modal operation keeps its
+		 * usual cadence. Release the game lock between every bounded slice. */
+		if (this->HasGUI() && _game_mode == GameMode::Normal && !HasModalProgress() &&
+				GetPassengerServiceDatabase().GetPreparationDiagnostic().slices != slices) {
+			this->next_game_tick = std::chrono::steady_clock::now();
+			if (!GetPassengerServiceDatabase().IsPreparingPrecomputed()) this->next_game_tick += interval;
+		}
 	}
 }
 

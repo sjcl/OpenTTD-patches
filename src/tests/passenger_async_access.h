@@ -37,15 +37,16 @@ struct PassengerPrecomputedTestAccess {
 		uint64_t digest = 0xcbf29ce484222325ULL;
 		VisitPublished(table, [&](uint64_t value) { digest = (digest ^ value) * 0x100000001b3ULL; }); return digest;
 	}
-	static void Hook(PassengerPrecomputedTable &table, void (*hook)(size_t, bool)) { table.parallel_search_hook = hook; }
+	template <typename Table> static void Hook(Table &table, void (*hook)(size_t, bool)) { table.parallel_search_hook = hook; }
 	static void StartHook(PassengerPrecomputedTable &table, bool (*hook)(uint)) { table.parallel_start_hook = hook; }
 	static void QuantumHook(PassengerPrecomputedTable &table, void (*hook)(size_t, uint64_t)) { table.parallel_quantum_hook = hook; }
 	static bool Prime(PassengerPrecomputedTable &table, uint workers) { return table.PrepareParallelBatch(workers); }
 	static bool Ready(const PassengerPrecomputedTable &table) { return table.ParallelCacheReady(); }
-	static bool Idle(const PassengerPrecomputedTable &table) { return table.ParallelIdle(); }
+	template <typename Table> static bool Idle(const Table &table) { return table.ParallelIdle(); }
 	static bool Serial(const PassengerPrecomputedTable &table) { return table.serial_destination == table.destination; }
 	static bool Pending(const PassengerPrecomputedTable &table) { return table.parallel_credit != 0; }
 	static bool RefreshService(PassengerPrecomputedTable &table, const PassengerPeriodicService &service) { return table.RefreshService(service); }
+	static void ExpirePreparationWait(PassengerPrecomputedTable &table) { table.preparation_wait_limit = std::chrono::milliseconds(0); }
 	/** Rotating eviction of every failed-carrier local policy, as a full cache would do. */
 	static void EvictLocalPolicies(const PassengerPrecomputedTable &table)
 	{
@@ -62,12 +63,16 @@ struct PassengerServiceDatabaseTestAccess {
 	static void DestinationChanged(PassengerServiceDatabase &db, StationID destination) { db.BumpHyperpathDestination(destination); }
 	static void Seed(PassengerServiceDatabase &db, std::span<const PassengerPeriodicService> services)
 	{
-		for (const auto &service : services) db.services.emplace(service.id, service);
+		for (const auto &service : services) {
+			db.services.emplace(service.id, service);
+			db.generation = std::max(db.generation, service.generation); // A saved service cannot be newer than its DB.
+		}
 		db.published_revision = 1; db.bootstrap = db.sweeping = false;
 	}
 	static void BeginReplacement(PassengerServiceDatabase &db, int64_t transfer) { db.BeginPrecomputed(transfer); }
 	static PassengerPrecomputedTable &Table(PassengerServiceDatabase &db, CargoType cargo) { return db.precomputed[cargo]; }
 	static const PassengerPrecomputedTable &Retained(const PassengerServiceDatabase &db, CargoType cargo) { return db.retained_precomputed[cargo]; }
+	static PassengerPrecomputedTable &Retained(PassengerServiceDatabase &db, CargoType cargo) { return db.retained_precomputed[cargo]; }
 	/** Cached-only membership without the derived row cache. */
 	static std::optional<bool> UncachedMembership(const PassengerServiceDatabase &db, const PassengerJourneyExecution &intent, CargoType cargo,
 			const std::array<uint32_t, 2> &occurrences, OrderListID previous, OrderListID failed)

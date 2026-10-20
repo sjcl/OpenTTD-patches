@@ -1,0 +1,37 @@
+[
+  {
+    "source": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-preparation\\Release\\openttd.exe",
+    "backup": "C:\\Users\\bebe\\OpenTTD-measurements\\passenger-preparation-20261020-5ac5f40c\\openttd.exe",
+    "bytes": 15949824,
+    "sha256": "ad73a020d83e21f26b17107f9c7e272acb211744a516d65ac749e92ed9bab56e",
+    "copy": "independent file"
+  },
+  {
+    "source": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-preparation\\Release\\openttd.pdb",
+    "backup": "C:\\Users\\bebe\\OpenTTD-measurements\\passenger-preparation-20261020-5ac5f40c\\openttd.pdb",
+    "bytes": 141430784,
+    "sha256": "80b226b3e1a0efba07ae417e69dcc0a5776a0dded5265c631a6a99238cf3439d",
+    "copy": "independent file"
+  },
+  {
+    "source": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-preparation\\Release\\openttd_test.exe",
+    "backup": "C:\\Users\\bebe\\OpenTTD-measurements\\passenger-preparation-20261020-5ac5f40c\\openttd_test.exe",
+    "bytes": 25556992,
+    "sha256": "5ac5f40c1072f647cc33ca65e9443bd093ee0e77919cdcdb34386a4a56f15c96",
+    "copy": "independent file"
+  },
+  {
+    "source": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-preparation\\Release\\openttd_test.pdb",
+    "backup": "C:\\Users\\bebe\\OpenTTD-measurements\\passenger-preparation-20261020-5ac5f40c\\openttd_test.pdb",
+    "bytes": 170811392,
+    "sha256": "466e1b182ef70cdd10b883de85dc4c820dc5b946645468cdc643b3dbefe69659",
+    "copy": "independent file"
+  },
+  {
+    "source": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-preparation\\lang\\english.lng",
+    "backup": "C:\\Users\\bebe\\OpenTTD-measurements\\passenger-preparation-20261020-5ac5f40c\\english.lng",
+    "bytes": 252384,
+    "sha256": "6b428c98951dc4c332107e63f55b8a8dcb757e4c5d9b80363318894e20892e0f",
+    "copy": "independent file"
+  }
+]

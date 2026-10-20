@@ -11,6 +11,7 @@
 #define PASSENGER_SERVICE_GRAPH_H
 
 #include "passenger_routing.h"
+#include "passenger_aircraft_cost.h"
 #include "direction_type.h"
 #include "tile_type.h"
 #include "passenger_service_index.h"
@@ -163,6 +164,7 @@ public:
 		uint64_t prediction_nanoseconds = 0; ///< Zero on a hit; live validation is in the build phase time.
 		bool prediction_cache_hit = false; ///< Per-vehicle/cargo/start observation; aggregate across OD builds to count duplicates.
 		bool prediction_executed = false;
+		std::vector<int64_t> aircraft_adjustments; ///< Arrival prefix; empty for default costs and other modes.
 	};
 
 	struct VisitID {
@@ -186,6 +188,13 @@ public:
 	static PassengerServiceGraph Build(CargoType cargo, StateTicks now, PassengerServiceGraphLimits limits = {},
 			std::optional<PassengerServiceScope> scope = {}, PassengerServiceCapture *capture = nullptr,
 			PassengerTimingPolicy timing = PassengerTimingPolicy::Conservative);
+	/** Running, passenger-capable aircraft in the captured corridor, including departures beyond this horizon. */
+	bool HasAircraftDiscount() const { return this->has_aircraft_discount; }
+	int64_t AircraftAdjustment(VisitID from, VisitID to) const
+	{
+		const auto &prefix = this->trips[from.trip].aircraft_adjustments;
+		return prefix.empty() ? 0 : prefix[to.visit] - prefix[from.visit];
+	}
 	CargoType GetCargo() const { return this->cargo; }
 	StateTicks GetStart() const { return this->start; }
 	StateTicks GetEnd() const { return this->end; }
@@ -241,6 +250,8 @@ public:
 
 private:
 	friend struct PassengerServiceGraphTestAccess;
+	PassengerAircraftCost aircraft_cost;
+	bool has_aircraft_discount = false;
 	CargoType cargo = INVALID_CARGO;
 	StateTicks start{};
 	StateTicks end{};

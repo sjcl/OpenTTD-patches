@@ -474,15 +474,23 @@ struct JourneyCapacityUpperBound : PassengerJourneyCapacityProvider {
 };
 
 struct PassengerJourneyActiveContext::Snapshot {
+	struct TimedPlan {
+		std::optional<PassengerJourneyExecution> ride;
+		std::tuple<int64_t, StateTicks, uint32_t, size_t, StateTicksDelta> rank{};
+		bool staying = false, extend = false, ignored_unknown = false;
+		void Set(PassengerJourneyExecution ride, const PassengerPlannedJourney &journey, bool staying, bool extend, bool ignored_unknown)
+		{
+			this->ride = ride; this->rank = {journey.generalized_time.base(), journey.arrival, journey.transfers, journey.legs.size(), journey.waiting};
+			this->staying = staying; this->extend = extend; this->ignored_unknown = ignored_unknown;
+		}
+	};
 	PassengerServiceGraph graph;
 	JourneyCapacityUpperBound capacity;
 	PassengerJourneyPlanner planner;
 	std::map<OrderListID, uint64_t> signatures;
-	std::map<StationID, std::optional<PassengerJourneyExecution>> waiting;
-	std::map<StationID, std::optional<std::pair<PassengerJourneyExecution, bool>>> onboard;
+	std::map<StationID, TimedPlan> waiting, onboard;
 	PassengerJourneyFallbackReason failure = PassengerJourneyFallbackReason::NoJourney;
 	bool deferred = false, budget_limited = false;
-	bool waiting_ignored_unknown = false, onboard_ignored_unknown = false;
 	Snapshot(PassengerServiceGraph graph) : graph(std::move(graph)), planner(this->graph, &this->capacity, {2, 256 * 1024}) {}
 };
 
@@ -805,7 +813,21 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		return true;
 	}
 	Snapshot *snapshot = nullptr;
+	const Snapshot::TimedPlan *incumbent = nullptr;
+	auto retain = [&](const Snapshot::TimedPlan &plan) {
+		if (plan.ride && (incumbent == nullptr || plan.rank < incumbent->rank)) incumbent = &plan;
+	};
+	auto adopt = [&]() {
+		this->deferred = false;
+		packet.SetPassengerJourney(*incumbent->ride, fallback_hop);
+		TickBudget().diagnostic.timed_routes_ignoring_unknown += incumbent->ignored_unknown;
+		++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count();
+		return true;
+	};
 	auto reject = [&](PassengerJourneyFallbackReason reason) {
+		/* Widening is optional once a validated journey exists. A later work,
+		 * memory or prediction limit cannot revoke that usable first leg. */
+		if (incumbent != nullptr) return adopt();
 		if (snapshot != nullptr) { snapshot->failure = reason; snapshot->deferred = this->deferred; }
 		if (reason == PassengerJourneyFallbackReason::GraphWork || reason == PassengerJourneyFallbackReason::GraphMemory ||
 				reason == PassengerJourneyFallbackReason::SnapshotLimit || reason == PassengerJourneyFallbackReason::QueryWork ||
@@ -834,14 +856,13 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		auto [cached, inserted] = snapshot->waiting.try_emplace(packet.GetPassengerDestination());
 		if (!inserted) {
 			++TickBudget().diagnostic.query_cache_hits;
-			if (!cached->second) {
+			if (!cached->second.ride) {
 				if (snapshot->failure == PassengerJourneyFallbackReason::PredictionHorizon && horizon < 65536) continue;
 				this->deferred = snapshot->deferred; return reject(snapshot->failure);
 			}
-			packet.SetPassengerJourney(*cached->second, fallback_hop);
-			TickBudget().diagnostic.timed_routes_ignoring_unknown += snapshot->waiting_ignored_unknown;
-			++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count();
-			return true;
+			retain(cached->second);
+			if (cached->second.extend) continue;
+			return adopt();
 		}
 		/* Reserve a fixed query allowance. Cache reuse is a performance optimization only. */
 		auto limits = ActiveJourneyLimits();
@@ -849,8 +870,7 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		const auto query_start = std::chrono::steady_clock::now();
 		auto result = snapshot->planner.Plan(cargo, this->station, packet.GetPassengerDestination(), _state_ticks, limits, ActiveJourneyEvaluation(), 1);
 		CountJourneySearch(result, snapshot->planner, query_start, this->station, packet.GetPassengerDestination());
-		if (result.stop_reason == PassengerJourneyStopReason::PredictionHorizon ||
-				(result.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound && result.journeys.front().generalized_time.base() >= horizon)) {
+		if (result.stop_reason == PassengerJourneyStopReason::PredictionHorizon) {
 			snapshot->failure = PassengerJourneyFallbackReason::PredictionHorizon;
 			if (horizon < 65536) continue;
 			return reject(PassengerJourneyFallbackReason::PredictionHorizon);
@@ -859,12 +879,12 @@ bool PassengerJourneyActiveContext::PlanWaiting(CargoPacket &packet, CargoType c
 		if (!result.HasJourney() || result.journeys.front().legs.empty()) return reject(PassengerJourneyFallbackReason::NoJourney);
 		auto execution = this->Execute(*snapshot, cargo, result.journeys.front().legs.front());
 		if (!execution) return reject(this->deferred ? this->failure : PassengerJourneyFallbackReason::InvalidLeg);
-		cached->second = *execution;
-		snapshot->waiting_ignored_unknown = result.diagnostic.unknown_alternatives_ignored;
-		packet.SetPassengerJourney(*execution, fallback_hop);
-		TickBudget().diagnostic.timed_routes_ignoring_unknown += snapshot->waiting_ignored_unknown;
-		++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count();
-		return true;
+		const auto &journey = result.journeys.front();
+		bool extend = horizon < 65536 && (snapshot->graph.HasAircraftDiscount() || journey.generalized_time.base() >= horizon);
+		cached->second.Set(*execution, journey, false, extend, result.diagnostic.unknown_alternatives_ignored);
+		retain(cached->second);
+		if (extend) continue;
+		return adopt();
 	}
 }
 
@@ -1130,6 +1150,16 @@ StationID PassengerOdFallbackContext::BoardingVia(const CargoPacket &packet, con
 	/* A live direct ride takes priority over an intermediate CargoDist hop. Both
 	 * checks reuse one order prefix and require no LinkGraph reverse exploration. */
 	StationID via = destination;
+	/* A penalized aircraft must not bypass an existing CargoDist ground corridor
+	 * merely because it also serves the destination directly. CargoDist already
+	 * applies these settings; keep its usable hop until timed routing resumes. */
+	if (vehicle->type == VehicleType::Aircraft && (_settings_game.linkgraph.aircraft_link_scale > 100 || _settings_game.linkgraph.aircraft_link_add != 0)) {
+		StationID hop = _settings_game.linkgraph.passenger_journey_precomputed ? packet.GetPassengerLegacyHop() :
+				CurrentPassengerLegacyHop(packet, cargo, vehicle->last_station_visited, packet.GetPassengerLegacyHop());
+		if (Station::IsValidID(hop) && hop != vehicle->last_station_visited && hop != destination) {
+			return this->CanReach(vehicle, cargo, hop) ? hop : StationID::Invalid();
+		}
+	}
 	if (!this->CanReach(vehicle, cargo, destination)) {
 		/* Precomputed waiting cohorts are indexed by their saved hop. Flow
 		 * changes are routing events, never a hidden per-packet boarding search. */
@@ -1646,7 +1676,20 @@ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Dec
 	Snapshot *snapshot = nullptr;
 	this->failure = PassengerJourneyFallbackReason::InvalidLeg;
 	this->deferred = false;
+	const Snapshot::TimedPlan *incumbent = nullptr;
+	auto retain = [&](const Snapshot::TimedPlan &plan) {
+		if (plan.ride && (incumbent == nullptr || plan.rank < incumbent->rank)) incumbent = &plan;
+	};
+	auto adopt = [&]() -> std::optional<Action> {
+		this->deferred = false;
+		packet.SetPassengerJourney(*incumbent->ride, StationID::Invalid());
+		packet.SetNextHop(StationID::Invalid());
+		TickBudget().diagnostic.timed_routes_ignoring_unknown += incumbent->ignored_unknown;
+		++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count();
+		return incumbent->staying ? Action::Keep : Action::Transfer;
+	};
 	auto fallback = [&]() -> std::optional<Action> {
+		if (incumbent != nullptr) return adopt();
 		if (snapshot != nullptr) { snapshot->failure = this->failure; snapshot->deferred = this->deferred; }
 		const bool budget_failure = this->deferred || this->failure == PassengerJourneyFallbackReason::GraphWork ||
 				this->failure == PassengerJourneyFallbackReason::GraphMemory || this->failure == PassengerJourneyFallbackReason::QueryWork ||
@@ -1694,15 +1737,13 @@ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Dec
 		auto [cached, inserted] = snapshot->onboard.try_emplace(packet.GetPassengerDestination());
 		if (!inserted) {
 			++TickBudget().diagnostic.query_cache_hits;
-			if (!cached->second) {
+			if (!cached->second.ride) {
 				if (snapshot->failure == PassengerJourneyFallbackReason::PredictionHorizon && horizon < 65536) continue;
 				this->failure = snapshot->failure; this->deferred = snapshot->deferred; return fallback();
 			}
-			packet.SetPassengerJourney(cached->second->first, StationID::Invalid());
-			packet.SetNextHop(StationID::Invalid());
-			TickBudget().diagnostic.timed_routes_ignoring_unknown += snapshot->onboard_ignored_unknown;
-			++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count();
-			return cached->second->second ? Action::Keep : Action::Transfer;
+			retain(cached->second);
+			if (cached->second.extend) continue;
+			return adopt();
 		}
 		auto onboard = snapshot->graph.FindOnboardVisit(this->vehicle->index, this->station, this->vehicle->cur_real_order_index);
 		auto limits = ActiveJourneyLimits();
@@ -1711,8 +1752,7 @@ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Dec
 		const auto query_start = std::chrono::steady_clock::now();
 		auto result = snapshot->planner.PlanOnboard(cargo, *onboard, packet.GetPassengerDestination(), limits, ActiveJourneyEvaluation(), 1);
 		CountJourneySearch(result, snapshot->planner, query_start, this->station, packet.GetPassengerDestination());
-		if (result.stop_reason == PassengerJourneyStopReason::PredictionHorizon ||
-				(result.GetOutcome() == PassengerJourneyOutcome::TimedRouteFound && result.journeys.front().generalized_time.base() >= horizon)) {
+		if (result.stop_reason == PassengerJourneyStopReason::PredictionHorizon) {
 			snapshot->failure = PassengerJourneyFallbackReason::PredictionHorizon;
 			if (horizon < 65536) continue;
 			this->failure = PassengerJourneyFallbackReason::PredictionHorizon; return fallback();
@@ -1725,13 +1765,12 @@ std::optional<VehicleCargoList::MoveToAction> PassengerJourneyActiveContext::Dec
 		if (!execution) return fallback();
 		bool staying = leg.vehicle == this->vehicle->index && leg.boarding == *onboard;
 		if (staying && (unload == OrderUnloadType::Unload || unload == OrderUnloadType::Transfer)) return fallback();
-		cached->second = std::pair(*execution, staying);
-		snapshot->onboard_ignored_unknown = result.diagnostic.unknown_alternatives_ignored;
-		packet.SetPassengerJourney(*execution, StationID::Invalid());
-		packet.SetNextHop(StationID::Invalid());
-		TickBudget().diagnostic.timed_routes_ignoring_unknown += snapshot->onboard_ignored_unknown;
-		++TickBudget().diagnostic.journeys; TickBudget().diagnostic.passengers += packet.Count();
-		return staying ? Action::Keep : Action::Transfer;
+		const auto &journey = result.journeys.front();
+		bool extend = horizon < 65536 && (snapshot->graph.HasAircraftDiscount() || journey.generalized_time.base() >= horizon);
+		cached->second.Set(*execution, journey, staying, extend, result.diagnostic.unknown_alternatives_ignored);
+		retain(cached->second);
+		if (extend) continue;
+		return adopt();
 	}
 }
 
@@ -2052,8 +2091,15 @@ std::array<uint, 3> CountReservedPassengerRoutingModes(const Station &station, C
 	return counts;
 }
 
+void PassengerAircraftCostSettingsChanged(int32_t)
+{
+	GetPassengerServiceDatabase().UpdateAircraftCosts();
+	ClearPassengerOdFallbackCache();
+}
+
 void PassengerJourneySettingsChanged(int32_t)
 {
+	PassengerAircraftCostSettingsChanged(0);
 	if (!_settings_game.linkgraph.passenger_journey_precomputed) GetPassengerServiceDatabase().DiscardPrecomputed();
 	InvalidatePassengerServiceDatabase();
 	InvalidatePassengerWaitingRouting(); // A mode change re-routes every waiting list at once.

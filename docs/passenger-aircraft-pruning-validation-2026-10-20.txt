@@ -1,0 +1,66 @@
+Passenger aircraft pruning validation (2026-10-20 JST)
+
+Base: sjcl/jgrpp-ya, 0226d3847d924578946b101086e5e7d75185c98f
+Branch: codex/passenger-aircraft-pruning
+Platform: Windows x64, clang-cl 23.1.3, Ninja, Release
+Options: OPTION_USE_ASSERTS=ON, OPTION_NO_LTO=ON, OPTION_PGO=OFF
+Dependencies: existing local x64-windows-static vcpkg installation, manifest install disabled
+
+Build:
+  os/windows/Build.ps1 -BuildDirectory build-aircraft
+    -CMakeArguments @('-DOPTION_PGO=OFF', '-DOPTION_NO_LTO=ON', '-DOPTION_USE_ASSERTS=ON',
+      '-DVCPKG_MANIFEST_INSTALL=OFF', '-DVCPKG_INSTALLED_DIR=<existing local installation>',
+      '-DCMAKE_MAKE_PROGRAM=<Visual Studio bundled Ninja>')
+  cmake --build build-aircraft --target openttd_test --parallel 8
+Result: openttd.exe and openttd_test.exe built successfully.
+
+Related tests:
+  build-aircraft/openttd_test.exe "[aircraft_cost]" --reporter compact
+  Passed all 19 test cases with 1664 assertions.
+
+Complete suite (ordinary Windows permissions, including font-dependent script regressions):
+  ctest --test-dir build-aircraft --parallel 4 --output-on-failure --timeout 120
+  100% tests passed, 0 tests failed out of 809
+  Total Test time (real) = 124.49 sec
+
+New regression coverage:
+  - No aircraft, disconnected aircraft, dead-end excursions, onboard-only capture,
+    stopped aircraft, and NoLoad aircraft: 3 waiting packets use 1 build, 1 query,
+    and 2 query-cache hits, with the original 100-tick rail arrival.
+  - A useful 8000-tick flight at 10% is selected over 3000-tick rail, despite
+    arriving outside the initial 4096-tick horizon.
+  - Separate query-count, work, and graph-memory exhaustion while widening:
+    3 waiting or onboard packets retain the validated 3000-tick rail journey;
+    timed_budget_deferred remains zero. Onboard packets Keep their vehicle.
+  - Same aircraft path with repeated arrivals at an interchange: 100% and 300%
+    retain 3 labels, while 50% keeps the cheaper later prefix (5 labels).
+    Its final generalized cost is 205 versus 310 at default and 330 at 300%;
+    real final arrival remains NOW+310. Weighted waiting is tested separately.
+
+Existing national rail fixture, 8000 stations / 800 trains / 80800 predicted visits:
+  All three settings (100%/0 days, 50%/0 days, 300%/3 days) produce identical
+  logical counts and scratch bounds for each query shape:
+
+  Query shape       Labels    Work    Reverse work    Scratch bound (bytes)
+  Hub direct           999   35630            4901                   891080
+  With feeder         1000   50114            4907                   894544
+
+These are deterministic unit-fixture counters, not real-map CPU/FPS measurements.
+No real-map benchmark or WPR capture was performed. Wall-clock samples are not
+used as a performance acceptance threshold.
+
+Implementation limits:
+  - The discount flag uses existing OD corridor selection and captured running,
+    passenger-capable aircraft. It is conservative about future connection times
+    and seats, and retains potential flights outside the first horizon.
+  - Once an optional wider search exceeds its existing allowances, the best
+    validated cached journey is used; global optimality beyond those allowances
+    is not claimed. No budget or maximum horizon is increased.
+  - Dominance still requires the same vehicle/station path and all prior
+    capacity/certainty conditions. A larger earlier aircraft adjustment cannot
+    dominate a cheaper later prefix. Weighted waits include the extra wait to
+    a common departure.
+  - No packet-level network traversal, persistent table format, asynchronous
+    publication rule, CargoDist calculation, or settings invalidation is added.
+
+Diff whitespace check: git diff --check passed.

@@ -1,0 +1,730 @@
+{
+  "comparisons": [
+    {
+      "case": "初期構築 Legacy",
+      "baseline": {
+        "kind": "singleplayer",
+        "ready": true,
+        "tick_before": 3201034745,
+        "tick_after": 3201034745,
+        "process_to_ready_ns": 42837085500,
+        "preparation_wall_ns": 38191497800,
+        "preparation_local_ready_ns": 38191483400,
+        "main_cpu_ns": 12656250000,
+        "process_cpu_ns": 80656250000,
+        "worker_cpu_ns": 49296875000,
+        "slices": 94039,
+        "max_slice_ns": 37876600,
+        "load_work": 0,
+        "requested_workers": 4,
+        "phase_call_ns": [
+          0,
+          14384500,
+          3114288900,
+          0,
+          9440744000,
+          0,
+          0,
+          0
+        ],
+        "phase_wall_ns": [
+          0,
+          32806200,
+          7065475500,
+          0,
+          31093215000,
+          0,
+          0,
+          0
+        ],
+        "tables": [
+          {
+            "cargo": 0,
+            "rows": 4936,
+            "retained_rows": 0,
+            "work": 5806592124,
+            "workers": 3,
+            "hits": 4857,
+            "serial_rows": 79,
+            "fallbacks": 0,
+            "finished_rows": 0
+          }
+        ]
+      },
+      "candidate": {
+        "kind": "singleplayer",
+        "ready": true,
+        "tick_before": 3201034745,
+        "tick_after": 3201034745,
+        "process_to_ready_ns": 27028680500,
+        "preparation_wall_ns": 21753651400,
+        "preparation_local_ready_ns": 21753639200,
+        "main_cpu_ns": 14843750000,
+        "process_cpu_ns": 87234375000,
+        "worker_cpu_ns": 50593750000,
+        "slices": 1423148,
+        "max_slice_ns": 85043700,
+        "load_work": 0,
+        "requested_workers": 4,
+        "phase_call_ns": [
+          0,
+          21140800,
+          4657229800,
+          0,
+          15500361900,
+          0,
+          0,
+          0
+        ],
+        "phase_wall_ns": [
+          0,
+          27942600,
+          4689599700,
+          0,
+          17036107800,
+          0,
+          0,
+          0
+        ],
+        "tables": [
+          {
+            "cargo": 0,
+            "rows": 4936,
+            "retained_rows": 0,
+            "work": 5806592124,
+            "workers": 3,
+            "hits": 4936,
+            "serial_rows": 0,
+            "fallbacks": 0,
+            "finished_rows": 0
+          }
+        ]
+      },
+      "baseline_path": "initial/A2/legacy",
+      "candidate_path": "initial/B1/legacy",
+      "preparation_change_percent": -43.0405910919786,
+      "process_to_ready_change_percent": -36.903549378960435
+    },
+    {
+      "case": "初期構築 Hyperpath",
+      "baseline": {
+        "kind": "singleplayer",
+        "ready": true,
+        "tick_before": 3201034745,
+        "tick_after": 3201034745,
+        "process_to_ready_ns": 30852631800,
+        "preparation_wall_ns": 26003003400,
+        "preparation_local_ready_ns": 26002975800,
+        "main_cpu_ns": 9078125000,
+        "process_cpu_ns": 98906250000,
+        "worker_cpu_ns": 64375000000,
+        "slices": 32621,
+        "max_slice_ns": 10242100,
+        "load_work": 0,
+        "requested_workers": 4,
+        "phase_call_ns": [
+          0,
+          23103300,
+          17754500,
+          0,
+          8570481900,
+          0,
+          0,
+          0
+        ],
+        "phase_wall_ns": [
+          0,
+          73009200,
+          46605500,
+          0,
+          25883387400,
+          0,
+          0,
+          0
+        ],
+        "tables": [
+          {
+            "cargo": 0,
+            "rows": 4936,
+            "retained_rows": 0,
+            "work": 1973842614,
+            "workers": 4,
+            "hits": 4386,
+            "serial_rows": 550,
+            "fallbacks": 0,
+            "finished_rows": 4386
+          }
+        ]
+      },
+      "candidate": {
+        "kind": "singleplayer",
+        "ready": true,
+        "tick_before": 3201034745,
+        "tick_after": 3201034745,
+        "process_to_ready_ns": 16910761300,
+        "preparation_wall_ns": 12427357900,
+        "preparation_local_ready_ns": 12427343100,
+        "main_cpu_ns": 1765625000,
+        "process_cpu_ns": 62578125000,
+        "worker_cpu_ns": 48234375000,
+        "slices": 484601,
+        "max_slice_ns": 11440700,
+        "load_work": 0,
+        "requested_workers": 4,
+        "phase_call_ns": [
+          0,
+          15941600,
+          11736100,
+          0,
+          11734542600,
+          0,
+          0,
+          0
+        ],
+        "phase_wall_ns": [
+          0,
+          22751000,
+          11914000,
+          0,
+          12392691900,
+          0,
+          0,
+          0
+        ],
+        "tables": [
+          {
+            "cargo": 0,
+            "rows": 4936,
+            "retained_rows": 0,
+            "work": 1973842614,
+            "workers": 4,
+            "hits": 4936,
+            "serial_rows": 0,
+            "fallbacks": 0,
+            "finished_rows": 4936
+          }
+        ]
+      },
+      "baseline_path": "initial/A1/hyperpath",
+      "candidate_path": "initial/B1/hyperpath",
+      "preparation_change_percent": -52.20799032776344,
+      "process_to_ready_change_percent": -45.18859392734205
+    },
+    {
+      "case": "旧世代を含む復元 Legacy",
+      "baseline": {
+        "kind": "singleplayer",
+        "ready": true,
+        "tick_before": 3201034745,
+        "tick_after": 3201034745,
+        "process_to_ready_ns": 230104685700,
+        "preparation_wall_ns": 225378548400,
+        "preparation_local_ready_ns": 225378540200,
+        "main_cpu_ns": 75265625000,
+        "process_cpu_ns": 98828125000,
+        "worker_cpu_ns": 0,
+        "slices": 94746,
+        "max_slice_ns": 98631400,
+        "load_work": 5806592131,
+        "requested_workers": 4,
+        "phase_call_ns": [
+          0,
+          0,
+          8422476700,
+          64229439500,
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase_wall_ns": [
+          0,
+          0,
+          18352984000,
+          207025563000,
+          0,
+          0,
+          0,
+          0
+        ],
+        "tables": [
+          {
+            "cargo": 0,
+            "rows": 0,
+            "retained_rows": 4936,
+            "work": 7,
+            "workers": 0,
+            "hits": 0,
+            "serial_rows": 0,
+            "fallbacks": 0,
+            "finished_rows": 0
+          }
+        ]
+      },
+      "candidate": {
+        "kind": "singleplayer",
+        "ready": true,
+        "tick_before": 3201034745,
+        "tick_after": 3201034745,
+        "process_to_ready_ns": 30741591500,
+        "preparation_wall_ns": 26325772100,
+        "preparation_local_ready_ns": 26325756400,
+        "main_cpu_ns": 18953125000,
+        "process_cpu_ns": 103250000000,
+        "worker_cpu_ns": 58375000000,
+        "slices": 1423800,
+        "max_slice_ns": 51707700,
+        "load_work": 5806592131,
+        "requested_workers": 4,
+        "phase_call_ns": [
+          0,
+          0,
+          6653572000,
+          17923585200,
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase_wall_ns": [
+          0,
+          0,
+          6712580800,
+          19613189900,
+          0,
+          0,
+          0,
+          0
+        ],
+        "tables": [
+          {
+            "cargo": 0,
+            "rows": 0,
+            "retained_rows": 4936,
+            "work": 7,
+            "workers": 0,
+            "hits": 0,
+            "serial_rows": 1,
+            "fallbacks": 0,
+            "finished_rows": 0
+          }
+        ]
+      },
+      "baseline_path": "replay/A1/legacy",
+      "candidate_path": "replay/B1/legacy",
+      "preparation_change_percent": -88.31930887527182,
+      "process_to_ready_change_percent": -86.64017144784289
+    },
+    {
+      "case": "旧世代を含む復元 Hyperpath",
+      "baseline": {
+        "kind": "singleplayer",
+        "ready": true,
+        "tick_before": 3201034745,
+        "tick_after": 3201034745,
+        "process_to_ready_ns": 173639812000,
+        "preparation_wall_ns": 169276589500,
+        "preparation_local_ready_ns": 169276583700,
+        "main_cpu_ns": 55312500000,
+        "process_cpu_ns": 73718750000,
+        "worker_cpu_ns": 0,
+        "slices": 30393,
+        "max_slice_ns": 9362700,
+        "load_work": 1973842621,
+        "requested_workers": 4,
+        "phase_call_ns": [
+          0,
+          0,
+          27516700,
+          56076413800,
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase_wall_ns": [
+          0,
+          0,
+          64337400,
+          169212249900,
+          0,
+          0,
+          0,
+          0
+        ],
+        "tables": [
+          {
+            "cargo": 0,
+            "rows": 0,
+            "retained_rows": 4936,
+            "work": 7,
+            "workers": 0,
+            "hits": 0,
+            "serial_rows": 0,
+            "fallbacks": 0,
+            "finished_rows": 0
+          }
+        ]
+      },
+      "candidate": {
+        "kind": "singleplayer",
+        "ready": true,
+        "tick_before": 3201034745,
+        "tick_after": 3201034745,
+        "process_to_ready_ns": 18131974400,
+        "preparation_wall_ns": 13789989900,
+        "preparation_local_ready_ns": 13789973300,
+        "main_cpu_ns": 2531250000,
+        "process_cpu_ns": 70625000000,
+        "worker_cpu_ns": 54171875000,
+        "slices": 482151,
+        "max_slice_ns": 13136500,
+        "load_work": 1973842621,
+        "requested_workers": 4,
+        "phase_call_ns": [
+          0,
+          0,
+          29251700,
+          13077769600,
+          17633500,
+          0,
+          0,
+          0
+        ],
+        "phase_wall_ns": [
+          0,
+          0,
+          36361100,
+          13735959500,
+          17667300,
+          0,
+          0,
+          0
+        ],
+        "tables": [
+          {
+            "cargo": 0,
+            "rows": 0,
+            "retained_rows": 4936,
+            "work": 7,
+            "workers": 4,
+            "hits": 1,
+            "serial_rows": 0,
+            "fallbacks": 0,
+            "finished_rows": 0
+          }
+        ]
+      },
+      "baseline_path": "replay/A1/hyperpath",
+      "candidate_path": "replay/B1/hyperpath",
+      "preparation_change_percent": -91.85357529902267,
+      "process_to_ready_change_percent": -89.55770903506853
+    },
+    {
+      "case": "TCP参加 Hyperpath",
+      "baseline": {
+        "kind": "multiplayer",
+        "ready": true,
+        "tick_before": 3201034745,
+        "tick_after": 3201034745,
+        "process_to_ready_ns": 184862615200,
+        "preparation_wall_ns": 176506868200,
+        "preparation_local_ready_ns": 176454302500,
+        "main_cpu_ns": 58906250000,
+        "process_cpu_ns": 76515625000,
+        "worker_cpu_ns": 0,
+        "slices": 30393,
+        "max_slice_ns": 11271100,
+        "load_work": 1973842621,
+        "requested_workers": 4,
+        "phase_call_ns": [
+          0,
+          0,
+          24502900,
+          58668397600,
+          0,
+          0,
+          0,
+          0
+        ],
+        "phase_wall_ns": [
+          0,
+          0,
+          60550300,
+          176446316200,
+          0,
+          0,
+          0,
+          0
+        ],
+        "tables": [
+          {
+            "cargo": 0,
+            "rows": 0,
+            "retained_rows": 4936,
+            "work": 7,
+            "workers": 0,
+            "hits": 0,
+            "serial_rows": 0,
+            "fallbacks": 0,
+            "finished_rows": 0
+          }
+        ]
+      },
+      "candidate": {
+        "kind": "multiplayer",
+        "ready": true,
+        "tick_before": 3201034745,
+        "tick_after": 3201034745,
+        "process_to_ready_ns": 23551876900,
+        "preparation_wall_ns": 14632551000,
+        "preparation_local_ready_ns": 14602739000,
+        "main_cpu_ns": 2000000000,
+        "process_cpu_ns": 73625000000,
+        "worker_cpu_ns": 57125000000,
+        "slices": 487229,
+        "max_slice_ns": 7645700,
+        "load_work": 1973842621,
+        "requested_workers": 4,
+        "phase_call_ns": [
+          0,
+          0,
+          26962500,
+          13913699300,
+          20076200,
+          0,
+          0,
+          0
+        ],
+        "phase_wall_ns": [
+          0,
+          0,
+          33829300,
+          14548733000,
+          49987100,
+          0,
+          0,
+          0
+        ],
+        "tables": [
+          {
+            "cargo": 0,
+            "rows": 0,
+            "retained_rows": 4936,
+            "work": 7,
+            "workers": 4,
+            "hits": 1,
+            "serial_rows": 0,
+            "fallbacks": 0,
+            "finished_rows": 0
+          }
+        ]
+      },
+      "baseline_path": "multiplayer-clean/baseline/client",
+      "candidate_path": "multiplayer-clean/candidate/client",
+      "preparation_change_percent": -91.70992542713984,
+      "process_to_ready_change_percent": -87.25979459150267
+    }
+  ],
+  "workers8": {
+    "initial": {
+      "kind": "singleplayer",
+      "ready": true,
+      "tick_before": 3201034745,
+      "tick_after": 3201034745,
+      "process_to_ready_ns": 11756962000,
+      "preparation_wall_ns": 7015155300,
+      "preparation_local_ready_ns": 7015142200,
+      "main_cpu_ns": 2109375000,
+      "process_cpu_ns": 63468750000,
+      "worker_cpu_ns": 54359375000,
+      "slices": 483637,
+      "max_slice_ns": 16665200,
+      "load_work": 0,
+      "requested_workers": 8,
+      "phase_call_ns": [
+        0,
+        20411400,
+        15020500,
+        0,
+        6324344800,
+        0,
+        0,
+        0
+      ],
+      "phase_wall_ns": [
+        0,
+        28575300,
+        15400000,
+        0,
+        6971179000,
+        0,
+        0,
+        0
+      ],
+      "tables": [
+        {
+          "cargo": 0,
+          "rows": 4936,
+          "retained_rows": 0,
+          "work": 1973842614,
+          "workers": 8,
+          "hits": 4936,
+          "serial_rows": 0,
+          "fallbacks": 0,
+          "finished_rows": 4936
+        }
+      ]
+    },
+    "replay": {
+      "kind": "singleplayer",
+      "ready": true,
+      "tick_before": 3201034745,
+      "tick_after": 3201034745,
+      "process_to_ready_ns": 11511018200,
+      "preparation_wall_ns": 7060128400,
+      "preparation_local_ready_ns": 7060113800,
+      "main_cpu_ns": 2031250000,
+      "process_cpu_ns": 63328125000,
+      "worker_cpu_ns": 54484375000,
+      "slices": 482066,
+      "max_slice_ns": 26796500,
+      "load_work": 1973842621,
+      "requested_workers": 8,
+      "phase_call_ns": [
+        0,
+        0,
+        33424600,
+        6378019800,
+        22163800,
+        0,
+        0,
+        0
+      ],
+      "phase_wall_ns": [
+        0,
+        0,
+        40196100,
+        6997535100,
+        22395200,
+        0,
+        0,
+        0
+      ],
+      "tables": [
+        {
+          "cargo": 0,
+          "rows": 0,
+          "retained_rows": 4936,
+          "work": 7,
+          "workers": 8,
+          "hits": 1,
+          "serial_rows": 0,
+          "fallbacks": 0,
+          "finished_rows": 0
+        }
+      ]
+    }
+  },
+  "supplemental": {
+    "legacy_baseline_first_native": {
+      "kind": "singleplayer",
+      "ready": true,
+      "tick_before": 3201034745,
+      "tick_after": 3201034745,
+      "process_to_ready_ns": 41020171700,
+      "preparation_wall_ns": 35703805800,
+      "preparation_local_ready_ns": 35703787200,
+      "main_cpu_ns": 12000000000,
+      "process_cpu_ns": 77968750000,
+      "worker_cpu_ns": 46703125000,
+      "slices": 94039,
+      "max_slice_ns": 71581900,
+      "load_work": 0,
+      "requested_workers": 4,
+      "phase_call_ns": [
+        0,
+        19338700,
+        3517649200,
+        0,
+        8421892500,
+        0,
+        0,
+        0
+      ],
+      "phase_wall_ns": [
+        0,
+        39115200,
+        7852901700,
+        0,
+        27811787800,
+        0,
+        0,
+        0
+      ],
+      "tables": [
+        {
+          "cargo": 0,
+          "rows": 4936,
+          "retained_rows": 0,
+          "work": 5806592124,
+          "workers": 3,
+          "hits": 4916,
+          "serial_rows": 20,
+          "fallbacks": 0,
+          "finished_rows": 0
+        }
+      ]
+    },
+    "hyperpath_candidate_pilot": {
+      "kind": "singleplayer",
+      "ready": true,
+      "tick_before": 3201034745,
+      "tick_after": 3201034745,
+      "process_to_ready_ns": 17355672100,
+      "preparation_wall_ns": 12800415400,
+      "preparation_local_ready_ns": 12800395700,
+      "main_cpu_ns": 2109375000,
+      "process_cpu_ns": 64828125000,
+      "worker_cpu_ns": 49828125000,
+      "slices": 488448,
+      "max_slice_ns": 7279100,
+      "load_work": 0,
+      "requested_workers": 4,
+      "phase_call_ns": [
+        0,
+        17203300,
+        13837700,
+        0,
+        12125635800,
+        0,
+        0,
+        0
+      ],
+      "phase_wall_ns": [
+        0,
+        24126100,
+        14053300,
+        0,
+        12762234800,
+        0,
+        0,
+        0
+      ],
+      "tables": [
+        {
+          "cargo": 0,
+          "rows": 4936,
+          "retained_rows": 0,
+          "work": 1973842614,
+          "workers": 4,
+          "hits": 4936,
+          "serial_rows": 0,
+          "fallbacks": 0,
+          "finished_rows": 4936
+        }
+      ]
+    }
+  },
+  "statistics": "Primary cases are one fresh process per version/mode. No confidence interval or cross-machine guarantee."
+}

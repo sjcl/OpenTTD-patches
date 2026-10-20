@@ -1,0 +1,25 @@
+script C:/Users/bebe/.codex/worktrees/ba19/OpenTTD-patches/build-real-preparation-20261020/fixtures/hyperpath/on-1-console.txt
+getfulldate
+setting gui.passenger_precomputed_workers 4
+passenger_journey_stats measurement_wait_background
+passenger_journey_stats replay_measure
+passenger_journey_stats wait_saved_replay
+passenger_journey_stats inventory
+setting linkgraph.passenger_transfer_penalty 20
+setting linkgraph.passenger_journey_precomputed true
+setting linkgraph.passenger_journey_hyperpath true
+passenger_journey_stats preparation_measure
+passenger_journey_stats build_precomputed
+passenger_journey_stats wait_background_ready
+passenger_journey_stats mixed_replay_fixture
+passenger_journey_stats reset
+script
+script C:/Users/bebe/.codex/worktrees/ba19/OpenTTD-patches/build-real-preparation-20261020/fixtures/hyperpath/on-1-console.txt
+getfulldate
+passenger_journey_stats inventory
+passenger_journey_stats total
+fps
+passenger_journey_stats save_integrity
+save C:/Users/bebe/.codex/worktrees/ba19/OpenTTD-patches/build-real-preparation-20261020/fixtures/hyperpath/result
+script
+quit

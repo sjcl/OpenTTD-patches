@@ -4,7 +4,7 @@ function(configure_lto)
     endif()
     if(WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
         # VS maps CMake's IPO property to WholeProgramOptimization; ClangCL does
-        # not reliably translate that into ThinLTO. Specify it on every TU.
+        # not reliably translate that into Full LTO. Specify it on every TU.
         set(targets ${OPENTTD_LIB} openttd)
         if(TARGET openttd_test)
             list(APPEND targets openttd_test)
@@ -16,9 +16,9 @@ function(configure_lto)
                 INTERPROCEDURAL_OPTIMIZATION_MINSIZEREL FALSE
                 INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO FALSE)
             target_compile_options(${target} PRIVATE
-                "$<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>,$<CONFIG:RelWithDebInfo>>:-flto=thin>")
+                "$<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>,$<CONFIG:RelWithDebInfo>>:-flto=full>")
         endforeach()
-        # LLD identifies ThinLTO from the bitcode summaries; do not pass Clang
+        # LLD identifies LLVM bitcode inputs; do not pass Clang
         # driver flags to lld-link itself.
     elseif(IPO_FOUND)
         set_target_properties(openttd PROPERTIES

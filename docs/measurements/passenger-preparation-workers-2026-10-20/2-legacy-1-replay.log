@@ -1,0 +1,2 @@
+passenger_replay,mode=legacy,requested=1,workers=1,wall_ns=820732300,retained_ns=592860000,graph_ns=222391000,tables_ns=4700,main_cpu_ns=328125000,worker_cpu_ns=593750000,slice_max_ns=5298100,cache_hits=894,serial_rows=0,fallbacks=0,worker_wait_ns=475784200,search_ns=596391400,search_work=62573430,cache_work=62573430,cancelled_work=0,workspace_bound=16582144,destinations=894,operations=71624560,digest=16956209175263850345,current_digest=6678351644743160619
+Passed 1 test case with 7 assertions.

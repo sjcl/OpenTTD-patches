@@ -2424,6 +2424,7 @@ STR_NETWORK_CONNECTING_3                                        :{BLACK}(3/6) �
 STR_NETWORK_CONNECTING_4                                        :{BLACK}(4/6) 地図をダウンロード中
 STR_NETWORK_CONNECTING_5                                        :{BLACK}(5/6) データ処理中
 STR_NETWORK_CONNECTING_6                                        :{BLACK}(6/6) 登録中
+STR_NETWORK_CONNECTING_PASSENGER_SYNC                           :{BLACK}旅客経路の同期を待っています…
 
 STR_NETWORK_CONNECTION_DISCONNECT                               :{BLACK}接続を解除
 

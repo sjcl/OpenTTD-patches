@@ -15,6 +15,7 @@
 bool IsPassengerJourneyRoutingEnabled(CargoType cargo);
 uint64_t PassengerJourneyServiceSignature(const OrderList &orders, CargoType cargo, size_t *budget = nullptr);
 void PassengerJourneySettingsChanged(int32_t);
+void PassengerAircraftCostSettingsChanged(int32_t);
 class PassengerJourneyLoadingContext;
 void RouteWaitingPassengerJourneys(Station *station, PassengerJourneyLoadingContext *loading = nullptr);
 void AfterLoadPassengerJourneys();
@@ -274,6 +275,7 @@ public:
 
 /** Shares snapshots/query caches across all coaches and packets at an arrival. */
 class PassengerJourneyActiveContext {
+	friend struct PassengerJourneyActiveTestAccess;
 	struct Snapshot;
 	PassengerServiceCapture capture;
 	const Vehicle *vehicle;

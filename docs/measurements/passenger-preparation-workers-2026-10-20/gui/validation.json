@@ -1,0 +1,6 @@
+{
+  "runs": 8,
+  "work_and_published_digests_equal": true,
+  "competing_process_checks": "before each case and every 100ms during it",
+  "finished_utc": "2026-10-19T18:30:27.693250+00:00"
+}

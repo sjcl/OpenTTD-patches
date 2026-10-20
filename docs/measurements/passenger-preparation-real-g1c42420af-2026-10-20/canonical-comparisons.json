@@ -1,0 +1,90 @@
+[
+  {
+    "case": "initial/legacy/raw-reference",
+    "equal": true,
+    "fields": 24,
+    "differences": {},
+    "left": "waiting/initial/A1/legacy",
+    "right": "waiting/initial/B1/legacy"
+  },
+  {
+    "case": "initial/legacy",
+    "equal": true,
+    "fields": 24,
+    "differences": {},
+    "left": "waiting/initial/A2/legacy",
+    "right": "waiting/initial/B1/legacy"
+  },
+  {
+    "case": "initial/hyperpath",
+    "equal": true,
+    "fields": 24,
+    "differences": {},
+    "left": "waiting/initial/A1/hyperpath",
+    "right": "waiting/initial/B1/hyperpath"
+  },
+  {
+    "case": "initial/hyperpath/pilot",
+    "equal": true,
+    "fields": 24,
+    "differences": {},
+    "left": "waiting/initial/A1/hyperpath",
+    "right": "waiting/initial/pilot/hyperpath"
+  },
+  {
+    "case": "initial/hyperpath/workers8",
+    "equal": true,
+    "fields": 24,
+    "differences": {},
+    "left": "waiting/initial/B1/hyperpath",
+    "right": "waiting/initial/workers8/hyperpath"
+  },
+  {
+    "case": "replay/legacy",
+    "equal": true,
+    "fields": 24,
+    "differences": {},
+    "left": "waiting/replay/A1/legacy",
+    "right": "waiting/replay/B1/legacy"
+  },
+  {
+    "case": "replay/hyperpath",
+    "equal": true,
+    "fields": 24,
+    "differences": {},
+    "left": "waiting/replay/A1/hyperpath",
+    "right": "waiting/replay/B1/hyperpath"
+  },
+  {
+    "case": "replay/hyperpath/workers8",
+    "equal": true,
+    "fields": 24,
+    "differences": {},
+    "left": "waiting/replay/B1/hyperpath",
+    "right": "waiting/replay/workers8/hyperpath"
+  },
+  {
+    "case": "multiplayer/input-unpause",
+    "equal": true,
+    "fields": 24,
+    "differences": {},
+    "left": "fixtures/hyperpath",
+    "right": "fixtures-mp/hyperpath"
+  },
+  {
+    "case": "multiplayer/host-cross-version",
+    "equal": true,
+    "fields": 24,
+    "differences": {},
+    "left": "waiting/multiplayer-clean/baseline/server",
+    "right": "waiting/multiplayer-clean/candidate/server"
+  },
+  {
+    "case": "multiplayer/client-cross-version",
+    "equal": true,
+    "fields": 24,
+    "differences": {},
+    "left": "waiting/multiplayer-clean/baseline/client",
+    "right": "waiting/multiplayer-clean/candidate/client"
+  }
+]

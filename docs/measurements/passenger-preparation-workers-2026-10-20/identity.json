@@ -1,0 +1,15 @@
+{
+  "exe": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-preparation\\Release\\openttd_test.exe",
+  "sha256": "5ac5f40c1072f647cc33ca65e9443bd093ee0e77919cdcdb34386a4a56f15c96",
+  "side": 32,
+  "lines": 240,
+  "seed": "0x0d16e57",
+  "logical_cpus": 32,
+  "rounds": 2,
+  "workers": "0,1,4,8",
+  "pinned_reference": true,
+  "gui_only": false,
+  "reference": "initial: unchanged nonblocking StepParallel; retained replay: serial Step via workers=0",
+  "peak_memory_scope": "whole fresh process, including unmeasured fixture construction",
+  "started_utc": "2026-10-19T18:29:17.591616+00:00"
+}

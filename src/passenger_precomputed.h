@@ -8,6 +8,7 @@
 #define PASSENGER_PRECOMPUTED_H
 
 #include "passenger_journey_type.h"
+#include "passenger_aircraft_cost.h"
 #include "cargo_type.h"
 #include "passenger_build_task.h"
 #include "core/passenger_queue.hpp"
@@ -17,6 +18,7 @@
 #include <unordered_map>
 #include <map>
 #include <atomic>
+#include <chrono>
 
 struct PassengerPeriodicService;
 
@@ -60,6 +62,9 @@ struct PassengerParallelBuildDiagnostic {
 	uint64_t minimum_work = UINT64_MAX, maximum_work = 0, search_work = 0;
 	uint64_t cache_hits = 0, cache_work = 0, serial_rows = 0, main_search_nanoseconds = 0, serial_search_work = 0;
 	uint64_t cancelled_search_work = 0, thread_starts = 0, workspace_reuses = 0, throttles = 0;
+	uint64_t wait_nanoseconds = 0, waits = 0, wait_timeouts = 0;
+	size_t outstanding = 0; ///< Queued or executing searches, observed locally.
+	size_t running = 0;
 	uint64_t finished_rows = 0, finish_effects = 0; ///< Hyperpath rows finished by a worker, and the effects replayed for them.
 	size_t workers = 0, peak_pending = 0, estimated_workspace_bytes = 0;
 };
@@ -81,7 +86,7 @@ public:
 	static constexpr uint64_t MAX_HYPERPATH_BYTES = uint64_t{32} * 1024 * 1024 * 1024; ///< Canonical admission, including a retained generation; not a physical allocation request.
 	/** Production uses the current algorithms. Alternate controls are differential
 	 * test/benchmark references, never saved construction-format identities. */
-	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true, bool integrated = true, bool hyperpath = false, bool revisit_dominance = true, bool continuation_witness = true, bool flat_storage = true);
+	void Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory = MAX_BYTES, bool sections = true, bool cooperative = false, std::shared_ptr<uint64_t> memory_budget = {}, bool estimates = true, bool optimized = true, bool integrated = true, bool hyperpath = false, bool revisit_dominance = true, bool continuation_witness = true, bool flat_storage = true, PassengerAircraftCost aircraft_cost = PassengerAircraftCost::Current());
 	bool PrepareGraph(size_t quantum = 1024);
 	bool IsPreparingGraph() const { return static_cast<bool>(this->graph_build); }
 	uint64_t GetGraphWork() const { return this->graph_work; }
@@ -89,6 +94,9 @@ public:
 	/** Nonblocking speculative searches. Work/publication exactly match Step;
 	 * a cache miss latches serial execution for the whole row. Zero selects Step. */
 	size_t StepParallel(size_t operations, uint workers = 4, const std::function<void(StationID)> &published = {});
+	/** Stopped simulation only: keep lookahead alive and wait at most 1ms per call.
+	 * May consume less than operations when yielding for a result. Same Work frontier as Step. */
+	size_t StepPreparation(size_t operations, uint workers, const std::function<void(StationID)> &published = {});
 	PassengerParallelBuildDiagnostic GetParallelDiagnostic() const;
 	void ReleaseDestination(StationID destination); ///< Retire a row immediately after its replacement is published.
 	void PrepareRetirement(const PassengerPrecomputedTable &replacement); ///< Freeze the few destinations absent from the replacement before retiring its ascending rows.
@@ -166,11 +174,11 @@ private:
 		std::vector<uint32_t> occurrences;
 		int64_t wait = 0, circuit = 0, risk = 0;
 		uint64_t weight = 1;
-		bool estimated = false;
+		bool estimated = false, aircraft = false;
 	};
-	struct Occurrence { StationID station; VehicleOrderID order; uint32_t pattern, arrival, departure; bool board, alight, forced, continues; int64_t travel = 0, uncertainty = 0, dwell = 0; uint32_t distance = 0; };
+	struct Occurrence { StationID station; VehicleOrderID order; uint32_t pattern, arrival, departure; bool board, alight, forced, continues; int64_t travel = 0, uncertainty = 0, dwell = 0, travel_cost = 0; uint32_t distance = 0; };
 	enum class EdgeKind : uint8_t { Board, Ride, Wait, Alight, Section };
-	struct Edge { uint32_t from, to, occurrence; int64_t cost; uint32_t distance; EdgeKind kind; int64_t uncertainty; uint32_t range = INVALID; };
+	struct Edge { uint32_t from, to, occurrence; int64_t cost; uint32_t distance; EdgeKind kind; int64_t riding; uint32_t range = INVALID; };
 	struct RangeEdge { uint32_t begin, end, excluded; }; ///< Base station is the descriptor's from, preceding this contiguous range.
 	struct SectionRide { uint32_t board, alight; int64_t riding, waiting, cost; };
 	struct SectionBinding { uint32_t board, alight; };
@@ -309,7 +317,7 @@ private:
 			std::vector<uint32_t> range;
 		} hot_edges;
 		std::vector<RangeEdge> range_edges;
-		struct ColdEdge { uint32_t occurrence, distance; int64_t uncertainty; EdgeKind kind; };
+		struct ColdEdge { uint32_t occurrence, distance; int64_t riding; EdgeKind kind; };
 		std::vector<ColdEdge> cold_edges;
 		std::vector<SectionRide> section_rides;
 		std::vector<Section> sections;
@@ -324,6 +332,7 @@ private:
 		std::vector<std::vector<std::pair<uint32_t, uint32_t>>> waiting_states;
 		std::vector<uint32_t> waiting_station;
 		std::vector<std::vector<uint32_t>> station_boarding;
+		PassengerAircraftCost aircraft_cost;
 		bool flat_storage = false; ///< Compact strategy storage.
 		size_t waiting_state_count = 0;
 		bool estimates = true;
@@ -376,6 +385,7 @@ private:
 		size_t destination = 0;
 		StationID station = StationID::Invalid();
 		uint64_t generation_id = 0, operations = 0, nanoseconds = 0;
+		std::chrono::steady_clock::time_point wait_started{}; ///< Main-thread only, never serialized.
 		std::atomic<bool> ready{false}, cancelled{false};
 		bool error = false; ///< Read only after acquiring ready.
 	};
@@ -390,6 +400,9 @@ private:
 	size_t serial_destination = SIZE_MAX;
 	uint parallel_misses = 0; ///< Local CPU backoff only; never part of Work or saves.
 	bool parallel_unavailable = false;
+	bool preparation_step = false; ///< Local scheduling mode, scoped to StepPreparation.
+	std::chrono::steady_clock::time_point preparation_deadline{};
+	std::chrono::milliseconds preparation_wait_limit{2000}; ///< Failure bound; native tests may inject expiry.
 	PassengerParallelBuildDiagnostic parallel_diagnostic;
 	void (*parallel_quantum_hook)(size_t, uint64_t) = nullptr; ///< Native cancellation/failure scheduling tests.
 	void (*parallel_search_hook)(size_t, bool) = nullptr; ///< Native scheduling/failure injection; unset in production.
@@ -436,7 +449,7 @@ private:
 	bool HasSameRunContinuationWitness(uint32_t board, uint32_t alight) const;
 	void AddBoardEdges(uint32_t station, uint32_t to, uint32_t pattern, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance = 0);
 	void ContractGraph(size_t &nodes);
-	void AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence = INVALID, uint32_t distance = 0, int64_t uncertainty = 0);
+	void AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence = INVALID, uint32_t distance = 0, int64_t uncertainty = 0, int64_t riding = -1);
 	PassengerBuildTask BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members, int64_t transfer,
 			size_t &nodes, uint64_t &envelope, uint64_t memory, bool cooperative, bool &success);
 	PassengerPrecomputedPlan Select(const Label &label, StateTicks ready, OrderListID excluded, uint32_t sample) const;

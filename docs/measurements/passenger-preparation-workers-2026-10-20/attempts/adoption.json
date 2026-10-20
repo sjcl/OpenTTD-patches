@@ -1,0 +1,11 @@
+{
+  "accepted": [
+    "../results.json",
+    "../gui/results.json"
+  ],
+  "rejected": "First unmonitored partial run overlapped ninja PID 28484 / clang-cl PID 138792; stopped, not adopted.",
+  "deferred": "Monitor detected another worktree's native tests before the first case; no measurement adopted.",
+  "interrupted": "Monitor detected ninja PID 90212 during the first serial replay; stopped, not adopted.",
+  "preliminary": "64 complete runs passed digest/Work checks, but replay routing was disabled in the fixture and phase diagnostics were classified Disabled. Superseded by the final 64 runs with routing enabled.",
+  "coordination": "User explicitly authorized coordination with the aircraft-cost chat; notified it before final measurement and released its hold afterward."
+}

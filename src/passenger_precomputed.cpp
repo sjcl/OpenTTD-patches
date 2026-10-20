@@ -10,6 +10,7 @@
 #include "map_func.h"
 #include "error_func.h"
 #include "thread.h"
+#include "core/backup_type.hpp"
 #include <atomic>
 #include <array>
 #include <condition_variable>
@@ -197,6 +198,7 @@ bool PassengerPrecomputedTable::RefreshService(const PassengerPeriodicService &s
 	if (member == p.members.end() || member->id != service.id || member->incarnation != service.incarnation ||
 			service.timetable.Circuit() <= 0 || p.occurrences.size() != service.timetable.stops.size()) return false;
 	if (!this->graph->estimates && p.estimated != (service.timetable.period == 0)) return false; // Reference binding without duration estimates.
+	if (!this->graph->aircraft_cost.IsDefault() && p.aircraft != service.IsAircraft()) return false;
 	uint64_t mask = uint64_t{1} << this->cargo;
 	for (size_t i = 0; i < p.occurrences.size(); ++i) {
 		const auto &old = this->graph->occurrences[p.occurrences[i]];
@@ -209,10 +211,10 @@ bool PassengerPrecomputedTable::RefreshService(const PassengerPeriodicService &s
 	return true;
 }
 
-void PassengerPrecomputedTable::AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance, int64_t uncertainty)
+void PassengerPrecomputedTable::AddEdge(uint32_t from, uint32_t to, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance, int64_t uncertainty, int64_t riding)
 {
 	assert(cost >= 0);
-	this->building_graph->edges.push_back({from, to, occurrence, cost, distance, kind, uncertainty});
+	this->building_graph->edges.push_back({from, to, occurrence, cost, distance, kind, riding >= 0 ? riding : kind == EdgeKind::Ride ? cost - uncertainty : 0, INVALID});
 }
 
 void PassengerPrecomputedTable::AddBoardEdges(uint32_t station, uint32_t to, uint32_t pattern, int64_t cost, EdgeKind kind, uint32_t occurrence, uint32_t distance)
@@ -226,9 +228,10 @@ void PassengerPrecomputedTable::AddBoardEdges(uint32_t station, uint32_t to, uin
 	this->building_graph->range_edges.push_back({states.front().second, states.back().second + 1, excluded});
 }
 
-void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates, bool optimized, bool integrated, bool hyperpath, bool revisit_dominance, bool continuation_witness, bool flat_storage)
+void PassengerPrecomputedTable::Begin(std::span<const PassengerPeriodicService *const> services, CargoType cargo, int64_t transfer, uint64_t memory, bool sections, bool cooperative, std::shared_ptr<uint64_t> memory_budget, bool estimates, bool optimized, bool integrated, bool hyperpath, bool revisit_dominance, bool continuation_witness, bool flat_storage, PassengerAircraftCost aircraft_cost)
 {
 	*this = {}; this->building_graph = std::make_shared<GraphSnapshot>(); this->graph = this->building_graph; this->cargo = cargo; this->building_graph->estimates = estimates; this->building_graph->optimized = optimized; this->building_graph->integrated = optimized && integrated;
+	this->building_graph->aircraft_cost = aircraft_cost;
 	this->building_graph->flat_storage = hyperpath && flat_storage;
 	this->building_graph->hyperpath = hyperpath; this->building_graph->transfer_cost = transfer >= 0 && transfer <= INT64_MAX / 2 ? 2 * transfer : 0;
 	this->building_graph->revisit_dominance = revisit_dominance;
@@ -300,6 +303,10 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			if (!capacity) { this->unsupported |= s->timetable.period == 0; continue; }
 			if ((this->building_graph->estimates ? s->timetable.Circuit() : s->timetable.period) <= 0 || s->timetable.stops.size() < 2) { this->unsupported = true; continue; }
 			auto key = PatternKey(*s);
+			if (!this->building_graph->aircraft_cost.IsDefault()) {
+				key.push_back(s->IsAircraft());
+				for (const auto &stop : s->timetable.stops) key.push_back(stop.intermediate_wait);
+			}
 			/* A strategy distinguishes actual services, even when their stop
 			 * patterns coincide. This makes exclusion remove exactly the arriving
 			 * OrderList's frequency, while retaining its identical neighbours. */
@@ -320,7 +327,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 			Pattern p;
 			const auto &t = members.front()->timetable;
 			p.circuit = std::max(t.Circuit(), members.front()->uncertain_dispatch_period);
-			p.estimated = t.period == 0;
+			p.estimated = t.period == 0; p.aircraft = members.front()->IsAircraft();
 			if (p.estimated) ++this->diagnostic.estimated_patterns; else ++this->diagnostic.certified_patterns;
 			uint64_t seats = 0;
 			size_t unknown_fleet = 0;
@@ -471,12 +478,15 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 				if (!(stop.forced & mask)) this->AddEdge(o.arrival, o.departure, stop.departure - stop.arrival, EdgeKind::Ride);
 				if (!stop.continues) continue;
 				size_t next = (i + 1) % t.stops.size();
-				int64_t travel = std::max<int64_t>(1, t.stops[next].arrival - stop.departure + (next == 0 ? t.Circuit() : 0));
+				int64_t duration = t.stops[next].arrival - stop.departure + (next == 0 ? t.Circuit() : 0);
+				int64_t travel = std::max<int64_t>(1, duration);
 				uint32_t distance = 0;
 				if (const auto *a = Station::GetIfValid(stop.station)) if (const auto *b = Station::GetIfValid(t.stops[next].station)) distance = DistanceManhattan(a->xy, b->xy);
 				int64_t uncertainty = TravelUncertainty(travel, t.stops[next].travel_quality);
+				o.travel_cost = travel;
+				if (representatives[p]->IsAircraft()) o.travel_cost += this->building_graph->aircraft_cost.Adjustment(duration - t.stops[next].intermediate_wait);
 				o.travel = travel; o.uncertainty = uncertainty; o.distance = distance;
-				this->AddEdge(o.departure, this->building_graph->occurrences[pattern.occurrences[next]].arrival, travel + uncertainty, EdgeKind::Ride, INVALID, distance, uncertainty);
+				this->AddEdge(o.departure, this->building_graph->occurrences[pattern.occurrences[next]].arrival, o.travel_cost + uncertainty, EdgeKind::Ride, INVALID, distance, uncertainty, travel);
 			}
 		}
 		if (this->building_graph->hyperpath && this->building_graph->revisit_dominance) {
@@ -496,10 +506,10 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 					uint32_t id = pattern.occurrences[k % pattern.occurrences.size()];
 					const auto &o = this->building_graph->occurrences[id];
 					const auto &to = this->building_graph->occurrences[pattern.occurrences[(k + 1) % pattern.occurrences.size()]];
-					if (!o.continues || to.forced || cost > INT64_MAX - o.travel ||
-							cost + o.travel > INT64_MAX - o.uncertainty || cost + o.travel + o.uncertainty > INT64_MAX - to.dwell) {
+					if (!o.continues || to.forced || cost > INT64_MAX - o.travel_cost ||
+							cost + o.travel_cost > INT64_MAX - o.uncertainty || cost + o.travel_cost + o.uncertainty > INT64_MAX - to.dwell) {
 						next.clear(); cost = 0;
-					} else cost += o.travel + o.uncertainty + to.dwell;
+					} else cost += o.travel_cost + o.uncertainty + to.dwell;
 					auto found = next.find(o.station);
 					if (k < pattern.occurrences.size() && o.board && found != next.end() && found->second.first != id && this->building_graph->occurrences[found->second.first].board) {
 						/* Road orders can request different bay/drive-through directions at
@@ -540,7 +550,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildGraph(std::vector<const Passe
 				this->building_graph->hot_edges.range[at] = edge.range;
 				this->building_graph->hot_edges.from[at] = edge.from; this->building_graph->hot_edges.cost[at] = edge.cost;
 				this->building_graph->hot_edges.legs[at] = edge.kind == EdgeKind::Board || edge.kind == EdgeKind::Section;
-				this->building_graph->cold_edges[at] = {edge.occurrence, edge.distance, edge.uncertainty, edge.kind};
+				this->building_graph->cold_edges[at] = {edge.occurrence, edge.distance, edge.riding, edge.kind};
 			}
 			this->diagnostic.logical_edges = this->building_graph->edges.size();
 			for (const auto &range : this->building_graph->range_edges) this->diagnostic.logical_edges += range.end - range.begin - (range.excluded >= range.begin && range.excluded < range.end);
@@ -634,12 +644,12 @@ void PassengerPrecomputedTable::ContractGraph(size_t &nodes)
 	 * have no surviving predecessor and are simply unreachable from any seed. */
 	for (const auto &edge : this->building_graph->edges) {
 		if (remove[edge.from]) continue;
-		int64_t cost = edge.cost, uncertainty = edge.uncertainty;
+		int64_t cost = edge.cost, riding = edge.riding;
 		uint32_t to = edge.to;
 		while (remove[to]) {
 			const auto &next = this->building_graph->edges[successor[to]];
-			if (edge.kind != EdgeKind::Ride || cost > INT64_MAX - next.cost || uncertainty > INT64_MAX - next.uncertainty) return;
-			cost += next.cost; uncertainty += next.uncertainty; to = next.to;
+			if (edge.kind != EdgeKind::Ride || cost > INT64_MAX - next.cost || riding > INT64_MAX - next.riding) return;
+			cost += next.cost; riding += next.riding; to = next.to;
 		}
 	}
 	uint32_t count = 0;
@@ -649,7 +659,7 @@ void PassengerPrecomputedTable::ContractGraph(size_t &nodes)
 		if (remove[edge.from]) continue;
 		while (remove[edge.to]) {
 			const auto &next = this->building_graph->edges[successor[edge.to]];
-			edge.cost += next.cost; edge.uncertainty += next.uncertainty;
+			edge.cost += next.cost; edge.riding += next.riding;
 			edge.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(edge.distance) + next.distance));
 			edge.to = next.to;
 		}
@@ -665,12 +675,12 @@ void PassengerPrecomputedTable::ContractGraph(size_t &nodes)
 PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<std::vector<const PassengerPeriodicService *>> &members,
 		int64_t transfer, size_t &nodes, uint64_t &envelope, uint64_t memory, bool cooperative, bool &success)
 {
-	struct Path { uint32_t board, alight; int64_t riding; uint32_t distance; int64_t uncertainty; };
+	struct Path { uint32_t board, alight; int64_t riding; uint32_t distance; int64_t uncertainty; int64_t adjustment; };
 	struct Prefix { std::vector<Path> paths; };
 	/* Intern all directed stop prefixes. Timings, order numbers and the circuit
 	 * outside the section are deliberately absent from compatibility; every
 	 * physical stop and this cargo's exchange/forced flags remain in the key. */
-	using Key = std::tuple<uint32_t, StationID, uint8_t>;
+	using Key = std::tuple<uint32_t, StationID, uint8_t, bool>;
 	std::map<Key, uint32_t> index;
 	std::vector<Prefix> prefixes;
 	std::map<StationID, std::set<uint32_t>> starters;
@@ -686,12 +696,12 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 			uint32_t board = pattern.occurrences[start]; const auto &b = this->building_graph->occurrences[board];
 			if (!b.board || starters[b.station].size() < 2) continue;
 			uint32_t prefix = INVALID, distance = 0;
-			int64_t uncertainty = 0;
+			int64_t uncertainty = 0, adjustment = 0;
 			for (size_t length = 0; length < t.stops.size(); ++length) {
 				if (cooperative) co_await std::suspend_always{};
 				size_t stop = (start + length) % t.stops.size();
 				uint32_t alight = pattern.occurrences[stop]; const auto &a = this->building_graph->occurrences[alight];
-				Key key{prefix, a.station, uint8_t((a.board ? 1 : 0) | (a.alight ? 2 : 0) | (a.forced ? 4 : 0))};
+				Key key{prefix, a.station, uint8_t((a.board ? 1 : 0) | (a.alight ? 2 : 0) | (a.forced ? 4 : 0)), !this->building_graph->aircraft_cost.IsDefault() && pattern.aircraft};
 				auto found = index.find(key);
 				if (found == index.end()) {
 					if (prefixes.size() >= INVALID || !Product(1, 256, envelope, memory)) co_return;
@@ -700,15 +710,17 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 				if (length == 0) continue;
 				const auto &previous = t.stops[(stop + t.stops.size() - 1) % t.stops.size()];
 				if (!previous.continues) break;
-				int64_t travel = std::max<int64_t>(1, t.stops[stop].arrival - previous.departure + (stop == 0 ? t.Circuit() : 0));
+				int64_t duration = t.stops[stop].arrival - previous.departure + (stop == 0 ? t.Circuit() : 0);
+				int64_t travel = std::max<int64_t>(1, duration);
 				uncertainty += TravelUncertainty(travel, t.stops[stop].travel_quality);
+				if (members[p].front()->IsAircraft()) adjustment += this->building_graph->aircraft_cost.Adjustment(duration - t.stops[stop].intermediate_wait);
 				if (const auto *x = Station::GetIfValid(previous.station)) if (const auto *y = Station::GetIfValid(a.station)) {
 					distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(distance) + DistanceManhattan(x->xy, y->xy)));
 				}
 				if (a.alight && a.station != b.station) {
 					if (!Product(1, 64, envelope, memory)) co_return;
 					int64_t riding = t.stops[stop].arrival - t.stops[start].departure + (stop < start ? t.Circuit() : 0);
-					prefixes[prefix].paths.push_back({board, alight, riding, distance, uncertainty});
+					prefixes[prefix].paths.push_back({board, alight, riding, distance, uncertainty, adjustment});
 				}
 				if (a.forced) break;
 			}
@@ -838,7 +850,7 @@ PassengerBuildTask PassengerPrecomputedTable::BuildSections(const std::vector<st
 						2 * transfer, EdgeKind::Alight, path.alight);
 			}
 			uint32_t id = static_cast<uint32_t>(this->building_graph->section_rides.size());
-			int64_t cost = path.riding + path.uncertainty + wait + risk;
+			int64_t cost = path.riding + path.adjustment + path.uncertainty + wait + risk;
 			this->building_graph->section_rides.push_back({path.board, path.alight, path.riding, wait, cost});
 			if (this->building_graph->integrated) this->AddBoardEdges(station, this->building_graph->landings[path.alight], board.pattern, cost, EdgeKind::Section, id, path.distance);
 			else {
@@ -976,12 +988,14 @@ void PassengerPrecomputedTable::CollectSearchCounters()
  * jobs and workers reusable contexts, across ALL tables and retired generations.
  * This local cap changes cache availability alone, never canonical admission. */
 struct PassengerPrecomputedTable::WorkerMetrics {
-	std::atomic<uint64_t> searches{0}, operations{0}, nanoseconds{0}, cancelled_work{0}, minimum{UINT64_MAX}, maximum{0}, outstanding{0}, workspace_reuses{0};
+	std::atomic<uint64_t> searches{0}, operations{0}, nanoseconds{0}, cancelled_work{0}, minimum{UINT64_MAX}, maximum{0}, outstanding{0}, running{0}, workspace_reuses{0};
 	void Add(PassengerParallelBuildDiagnostic &result) const
 	{
 		result.workspace_reuses += this->workspace_reuses.load(); result.searches += this->searches.load(); result.search_work += this->operations.load();
 		result.search_nanoseconds += this->nanoseconds.load(); result.cancelled_search_work += this->cancelled_work.load();
 		result.minimum_work = std::min(result.minimum_work, this->minimum.load()); result.maximum_work = std::max(result.maximum_work, this->maximum.load());
+		result.outstanding += this->outstanding.load();
+		result.running += this->running.load();
 	}
 };
 
@@ -1011,6 +1025,7 @@ struct PassengerPrecomputedTable::DestinationWorkerPool {
 	static constexpr uint64_t SCRATCH_LIMIT = uint64_t{512} * 1024 * 1024;
 	std::mutex mutex;
 	std::condition_variable wake;
+	std::condition_variable completed;
 	std::deque<std::shared_ptr<DestinationBuildResult>> jobs;
 	std::vector<std::thread> threads;
 	std::shared_ptr<std::atomic<uint64_t>> budget = std::make_shared<std::atomic<uint64_t>>(0);
@@ -1045,6 +1060,7 @@ struct PassengerPrecomputedTable::DestinationWorkerPool {
 			job->cancelled.store(true); --job->generation->metrics->outstanding; job->ready.store(true, std::memory_order_release);
 			retired[count++] = std::move(job); return true;
 		});
+		if (count != 0) this->completed.notify_all();
 	}
 	bool Submit(const std::shared_ptr<DestinationBuildResult> &job)
 	{
@@ -1075,6 +1091,7 @@ struct PassengerPrecomputedTable::DestinationWorkerPool {
 			auto selected = std::find_if(this->jobs.begin(), this->jobs.end(), [&](const auto &job) { return index < job->generation->workers; });
 			if (selected == this->jobs.end()) { this->wake.wait_for(lock, std::chrono::milliseconds(20)); continue; }
 			auto job = std::move(*selected); this->jobs.erase(selected);
+			++job->generation->metrics->running;
 			lock.unlock();
 			if (owner != job->generation) { workspace = {}; owner = job->generation; }
 			const auto started = Clock::now(); uint64_t operations = 0;
@@ -1104,8 +1121,9 @@ struct PassengerPrecomputedTable::DestinationWorkerPool {
 			job->nanoseconds = Elapsed(started); owner->metrics->nanoseconds += job->nanoseconds; owner->metrics->operations += operations;
 			/* This is the final access to the job's non-atomic fields. A ready
 			 * result may now be adopted/recycled by the simulation thread. */
-			--owner->metrics->outstanding; job->ready.store(true, std::memory_order_release);
 			lock.lock();
+			--owner->metrics->running; --owner->metrics->outstanding; job->ready.store(true, std::memory_order_release);
+			this->completed.notify_all();
 		}
 	}
 	~DestinationWorkerPool()
@@ -1180,6 +1198,7 @@ bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
 			else job = std::make_shared<DestinationBuildResult>();
 			job->generation = state.generation; job->generation_id = state.generation->id;
 			job->destination = state.next; job->station = this->graph->stations[state.next]; job->operations = 0; job->error = false;
+			job->wait_started = {};
 			job->ready.store(false); job->cancelled.store(false);
 			if (!WorkerPool().Submit(job)) break;
 			state.pending.push_back(std::move(job)); ++state.next; ++submitted;
@@ -1219,6 +1238,27 @@ size_t PassengerPrecomputedTable::AdvanceSearch(size_t allowance, uint workers)
 		 * owns the serial cursor through completion, including across ticks. */
 		const bool pristine = this->work.initializing_row && this->work.search.cost.empty() && this->work.scratch.labels.empty() && this->work.seeding == 0;
 		if (this->parallel && !this->parallel->pending.empty() && this->parallel->pending.front()->destination == this->destination) {
+			const auto &pending = this->parallel->pending.front();
+			if (this->preparation_step && pristine && !pending->ready.load(std::memory_order_acquire)) {
+				const auto started = Clock::now();
+				if (pending->wait_started == Clock::time_point{}) pending->wait_started = started;
+				auto &pool = WorkerPool();
+				{
+					std::unique_lock lock(pool.mutex);
+					pool.completed.wait_until(lock, this->preparation_deadline, [&]() {
+						return pending->ready.load(std::memory_order_acquire) || pending->generation->cancelled.load() || pool.stopping.load();
+					});
+				}
+				++this->parallel_diagnostic.waits; this->parallel_diagnostic.wait_nanoseconds += Elapsed(started);
+				if (!pending->ready.load(std::memory_order_acquire) && !pending->generation->cancelled.load() && !pool.stopping.load()) {
+					/* Yield without charging Work or latching a serial row. A stuck worker
+					 * eventually loses ownership, but no single UI slice waits for it. */
+					if (Clock::now() - pending->wait_started < this->preparation_wait_limit) return 0;
+					++this->parallel_diagnostic.wait_timeouts;
+					pending->cancelled.store(true); pending->generation->cancelled.store(true);
+					this->parallel_unavailable = true; ++this->parallel_diagnostic.fallbacks;
+				}
+			}
 			auto job = std::move(this->parallel->pending.front()); this->parallel->pending.pop_front();
 			if (pristine && job->ready.load(std::memory_order_acquire) && !job->cancelled.load() && !job->error &&
 					job->operations != 0 && job->workspace.finishing_row && job->generation_id == this->parallel->generation->id && job->station == this->graph->stations[this->destination]) {
@@ -1227,7 +1267,7 @@ size_t PassengerPrecomputedTable::AdvanceSearch(size_t allowance, uint workers)
 		}
 		if (!this->parallel_result) { this->serial_destination = this->destination; ++this->parallel_diagnostic.serial_rows; }
 		if (this->parallel_result) this->parallel_misses = 0;
-		else if (this->parallel && !this->parallel_unavailable && ++this->parallel_misses >= 16) {
+		else if (this->parallel && !this->parallel_unavailable && (!this->preparation_step || this->parallel_diagnostic.wait_timeouts != 0) && ++this->parallel_misses >= 16) {
 			/* A persistently late cache can otherwise burn a second CPU on rows
 			 * the main thread already owns. Disable speculation locally for this
 			 * generation; the same serial Work/publication path remains in use. */
@@ -1265,6 +1305,13 @@ size_t PassengerPrecomputedTable::StepParallel(size_t allowance, uint workers, c
 	return used;
 }
 
+size_t PassengerPrecomputedTable::StepPreparation(size_t allowance, uint workers, const std::function<void(StationID)> &published)
+{
+	AutoRestoreBackup mode{this->preparation_step, true};
+	this->preparation_deadline = Clock::now() + std::chrono::milliseconds(1);
+	return this->StepParallel(std::min<size_t>(allowance, 4096), workers, published);
+}
+
 size_t PassengerPrecomputedTable::SearchDestination(DestinationWorkspace &work, size_t allowance) const
 {
 	return this->graph->SearchDestination(work, allowance);
@@ -1295,7 +1342,8 @@ size_t PassengerPrecomputedTable::StepImpl(size_t allowance, bool legacy_publica
 	try {
 		while (used < allowance && !this->Finished()) {
 			if (!this->work.finishing_row) {
-				used += this->AdvanceSearch(allowance - used, workers); continue;
+				const size_t searched = this->AdvanceSearch(allowance - used, workers);
+				used += searched; if (searched == 0 && !this->work.finishing_row) break; continue;
 			}
 			++used;
 			if (this->work.finishing_row) {
@@ -1522,7 +1570,8 @@ size_t PassengerPrecomputedTable::StepHyperpath(size_t allowance, const std::fun
 	try {
 		while (used < allowance && !this->Finished()) {
 			if (!this->work.finishing_row) {
-				used += this->AdvanceSearch(allowance - used, workers); continue;
+				const size_t searched = this->AdvanceSearch(allowance - used, workers);
+				used += searched; if (searched == 0 && !this->work.finishing_row) break; continue;
 			}
 			if (this->work.finish_prepared) {
 				/* Finished by a worker: the same Work, and the same effects at the same positions. */
@@ -2105,8 +2154,8 @@ PassengerPrecomputedTable::Label PassengerPrecomputedTable::EvaluateRide(const R
 			if (cost > INT64_MAX - from.dwell) break;
 			cost += from.dwell; riding += from.dwell;
 		}
-		if (cost > INT64_MAX - from.travel || cost + from.travel > INT64_MAX - from.uncertainty) break;
-		cost += from.travel + from.uncertainty; riding += from.travel;
+		if (cost > INT64_MAX - from.travel_cost || cost + from.travel_cost > INT64_MAX - from.uncertainty) break;
+		cost += from.travel_cost + from.uncertainty; riding += from.travel;
 		distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(distance) + from.distance));
 		at = (at + 1) % stops.size(); const auto &to = this->graph->occurrences[stops[at]];
 		if (!to.alight) continue;
@@ -2436,7 +2485,7 @@ size_t PassengerPrecomputedTable::GraphSnapshot::SearchDestination(DestinationWo
 				next.board = ride.board; next.alight = ride.alight;
 				next.first_wait = ride.waiting; next.waiting += ride.waiting; next.riding += ride.riding;
 			}
-			if (edge.kind == EdgeKind::Ride) next.riding += edge.cost - edge.uncertainty;
+			if (edge.kind == EdgeKind::Ride) next.riding += edge.riding;
 			if (edge.kind == EdgeKind::Alight) { next.board = INVALID; next.alight = edge.occurrence; next.waiting += edge.cost / 2; }
 			this->SetSearchLabel(work, edge.from, next); work.queue.emplace(next.cost, next.legs, edge.from);
 		}
@@ -2483,7 +2532,7 @@ size_t PassengerPrecomputedTable::GraphSnapshot::SearchHyperpath(DestinationWork
 			uint32_t edge = work.strategy.witness_edge, board = this->cold_edges[edge].occurrence;
 			const auto &first = this->occurrences[board]; const auto &stops = this->patterns[first.pattern].occurrences;
 			const auto &from = this->occurrences[work.strategy.witness_at];
-			int64_t step = from.travel + from.uncertainty;
+			int64_t step = from.travel_cost + from.uncertainty;
 			if (work.strategy.witness_at != board) step += from.dwell;
 			work.strategy.witness_cost += step; // Bounded by the precomputed, checked departure-to-departure delta.
 			work.strategy.witness_at = work.strategy.witness_at == stops.back() ? stops.front() : work.strategy.witness_at + 1;
@@ -2545,7 +2594,7 @@ size_t PassengerPrecomputedTable::GraphSnapshot::SearchHyperpath(DestinationWork
 			auto label = this->SearchLabel(work, work.expanding); label.cost += cost;
 			if (label.cost >= this->SearchCost(work, from)) continue;
 			label.distance = static_cast<uint32_t>(std::min<uint64_t>(UINT32_MAX, uint64_t(label.distance) + cold.distance));
-			if (cold.kind == EdgeKind::Ride) label.riding += cost - cold.uncertainty;
+			if (cold.kind == EdgeKind::Ride) label.riding += cold.riding;
 			if (cold.kind == EdgeKind::Alight) { label.board = INVALID; label.alight = cold.occurrence; label.waiting += cost / 2; }
 			this->SetSearchLabel(work, from, label); this->PushHyperpath(work, label.cost, 1, from); continue;
 		}
@@ -2637,7 +2686,7 @@ size_t PassengerPrecomputedTable::GraphSnapshot::RelaxIncoming(DestinationWorksp
 					const auto &ride = this->section_rides[edge.occurrence];
 					next.board = ride.board; next.alight = ride.alight;
 					next.first_wait = ride.waiting; next.waiting += ride.waiting; next.riding += ride.riding;
-				} else if (edge.kind == EdgeKind::Ride) next.riding += edge_cost - edge.uncertainty;
+				} else if (edge.kind == EdgeKind::Ride) next.riding += edge.riding;
 				else if (edge.kind == EdgeKind::Alight) { next.board = INVALID; next.alight = edge.occurrence; next.waiting += edge_cost / 2; }
 				materialized = true;
 			}

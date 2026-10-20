@@ -1,0 +1,38 @@
+[
+  {
+    "kind": "replay",
+    "ready": "true",
+    "tick_before": "3201034745",
+    "tick_after": "3201034745",
+    "wall_ns": "400",
+    "process_cpu_ns": "0",
+    "main_cpu_ns": "0",
+    "slices": "0",
+    "max_slice_ns": "0",
+    "services_ns": "0",
+    "graph_ns": "0",
+    "retained_ns": "0",
+    "tables_ns": "0",
+    "load_work": "0",
+    "requested_workers": "4",
+    "worker_cpu_ns": "0"
+  },
+  {
+    "kind": "initial",
+    "ready": "true",
+    "tick_before": "3201034745",
+    "tick_after": "3201034745",
+    "wall_ns": "21294238100",
+    "process_cpu_ns": "65921875000",
+    "main_cpu_ns": "12562500000",
+    "slices": "1422196",
+    "max_slice_ns": "46609600",
+    "services_ns": "16920200",
+    "graph_ns": "3190226100",
+    "retained_ns": "0",
+    "tables_ns": "17931327700",
+    "load_work": "0",
+    "requested_workers": "4",
+    "worker_cpu_ns": "53359375000"
+  }
+]

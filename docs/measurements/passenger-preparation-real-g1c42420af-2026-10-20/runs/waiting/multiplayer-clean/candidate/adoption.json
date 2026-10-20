@@ -1,0 +1,8 @@
+{
+  "accepted": true,
+  "label": "candidate",
+  "mode": "hyperpath",
+  "kind": "Real encrypted TCP loopback, spectator, first successful sync closes the join window",
+  "tick_unchanged": true,
+  "input_sha256": "ac7801f9e5d1e7313e6fc501e430fd0705bf54f393d85df6107f22fff3b9eeff"
+}

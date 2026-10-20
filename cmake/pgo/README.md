@@ -4,6 +4,8 @@
 Clang/LLVM version in `../WindowsLLVMVersion.cmake`. Windows Clang builds use
 it by default in Release. The same indexed profile is used locally and in
 the x86, x64 and ARM64 Actions builds. No training is performed in CI.
+The default build uses Full LTO. The existing IR profile is reused without
+retraining; instrumentation counts are applied before link-time optimization.
 
 `windows.json` records the compiler, source revision, input hash, tick interval
 and profile checksum. The training savegame, its assets and raw profiles are

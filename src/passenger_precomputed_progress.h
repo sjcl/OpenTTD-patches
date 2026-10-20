@@ -10,6 +10,8 @@ struct PassengerPrecomputedProgress {
 	enum class Phase : uint8_t { Disabled, Services, Graph, Restoring, Tables, Complete, MemoryRejected, Invalid };
 	Phase phase = Phase::Disabled;
 	size_t destinations = 0, stations = 0;
+	size_t restored_destinations = 0, retained_stations = 0;
+	bool retained_total_known = false;
 	bool preparing = false, total_known = false;
 
 	/** Fraction of published destination tables, never elapsed time or replay Work. */

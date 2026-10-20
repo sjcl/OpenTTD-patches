@@ -1,0 +1,92 @@
+{
+  "base_commit": "79636e49744a0b0caa9f174f87b5490aa3daca9b",
+  "compiler": "clang version 23.1.3 (https://github.com/llvm/llvm-project 0d261d1ca552c95a8f007e061c787ac7132fbcbc)\nTarget: x86_64-pc-windows-msvc\nThread model: posix\nInstalledDir: C:\\Program Files\\LLVM\\bin\nBuild config: +alloc:rpmalloc\n",
+  "flags": {
+    "Release": "/O2 /Ob2 /DNDEBUG /Zi",
+    "CRT": "MultiThreaded",
+    "asserts": true,
+    "LTO": false,
+    "PGO": "OFF",
+    "generator": "Visual Studio 17 2022 / ClangCL / x64"
+  },
+  "source_patch_sha256": "532a09387769e8435fc1266b8050f39cb22fbb5b2e8f82b603142bf352e30173",
+  "source_files": {
+    "src/console_cmds.cpp": "4cafdb8f4ce28cb05c47d67166bccf4f78a7175648e4ceb187832159e1d869df",
+    "src/core/CMakeLists.txt": "ff4c3abbc80cc97e92a430becadd86db8f909ee54a7b102a3ba5a4aadb9d0a3b",
+    "src/core/thread_cpu_timer.hpp": "8cdde6a0b3c8e56cc02e9d02909f8e3516b2ecbc7e8b3594a24154316ce1b750",
+    "src/passenger_precomputed.cpp": "033a109e40f88db82fba44decc594fae26d844eee77293c3ebbeba8bbeee8cda",
+    "src/passenger_precomputed.h": "5e863f23f897417e17139dc6b72f959c18b7ec39173f0e65691123480927413e",
+    "src/passenger_precomputed_gui.cpp": "739c7a4a9c0224a57cc1324fd36e7d1bb236cfc958c0d8573c55527191c6d388",
+    "src/passenger_precomputed_progress.h": "aa40ebe1be96ebc31a871f3e6c17a38153efa42a5ca01234740cdfa38a65e1f3",
+    "src/passenger_service_database.cpp": "00b6d09974ad02b4a6b4e25ab29d9a41a1272817ed2a3fb6fb000c323e738afe",
+    "src/passenger_service_database.h": "20b025e846bdc303c2eb2536a7f57e827bb6869c0dfb09efa71c97b9524ad3c3",
+    "src/tests/passenger_async_access.h": "cdaabc111ed2314c329fc54f0cac71248a38b408ab2f9ba5095d1b61ecd82381",
+    "src/tests/passenger_precomputed.cpp": "49f500639fd9e6938c30e8f8e5ca0ff2406168bfef3779e61544949ab5172444",
+    "src/tests/passenger_service_database.cpp": "0ed9b494335cf589436f68d3fdd8e5adfb8060a21611555bfa1a8370bd52f83e",
+    "src/video/video_driver.cpp": "cdff8265622d05226c5e3b421567714ff4ba053c675123acd448db5897d77966",
+    "src/video/video_driver.hpp": "d0cb7988c66cd02073901655a8317c345983913f1f8f55daec1db7c149fa9eae"
+  },
+  "reference_generated": {
+    "PassengerSequentialReference.cpp": "a468de13ebc4dbd163bb51bc4b501ce09edf84610f9f6df87b5c14b7c0b6e514",
+    "PassengerSequentialReference.h": "ebc9451ec8d628a812d83ca8c0c7c2ac5407edbe7c6fd18ccbeffc134b0e133d"
+  },
+  "binaries": [
+    {
+      "source": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-preparation\\Release\\openttd.exe",
+      "backup": "C:\\Users\\bebe\\OpenTTD-measurements\\passenger-preparation-20261020-5ac5f40c\\openttd.exe",
+      "bytes": 15949824,
+      "sha256": "ad73a020d83e21f26b17107f9c7e272acb211744a516d65ac749e92ed9bab56e",
+      "copy": "independent file"
+    },
+    {
+      "source": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-preparation\\Release\\openttd.pdb",
+      "backup": "C:\\Users\\bebe\\OpenTTD-measurements\\passenger-preparation-20261020-5ac5f40c\\openttd.pdb",
+      "bytes": 141430784,
+      "sha256": "80b226b3e1a0efba07ae417e69dcc0a5776a0dded5265c631a6a99238cf3439d",
+      "copy": "independent file"
+    },
+    {
+      "source": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-preparation\\Release\\openttd_test.exe",
+      "backup": "C:\\Users\\bebe\\OpenTTD-measurements\\passenger-preparation-20261020-5ac5f40c\\openttd_test.exe",
+      "bytes": 25556992,
+      "sha256": "5ac5f40c1072f647cc33ca65e9443bd093ee0e77919cdcdb34386a4a56f15c96",
+      "copy": "independent file"
+    },
+    {
+      "source": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-preparation\\Release\\openttd_test.pdb",
+      "backup": "C:\\Users\\bebe\\OpenTTD-measurements\\passenger-preparation-20261020-5ac5f40c\\openttd_test.pdb",
+      "bytes": 170811392,
+      "sha256": "466e1b182ef70cdd10b883de85dc4c820dc5b946645468cdc643b3dbefe69659",
+      "copy": "independent file"
+    },
+    {
+      "source": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-preparation\\lang\\english.lng",
+      "backup": "C:\\Users\\bebe\\OpenTTD-measurements\\passenger-preparation-20261020-5ac5f40c\\english.lng",
+      "bytes": 252384,
+      "sha256": "6b428c98951dc4c332107e63f55b8a8dcb757e4c5d9b80363318894e20892e0f",
+      "copy": "independent file"
+    }
+  ],
+  "runbook_read": {
+    "commit": "1c42420af2226a73063e4a1eb9cc5990a57229c8",
+    "path": "docs/passenger-wpr-runbook.md",
+    "note": "Read before preparation on the initial checkout; absent from requested jgrpp-ya base. These runs use synthetic native tests, no real-map save or ETL."
+  },
+  "source_git_lf_sha256": {
+    "src/console_cmds.cpp": "96ba2bef98c2fe9c9e28fcb7607c7c8ca13b651790e01b340cabf54d0358c91b",
+    "src/core/CMakeLists.txt": "cb8658a0ac17344ea7d981fcb35ce49d73495d50281b29bdc0c5b75c8d02b16b",
+    "src/core/thread_cpu_timer.hpp": "8cdde6a0b3c8e56cc02e9d02909f8e3516b2ecbc7e8b3594a24154316ce1b750",
+    "src/passenger_precomputed.cpp": "f29cb19b6414888b2b2dc11799c0a6a5f7a8b6158b113a9e8c0293e18e42ba8f",
+    "src/passenger_precomputed.h": "5a39372fcc03e33738376d7f83752caf98ebd77d0946607a2338bc50ff47b9b9",
+    "src/passenger_precomputed_gui.cpp": "8706e9ec92bfb7f9cfec777a922e2b5f396ae93e878bbd2d8cc2f5b806e89b37",
+    "src/passenger_precomputed_progress.h": "25074d9e83f5f020bb20849048085224fb82cc965e4d67c1deb84065df4c0891",
+    "src/passenger_service_database.cpp": "75ed34ac61d33e7fd79e04288a285140b253eb71ad53258b892b8ccded3976b9",
+    "src/passenger_service_database.h": "dcbf0a5fb047eeeab7142ed837e7556884ae67bd13adff31d309f6c4d7891e24",
+    "src/tests/passenger_async_access.h": "8097b8747fd4ae62cfa119413ce534d1e73f19b341b390079bbc49ebae2a25f9",
+    "src/tests/passenger_precomputed.cpp": "ef30bda469415f422ad1a28777fd872056684e12941375298b986c6943f108ff",
+    "src/tests/passenger_service_database.cpp": "fb69c75dffd2d4b7335cad83b58b60c3ee3f487d69db28f39e3da48a5d4cddb0",
+    "src/video/video_driver.cpp": "1bc8224a80e57b6655aba5cdf576de615b4ecc14a0ac52f28da8c36fe3762b06",
+    "src/video/video_driver.hpp": "819f54977ebe73042f8107d23138985cd4f1a6a97451dca4167d41834d76851c"
+  },
+  "src_tree": "aae92e312bfb61f2bc277219a1c3e4d5441867b8"
+}

@@ -194,6 +194,10 @@ PassengerServiceSelection SelectPassengerServices(CargoType cargo, PassengerServ
 	result.allocation_bytes = service_index->allocation_bytes;
 	result.resident_bound = service_index->resident_bound;
 	result.largest_block_services = service_index->largest_block_services;
+	auto include_service = [&](OrderListID id) {
+		result.services.insert(id);
+		if (id == scope.onboard_service) result.onboard_on_corridor = true;
+	};
 	auto from = service_index->stations.find(scope.origin), to = service_index->stations.find(scope.destination);
 	if (from == service_index->stations.end() || to == service_index->stations.end() || service_index->root[from->second] != service_index->root[to->second]) return result;
 	auto include = [&](size_t node) {
@@ -204,10 +208,10 @@ PassengerServiceSelection SelectPassengerServices(CargoType cargo, PassengerServ
 			if (work == 0) { result.status = PassengerPredictionStatus::BudgetExhausted; return false; }
 			--work;
 			auto service = service_index->services.find(member);
-			if (service != service_index->services.end()) result.services.insert(service->second);
+			if (service != service_index->services.end()) include_service(service->second);
 		}
 		auto service = service_index->services.find(node);
-		if (service != service_index->services.end()) result.services.insert(service->second);
+		if (service != service_index->services.end()) include_service(service->second);
 		return true;
 	};
 	size_t a = from->second, b = to->second;

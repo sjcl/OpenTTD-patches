@@ -1,0 +1,70 @@
+{
+  "product_commit": "fe663cfa81661fc02cddb30e5be1618dcea0292f",
+  "label": "candidate",
+  "files": {
+    "cpu-sampled.wpaProfile": {
+      "bytes": 4034,
+      "sha256": "5092304c54ce1f2d1e34f73cc09c6d8b91513a7aba76e6c16fd1f4403067682c"
+    },
+    "lang/english.lng": {
+      "bytes": 252384,
+      "sha256": "6b428c98951dc4c332107e63f55b8a8dcb757e4c5d9b80363318894e20892e0f"
+    },
+    "Release/openttd.exe": {
+      "bytes": 16062464,
+      "sha256": "f230b6db059cd7ba2fc561765dd084909a18b99aa7b982894fd6c39af368688c"
+    },
+    "Release/openttd.pdb": {
+      "bytes": 142647296,
+      "sha256": "76d6a4eeb16e804e053e9c9c1ce55cb5689280e11a4d59208934effcc613aa0e"
+    },
+    "Release/openttd_test.exe": {
+      "bytes": 25768960,
+      "sha256": "81d024a3c3085da801df423b439d81f0b438be26f62ecbb84089f37d15097bbb"
+    },
+    "Release/openttd_test.pdb": {
+      "bytes": 170430464,
+      "sha256": "095abe809485ba25e9a0e7d7e4d53cc62fe050bd9891dfe9c62807b630d3ef15"
+    }
+  },
+  "compiler": "clang version 23.1.3 (https://github.com/llvm/llvm-project 0d261d1ca552c95a8f007e061c787ac7132fbcbc)\nTarget: x86_64-pc-windows-msvc\nThread model: posix\nInstalledDir: C:\\Program Files\\LLVM\\bin\nBuild config: +alloc:rpmalloc\n",
+  "flags": {
+    "asserts": true,
+    "lto": false,
+    "pgo": false,
+    "CRT": "MT",
+    "release": "/O2 /Ob2 /DNDEBUG /Zi"
+  },
+  "instrumentation": {
+    "revision": "fe663cfa81661fc02cddb30e5be1618dcea0292f",
+    "compatibility_change": "Select only build_precomputed timer, as documented in the WPR runbook",
+    "files": {
+      "save-integrity/cargopacket.cpp": "d2911acf583da57afddc87394c7ada6f23b47f95aaa91188e59847876e4ced42",
+      "save-integrity/cargopacket_sl.cpp": "b5f85245e4a2d144d73d927699f3fd9791c445ff5c9833b5ba05ae721642ff24",
+      "save-integrity/command.cpp": "4642b956d63de09948a338cac67e71533b9cf090f69a525811f16e7b22ef1938",
+      "save-integrity/console_cmds.cpp": "e25bfb4bef97e0be6cf710a4c27a46f627d10a0d7ad2dcbb126071f2e26c18ee",
+      "save-integrity/integrity.h": "6b809300bf19a213ee7d797424136f2172bb0d2d6513c092fa4b587403f64b5b",
+      "save-integrity/passenger_service_database.cpp": "5dbc843c775ea44e3d7ef239508cf587728d017e0de1c3eaa89de79e638778cb",
+      "save-integrity/wpr_gate.h": "64793e1253d3040ee8b8855b9c23a1d00b3db7690e26caf2716480d8750b8b24",
+      "real-map-driver/null_v.cpp": "502bd068b62a8f916d3f1baafe75f697d8aaf71da74aea9ca1407e8c7c1ab220",
+      "real-map-driver/win32.cpp": "4b38f569de4bf0ba837bcf6002be13f8ef7cbe4c5662c640be5b123612cc5a92"
+    }
+  },
+  "waiting_instrumentation": {
+    "scope": "Copied translation units only; observe public preparation APIs and first sync; exit singleplayer before StateGameLoop",
+    "files": {
+      "save-integrity/cargopacket.cpp": "d2911acf583da57afddc87394c7ada6f23b47f95aaa91188e59847876e4ced42",
+      "save-integrity/cargopacket_sl.cpp": "b5f85245e4a2d144d73d927699f3fd9791c445ff5c9833b5ba05ae721642ff24",
+      "save-integrity/command.cpp": "4642b956d63de09948a338cac67e71533b9cf090f69a525811f16e7b22ef1938",
+      "save-integrity/console_cmds.cpp": "ee6247bed2377ee819f5bcdb1082fce691f1c07fcde1b4fc5f5e460dcb080af3",
+      "save-integrity/integrity.h": "6b809300bf19a213ee7d797424136f2172bb0d2d6513c092fa4b587403f64b5b",
+      "save-integrity/passenger_service_database.cpp": "ca32a0b363ef09b51e5f3944df0f429ed4e32861942494fa63eed07c4645b83f",
+      "save-integrity/wpr_gate.h": "64793e1253d3040ee8b8855b9c23a1d00b3db7690e26caf2716480d8750b8b24",
+      "real-map-driver/null_v.cpp": "502bd068b62a8f916d3f1baafe75f697d8aaf71da74aea9ca1407e8c7c1ab220",
+      "real-map-driver/win32.cpp": "4b38f569de4bf0ba837bcf6002be13f8ef7cbe4c5662c640be5b123612cc5a92",
+      "waiting-probe/network_client.cpp": "a1b9d39383d345ea007236a25e166828de4679bc74ff3a02455e5a618714a89c",
+      "waiting-probe/openttd.cpp": "a8f487e68b242af837be284e5166a761fcdc6e02f93e571140dc36ce59ca39cc",
+      "waiting-probe/waiting.hpp": "2d991a4948f93fa65e37138ccc5a32c430d951666ddde589ad9cce54896193ee"
+    }
+  }
+}

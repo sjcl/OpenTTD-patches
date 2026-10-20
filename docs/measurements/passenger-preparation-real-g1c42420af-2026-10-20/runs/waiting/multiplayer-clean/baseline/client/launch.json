@@ -1,0 +1,22 @@
+{
+  "command": [
+    "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-real-preparation-20261020\\artifacts-waiting\\baseline\\Release\\openttd.exe",
+    "-x",
+    "-X",
+    "-c",
+    "openttd.cfg",
+    "-snull",
+    "-mnull",
+    "-dnet=4,sl=2",
+    "-vwin32",
+    "-r640x480",
+    "-n",
+    "127.0.0.1:17640#255"
+  ],
+  "environment": {
+    "OPENTTD_PASSENGER_MEASURE": "1",
+    "OPENTTD_WAITING_ROLE": "client"
+  },
+  "gui": "win32 GDI, hidden through STARTF_USESHOWWINDOW; default threaded product GameLoop",
+  "resolution": "640x480"
+}

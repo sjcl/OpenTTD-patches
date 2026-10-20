@@ -1,0 +1,37 @@
+{
+  "preflight-hyperpath": {
+    "accepted_for_comparison": false,
+    "reason": "Loaded LinkGraph work overlapped the paused console preparation probe. Kept as setup evidence only."
+  },
+  "runs/A-baseline/legacy": {
+    "accepted_for_requested_waiting_comparison": false,
+    "reason": "Normal-tick capture completed before the user narrowed the task to post-load/join waiting. No tick performance analysis or WPA export is used."
+  },
+  "runs/A-baseline/hyperpath": {
+    "accepted_for_requested_waiting_comparison": false,
+    "reason": "Already in flight when scope changed. The dispatcher was stopped to prevent subsequent captures; this run finished its 2048 ticks before the error gate could abort it. Kept and excluded from requested results."
+  },
+  "waiting/initial/A1/legacy": {
+    "accepted_native_timing_and_canonical": true,
+    "accepted_complete_external_observer": false,
+    "reason": "Native ready JSON and canonical completed successfully. The Python observer checked child exit before reading completion files, so its final census/peak metadata was not persisted. Raw files are retained; remaining cases resumed without recapture. A separately reported additional Legacy baseline repetition has complete observer metadata."
+  },
+  "observer_repair": {
+    "change": "Read readiness files even after child exit; persist the live census/peak every poll. No product or measurement-binary change.",
+    "product_changed": false
+  },
+  "waiting/multiplayer/baseline/server": {
+    "accepted": false,
+    "reason": "Dedicated afterload rejected the saved PauseMode::Error before game_start; no client joined and no join timing was adopted."
+  },
+  "multiplayer_input_repair": {
+    "operation": "Load an independent copy of the Hyperpath retained fixture; existing copied-console unpause explicitly acknowledges the error pause; save with zero simulation ticks.",
+    "output": "fixtures-mp/hyperpath/result.sav",
+    "canonical_24_equal_before_after": true,
+    "state_ticks": 3201034745,
+    "retained_rows": 4936,
+    "current_work": 7,
+    "original_save_changed": false,
+    "product_dedicated_rejection_changed": false
+  }
+}

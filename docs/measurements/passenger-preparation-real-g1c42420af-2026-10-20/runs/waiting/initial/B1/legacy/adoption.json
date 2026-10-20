@@ -1,0 +1,9 @@
+{
+  "accepted": true,
+  "exit_code": 0,
+  "input_sha256": "22743c39125f5ac35a813144506040f3693b40d0f374514a0bb8c3c20eed9bb7",
+  "label": "candidate",
+  "mode": "legacy",
+  "replay": false,
+  "tick_unchanged": true
+}

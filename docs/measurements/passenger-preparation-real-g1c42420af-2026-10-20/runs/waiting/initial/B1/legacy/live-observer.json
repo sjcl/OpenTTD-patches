@@ -1,0 +1,9 @@
+{
+  "census_count": 14,
+  "contamination": [],
+  "peak": {
+    "peak_working_bytes": 4664467456,
+    "peak_commit_bytes": 4684963840,
+    "process_cpu_seconds": 91.734375
+  }
+}

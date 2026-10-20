@@ -12,6 +12,7 @@
 #include "../vehicle_base.h"
 #include "passenger_test_stations.h"
 #include "../core/random_func.hpp"
+#include "../core/backup_type.hpp"
 #include <chrono>
 #include <deque>
 
@@ -838,9 +839,12 @@ TEST_CASE("Journey circular trains and scheduled dispatch use real future occurr
 	}
 }
 
-TEST_CASE("National journey queries reach eight thousand stations without whole network rescans", "[passenger][journey][performance]")
+TEST_CASE("National journey queries reach eight thousand stations without whole network rescans", "[passenger][journey][performance][aircraft_cost]")
 {
 	PassengerTestStations stations;
+	AutoRestoreBackup settings{_settings_game.linkgraph, AutoRestoreBackupNoNewValueTag{}};
+	_settings_game.linkgraph.aircraft_link_scale = GENERATE(uint16_t{100}, uint16_t{50}, uint16_t{300});
+	_settings_game.linkgraph.aircraft_link_add = _settings_game.linkgraph.aircraft_link_scale == 300 ? 3 : 0;
 	/* 80 routes of 100 stations, each with 10 physical trains: 8000 stations and 80000 visits.
 	 * The station-0 hub reaches every route in one boarding round. No synthetic headway expansion. */
 	std::deque<JourneyVehicle> fleet;
@@ -859,6 +863,7 @@ TEST_CASE("National journey queries reach eight thousand stations without whole 
 	PassengerServiceGraphLimits graph_limits;
 	graph_limits.horizon = 1000;
 	const auto graph = PassengerServiceGraph::Build(PAX, NOW, graph_limits);
+	CHECK_FALSE(graph.HasAircraftDiscount());
 	REQUIRE(graph.GetTrips().size() == (feeder ? 801 : 800));
 	size_t visits = 0;
 	for (const auto &trip : graph.GetTrips()) visits += trip.prediction.visits.size();
@@ -889,7 +894,7 @@ TEST_CASE("National journey queries reach eight thousand stations without whole 
 	REQUIRE_FALSE(leaf.journeys.empty());
 	CHECK(leaf.status == PassengerPredictionStatus::Complete);
 	CHECK(leaf.diagnostic.visits < 2000);
-	WARN("National journey defaults: " << us << " us; trips=" << graph.GetTrips().size() << "; visits=" << visits << "; work=" << result.diagnostic.work << "; reverse work=" << result.diagnostic.reverse_work << "; scratch peak=" << result.diagnostic.scratch_bytes);
+	WARN("National rail journey: scale=" << _settings_game.linkgraph.aircraft_link_scale << "; add=" << _settings_game.linkgraph.aircraft_link_add << "; " << us << " us; trips=" << graph.GetTrips().size() << "; visits=" << visits << "; labels=" << result.diagnostic.labels << "; work=" << result.diagnostic.work << "; reverse work=" << result.diagnostic.reverse_work << "; scratch peak=" << result.diagnostic.scratch_bytes);
 }
 
 TEST_CASE("Journey stages continue actual train chains without replaying earlier rounds", "[passenger][journey][transfer-limits]")

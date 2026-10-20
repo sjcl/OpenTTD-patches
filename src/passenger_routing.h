@@ -75,6 +75,7 @@ struct PassengerPredictedVisit {
 	std::optional<StateTicks> departure;
 	bool loading_now = false;
 	std::optional<StateTicksDelta> travel_from_previous; ///< Recorded leg duration can be known even when absolute times are not.
+	StateTicksDelta movement_from_previous{}; ///< Travel only; excludes waypoint/depot waits and station dwell.
 	bool operator==(const PassengerPredictedVisit &) const = default;
 };
 

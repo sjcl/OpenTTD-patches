@@ -1,0 +1,36 @@
+{
+  "accepted_waiting_runs": [
+    "waiting\\initial\\A1\\hyperpath",
+    "waiting\\initial\\A2\\legacy",
+    "waiting\\initial\\B1\\hyperpath",
+    "waiting\\initial\\B1\\legacy",
+    "waiting\\initial\\pilot\\hyperpath",
+    "waiting\\initial\\workers8\\hyperpath",
+    "waiting\\multiplayer-clean\\baseline\\client",
+    "waiting\\multiplayer-clean\\candidate\\client",
+    "waiting\\replay\\A1\\hyperpath",
+    "waiting\\replay\\A1\\legacy",
+    "waiting\\replay\\B1\\hyperpath",
+    "waiting\\replay\\B1\\legacy",
+    "waiting\\replay\\workers8\\hyperpath"
+  ],
+  "accepted_count": 13,
+  "tick_unchanged": true,
+  "canonical_all_24_fields_equal": true,
+  "native": {
+    "baseline": {
+      "cases": 801,
+      "assertions": 10757738,
+      "passed": true
+    },
+    "candidate": {
+      "cases": 805,
+      "assertions": 10523428,
+      "passed": true
+    }
+  },
+  "hyperpath_filter_validate": "Not run: normal simulation ticks are outside the user-requested scope. Canonical equality is reported independently.",
+  "normal_tick_performance": "Excluded",
+  "gui": "Real Win32 GDI, threaded, 640x480, hidden",
+  "multiplayer": "Real encrypted TCP loopback, spectator, stopped at first successful sync; paused host and client StateTicks unchanged"
+}

@@ -1,0 +1,10 @@
+{
+  "valid": true,
+  "lost_events": 0,
+  "lost_buffers": 0,
+  "begin": 1536949,
+  "end": 4633656,
+  "interval_100ns": 10000,
+  "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82",
+  "note": "Short CPU pilot, not a real-map performance run; both marks ordered"
+}

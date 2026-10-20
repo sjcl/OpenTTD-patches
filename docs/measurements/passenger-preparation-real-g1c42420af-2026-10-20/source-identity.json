@@ -1,0 +1,9 @@
+{
+  "baseline": "8f200282e83246898de702d014aa6acda0a95905",
+  "candidate": "fe663cfa81661fc02cddb30e5be1618dcea0292f",
+  "baseline_src_tree": "0f3e31b01c96435f5b57954d5069f6697d5c9aa9",
+  "candidate_src_tree": "a7cfba8de14f1a398086501e9839a62e272af363",
+  "archive_sha256": "02a6cab816372f1f3f4180bdb39c37821314b792092a935a0e3e63c0d0b73a36",
+  "baseline_source": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-real-preparation-20261020\\baseline-source",
+  "candidate_source": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches"
+}

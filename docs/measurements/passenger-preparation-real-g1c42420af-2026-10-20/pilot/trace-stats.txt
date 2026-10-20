@@ -1,0 +1,23 @@
+Number of Processors : 32
+CPU Speed            : 4300 MHz
+OS Version           : 10.00.00.00
+OS Build Number      : 26200
+Clock type           : PerfCounter
+Boot time            : 2026/10/20:06:25:27.5000000
+Native Pointer Size  : 8 (64bit)
+Start time (UTC)     : 2026/10/20:06:47:43.7393866
+End time (UTC)       : 2026/10/20:06:47:49.3496620  (+         0:00:00:05.6102754)
+Total # Lost Buffers : 0
+Total # Lost Events  : 0
+
+Number of Traces     : 1
+
+Trace name: C:\Users\bebe\.codex\worktrees\ba19\OpenTTD-patches\build-real-preparation-20261020\pilot\cpu.etl
+    Log file mode        : Sequential Relogged
+    Pointer size         : 8 (64bit)
+    Start time (UTC)     : 2026/10/20:06:47:43.7393866
+    End time (UTC)       : 2026/10/20:06:47:49.3496620  (+         0:00:00:05.6102754)
+    Start time (Local)   : 2026/10/20:15:47:43.7393866
+    End time (Local)     : 2026/10/20:15:47:49.3496620
+    # Lost Buffers       : 0
+    # Lost Events        : 0
