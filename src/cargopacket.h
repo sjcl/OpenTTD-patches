@@ -783,7 +783,14 @@ public:
 	uint32_t passenger_routing_cursor = 0, passenger_routing_end = 0;
 	StateTicks passenger_routing_tick = INVALID_STATE_TICKS;
 	uint16_t passenger_routing_work = 0;
-	StateTicks passenger_routing_swept = INVALID_STATE_TICKS; ///< Saved start of the latest generation sweep; bounds sweeps due only to publications.
+	StateTicks passenger_routing_swept = INVALID_STATE_TICKS; ///< Saved start of the latest full generation sweep; bounds sweeps due only to publications.
+	/* A Hyperpath plan for an OD depends only on its destination's row, and a table publishes rows in a
+	 * fixed order. A sweep due only to more rows of the same table generation therefore visits just the
+	 * packets whose destination row is new to it; anything else sweeps every unresolved packet. */
+	bool passenger_routing_published = false; ///< Saved: rows were published since this list's latest sweep started.
+	uint64_t passenger_routing_rows_from = UINT64_MAX; ///< Saved: the active sweep visits destination row ordinals in [rows_from, rows); UINT64_MAX visits all.
+	uint64_t passenger_routing_generation = UINT64_MAX; ///< Saved table generation of passenger_routing_rows.
+	bool InPassengerGenerationSweep(const CargoPacket &packet) const;
 	/** Empty cargo may still own saved scheduling state. In particular, dropping
 	 * it on load must not reset a slice or pass its cursor to a reused goods entry. */
 	bool HasPassengerRoutingState() const
@@ -791,7 +798,8 @@ public:
 		return this->passenger_boarding_last != StationID::Invalid() || !this->passenger_routing_dirty || this->passenger_routing_revision != UINT64_MAX || this->passenger_routing_rows != UINT64_MAX ||
 				this->passenger_routing_due != INVALID_STATE_TICKS || this->passenger_routing_sweeping || this->passenger_routing_cursor != 0 ||
 				this->passenger_routing_end != 0 || this->passenger_routing_tick != INVALID_STATE_TICKS || this->passenger_routing_work != 0 ||
-				this->passenger_routing_swept != INVALID_STATE_TICKS;
+				this->passenger_routing_swept != INVALID_STATE_TICKS || this->passenger_routing_published ||
+				this->passenger_routing_rows_from != UINT64_MAX || this->passenger_routing_generation != UINT64_MAX;
 	}
 	static constexpr uint16_t PASSENGER_ROUTING_SLICE = 256; ///< Cheap table events; national budget and station fairness also apply.
 	/** A service publication alone starts a generation sweep at most this often. It cannot resolve
@@ -799,7 +807,7 @@ public:
 	 * shorter bound. Table changes, flow changes and invalidations still sweep immediately. */
 	static constexpr int64_t PASSENGER_REVISION_SWEEP_TICKS = 1024, PASSENGER_TABLE_REVISION_SWEEP_TICKS = 8192;
 	static constexpr uint64_t PASSENGER_ROUTING_STALE_REVISION = UINT64_MAX - 1; ///< Saved: a service invalidation is pending, like a publication.
-	uint64_t passenger_routing_inspected = 0, passenger_generation_inspected = 0; ///< Diagnostics only.
+	uint64_t passenger_routing_inspected = 0, passenger_generation_inspected = 0, passenger_generation_skipped = 0; ///< Diagnostics only.
 	void RebuildWaitingIndex() const { this->EnsureWaitingIndex(); }
 	CargoType passenger_index_cargo = INVALID_CARGO; ///< Derived owning cargo, supplied by routing/boarding events.
 	/** The super class ought to know what it's doing. */

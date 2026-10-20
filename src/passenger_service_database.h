@@ -258,6 +258,9 @@ public:
 	PassengerPrecomputedPlan BoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo, OrderListID service,
 			VehicleOrderID boarding, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
 	size_t PrecomputedDestinations(CargoType cargo) const { return cargo < NUM_CARGO ? this->precomputed[cargo].GetDiagnostic().destinations : 0; } ///< No diagnostic copy.
+	/** Publication ordinal of destination's row in the current table; see PassengerPrecomputedTable::RowOrdinal. */
+	uint32_t PrecomputedRowOrdinal(CargoType cargo, StationID destination) const { return cargo < NUM_CARGO ? this->precomputed[cargo].RowOrdinal(destination) : PassengerPrecomputedTable::INVALID; }
+	uint64_t PrecomputedPolicyGeneration() const { return this->precomputed_policy_generation; } ///< Saved; changes with every new table.
 	PassengerPrecomputedDiagnostic GetPrecomputedDiagnostic(CargoType cargo) const
 	{
 		auto result = this->precomputed[cargo].GetDiagnostic();

@@ -32,6 +32,8 @@ struct PassengerWaitingEventDiagnostic {
 	uint64_t capacity_missed_packets = 0, capacity_missed_passengers = 0;
 	uint64_t capacity_record_nanoseconds = 0; ///< Outside the national scheduler; includes candidate visits and index/event mutation.
 	uint64_t unchanged_generation_packets = 0; ///< Unchanged fallback decision; only retry/merge metadata is refreshed.
+	uint64_t skipped_generation_packets = 0; ///< Passed by a sweep limited to newly published rows: no plan.
+	uint64_t row_limited_sweeps = 0, full_sweeps = 0; ///< Generation sweep starts by kind.
 	/* Hyperpath boarding enumeration: policy groups whose predicate ran, groups skipped by the
 	 * derived destination filter, predicates that admitted a group, and walks with/without the filter. */
 	uint64_t hyperpath_groups_checked = 0, hyperpath_groups_skipped = 0, hyperpath_groups_admitted = 0;
@@ -48,6 +50,8 @@ struct PassengerWaitingEventDiagnostic {
 	std::array<uint64_t, static_cast<size_t>(PassengerWaitingCause::End)> cause_nanoseconds{}, cause_packets{};
 };
 void RecordPassengerWaitingCause(PassengerWaitingCause cause, uint64_t nanoseconds, bool unchanged = false);
+void RecordPassengerGenerationSweep(bool row_limited);
+void RecordPassengerGenerationSkip();
 PassengerWaitingEventDiagnostic GetPassengerWaitingEventDiagnostic();
 void ResetPassengerWaitingEventDiagnostic();
 void RecordPassengerWaitingEvent(StateTicks due);

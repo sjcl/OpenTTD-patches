@@ -3750,6 +3750,7 @@ TEST_CASE("Precomputed waiting events survive save tables without inventing a ro
 	a.passenger_routing_sweeping = true; a.passenger_routing_cursor = 7; a.passenger_routing_end = 103;
 	a.passenger_routing_tick = NOW; a.passenger_routing_work = 31;
 	a.passenger_boarding_last = B; a.passenger_routing_swept = NOW - 7;
+	a.passenger_routing_published = true; a.passenger_routing_rows_from = 19; a.passenger_routing_generation = 5;
 	CHECK_FALSE(source.data->MayBeRemoved());
 	REQUIRE_FALSE(SlTestSaveLoadTable(&source, &loaded, GetGoodsDesc()).empty());
 	auto &b = loaded.data->cargo; b.RebuildWaitingIndex();
@@ -3757,7 +3758,17 @@ TEST_CASE("Precomputed waiting events survive save tables without inventing a ro
 	CHECK(b.passenger_routing_sweeping); CHECK(b.passenger_routing_cursor == 7); CHECK(b.passenger_routing_end == 103);
 	CHECK(b.passenger_routing_tick == NOW); CHECK(b.passenger_routing_work == 31);
 	CHECK(b.passenger_boarding_last == B); CHECK(b.passenger_routing_swept == NOW - 7);
+	CHECK(b.passenger_routing_published); CHECK(b.passenger_routing_rows_from == 19); CHECK(b.passenger_routing_generation == 5);
 	CHECK_FALSE(loaded.data->MayBeRemoved());
+	/* Each new field alone keeps otherwise empty goods: it is saved scheduling state. */
+	for (int field = 0; field < 3; ++field) {
+		GoodsEntry fresh{}; auto &list = fresh.CreateData().cargo;
+		REQUIRE_FALSE(list.HasPassengerRoutingState());
+		if (field == 0) list.passenger_routing_published = true;
+		if (field == 1) list.passenger_routing_rows_from = 0;
+		if (field == 2) list.passenger_routing_generation = 1;
+		CHECK(list.HasPassengerRoutingState());
+	}
 	auto *packet = CargoPacket::Create(10, 0, A, TileIndex{0}, Money{0});
 	auto *copy = CargoPacket::Create(); packet->SchedulePassengerRouting(NOW + 150);
 	REQUIRE_FALSE(SlTestSaveLoadTable(packet, copy, GetCargoPacketDesc()).empty());
@@ -3792,7 +3803,7 @@ TEST_CASE("A publication alone sweeps waiting fallback packets at a bounded rate
 	generations = waiting.passenger_generation_inspected;
 	PassengerWaitingFlowsChanged(goods, PAX); CHECK(waiting.passenger_routing_dirty);
 	route_at(swept + interval + 1); CHECK(waiting.passenger_generation_inspected == generations + 1);
-	--waiting.passenger_routing_rows;
+	waiting.passenger_routing_rows = 0; // Every row is new to this list, including D's.
 	route_at(swept + interval + 2); CHECK(waiting.passenger_generation_inspected == generations + 2);
 	InvalidatePassengerWaitingRouting();
 	route_at(swept + interval + 3); CHECK(waiting.passenger_generation_inspected == generations + 3);
@@ -3805,6 +3816,55 @@ TEST_CASE("A publication alone sweeps waiting fallback packets at a bounded rate
 	db.Invalidate(carrier->orders->index);
 	route_at(later + 2); CHECK(waiting.passenger_generation_inspected == generations + 4);
 	route_at(later + 1 + interval); CHECK(waiting.passenger_generation_inspected == generations + 5);
+}
+
+TEST_CASE("Row publications sweep only waiting packets of their new destinations", "[passenger][precomputed][events][determinism]")
+{
+	const bool hyperpath = GENERATE(false, true);
+	CAPTURE(hyperpath);
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = true; _settings_game.linkgraph.passenger_journey_hyperpath = hyperpath;
+	f.Train({Stop(A), Stop(B)}); f.Train({Stop(C), Stop(D)}); auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto &waiting = Station::Get(A)->goods[PAX].CreateData().cargo;
+	for (StationID destination : {C, D}) { // No service from A reaches either.
+		auto *packet = CargoPacket::Create(3, 0, A, TileIndex{0}, Money{0});
+		REQUIRE(packet->SetPassengerDestination(PAX, destination)); waiting.Append(packet, destination);
+	}
+	auto settle = [&]() { for (int i = 0; i < 8 && (waiting.passenger_routing_dirty || waiting.passenger_routing_sweeping || i == 0); ++i) { ++_state_ticks; waiting.RoutePassengerJourneys(PAX, A); } };
+	settle();
+	REQUIRE_FALSE(waiting.passenger_routing_dirty); REQUIRE_FALSE(waiting.passenger_routing_sweeping);
+	const uint64_t rows = db.PrecomputedDestinations(PAX), generation = db.PrecomputedPolicyGeneration();
+	REQUIRE(waiting.passenger_routing_rows == rows); REQUIRE(waiting.passenger_routing_generation == generation);
+	const uint32_t c = db.PrecomputedRowOrdinal(PAX, C), d = db.PrecomputedRowOrdinal(PAX, D);
+	REQUIRE(c < rows); REQUIRE(d < rows); REQUIRE(c != d);
+	/* As if the rows from `seen` on were published after this list's latest sweep started. */
+	auto sweep = [&](uint64_t seen) {
+		waiting.passenger_routing_rows = seen;
+		const auto inspected = waiting.passenger_generation_inspected, skipped = waiting.passenger_generation_skipped;
+		settle();
+		return std::pair(waiting.passenger_generation_inspected - inspected, waiting.passenger_generation_skipped - skipped);
+	};
+	const StateTicks swept = waiting.passenger_routing_swept;
+	CHECK(sweep(std::max(c, d)) == (hyperpath ? std::pair<uint64_t, uint64_t>(1, 1) : std::pair<uint64_t, uint64_t>(2, 0)));
+	CHECK(waiting.passenger_routing_rows == rows);
+	/* A row-limited sweep is not the bounded full sweep a publication alone may still need. */
+	if (hyperpath) { CHECK(waiting.passenger_routing_swept == swept); CHECK(waiting.passenger_routing_rows_from == std::max(c, d)); }
+	CHECK(sweep(std::min(c, d)) == std::pair<uint64_t, uint64_t>(2, 0));
+	/* Another table generation, or any other request, sweeps every packet. */
+	waiting.passenger_routing_generation = generation - 1;
+	CHECK(sweep(std::max(c, d)) == std::pair<uint64_t, uint64_t>(2, 0));
+	CHECK(waiting.passenger_routing_generation == generation); CHECK(waiting.passenger_routing_rows_from == UINT64_MAX);
+	waiting.passenger_routing_dirty = true;
+	CHECK(sweep(std::max(c, d)) == std::pair<uint64_t, uint64_t>(2, 0));
+	/* A table replaced during a row-limited sweep renumbers its rows: the rest of it visits every packet. */
+	waiting.passenger_routing_sweeping = true; waiting.passenger_routing_cursor = 0; waiting.passenger_routing_end = UINT32_MAX;
+	waiting.passenger_routing_rows_from = rows; waiting.passenger_routing_generation = generation - 1;
+	CHECK(sweep(rows) == std::pair<uint64_t, uint64_t>(2, 0));
+	CHECK(waiting.passenger_routing_rows_from == UINT64_MAX);
+	/* A row publication wakes the list without requesting a full sweep, and nothing stays scheduled once it is swept. */
+	WakePassengerWaitingCargo(PAX);
+	CHECK(waiting.passenger_routing_published); CHECK_FALSE(waiting.passenger_routing_dirty);
+	CHECK(sweep(rows) == std::pair<uint64_t, uint64_t>(0, 0));
+	CHECK_FALSE(waiting.passenger_routing_published);
 }
 
 TEST_CASE("Precomputed single packet events leave thousands of sleeping intents untouched", "[passenger][precomputed][events][scaling]")

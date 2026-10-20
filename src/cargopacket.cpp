@@ -87,7 +87,7 @@ void StationCargoList::UpdatePassengerRoutingSchedule() const
 	StateTicks due = INVALID_STATE_TICKS;
 	if (this->waiting_index_valid && _settings_game.linkgraph.passenger_journey_precomputed && IsPassengerJourneyRoutingEnabled(this->passenger_index_cargo)) {
 		due = this->routing_events.empty() ? INVALID_STATE_TICKS : this->routing_events.begin()->first;
-		if (unresolved && (this->passenger_routing_sweeping || this->passenger_routing_dirty)) {
+		if (unresolved && (this->passenger_routing_sweeping || this->passenger_routing_dirty || this->passenger_routing_published)) {
 			StateTicks generation = this->passenger_routing_due == INVALID_STATE_TICKS ? _state_ticks : this->passenger_routing_due;
 			due = due == INVALID_STATE_TICKS ? generation : std::min(due, generation);
 		}
@@ -136,12 +136,21 @@ void RunPassengerWaitingEvents()
 
 void WakePassengerWaitingCargo(CargoType cargo)
 {
+	/* Not dirty: the list compares its saved rows and generation when it starts the sweep, and can
+	 * then limit it to the new rows' destinations. */
 	for (StationID station : _passenger_unresolved_stations[cargo]) {
 		auto *list = _passenger_station_lists.at({station, cargo});
-		if (!list->passenger_routing_sweeping && !list->passenger_routing_dirty) list->passenger_routing_due = _state_ticks;
-		list->passenger_routing_dirty = true;
+		if (!list->passenger_routing_sweeping && !list->passenger_routing_dirty && !list->passenger_routing_published) list->passenger_routing_due = _state_ticks;
+		list->passenger_routing_published = true;
 		list->UpdatePassengerRoutingSchedule();
 	}
+}
+
+bool StationCargoList::InPassengerGenerationSweep(const CargoPacket &packet) const
+{
+	if (this->passenger_routing_rows_from == UINT64_MAX) return true;
+	const uint32_t ordinal = GetPassengerServiceDatabase().PrecomputedRowOrdinal(this->passenger_index_cargo, packet.GetPassengerDestination());
+	return ordinal != PassengerPrecomputedTable::INVALID && ordinal >= this->passenger_routing_rows_from && ordinal < this->passenger_routing_rows;
 }
 
 PassengerWaitingEventDiagnostic GetPassengerWaitingEventDiagnostic()
@@ -158,7 +167,7 @@ PassengerWaitingEventDiagnostic GetPassengerWaitingEventDiagnostic()
 			result.oldest_ticks = std::max<uint64_t>(result.oldest_ticks, uint64_t(_state_ticks.base()) - uint64_t(due.base()));
 		}
 		if (list->passenger_routing_dirty || list->passenger_routing_sweeping) for (CargoPacketID id = list->NextPassengerGenerationPacket(0); id != CargoPacketID::Invalid(); id = list->NextPassengerGenerationPacket(id.base() + 1)) {
-			if (!list->passenger_routing_dirty && (id.base() < list->passenger_routing_cursor || id.base() > list->passenger_routing_end)) continue;
+			if (!list->passenger_routing_dirty && (id.base() < list->passenger_routing_cursor || id.base() > list->passenger_routing_end || !list->InPassengerGenerationSweep(*CargoPacket::Get(id)))) continue;
 			if (list->waiting_entries.at(id).routing_due != INVALID_STATE_TICKS) continue;
 			++pending; ++result.overdue;
 			if (list->passenger_routing_due != INVALID_STATE_TICKS && list->passenger_routing_due <= _state_ticks)
@@ -177,6 +186,8 @@ void RecordPassengerWaitingCause(PassengerWaitingCause cause, uint64_t nanosecon
 	++_passenger_event_diagnostic.cause_packets[static_cast<size_t>(cause)];
 	_passenger_event_diagnostic.unchanged_generation_packets += unchanged;
 }
+void RecordPassengerGenerationSweep(bool row_limited) { ++(row_limited ? _passenger_event_diagnostic.row_limited_sweeps : _passenger_event_diagnostic.full_sweeps); }
+void RecordPassengerGenerationSkip() { ++_passenger_event_diagnostic.skipped_generation_packets; }
 void RecordPassengerWaitingEvent(StateTicks due)
 {
 	++_passenger_event_diagnostic.packets;

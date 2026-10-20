@@ -1793,16 +1793,34 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 		const int64_t revision_interval = GetPassengerServiceDatabase().RevisionAffectsWaitingPlans() ? PASSENGER_REVISION_SWEEP_TICKS : PASSENGER_TABLE_REVISION_SWEEP_TICKS;
 		const bool revision_due = this->passenger_routing_revision != revision && (this->passenger_routing_swept == INVALID_STATE_TICKS ||
 				this->passenger_routing_swept > _state_ticks || _state_ticks.base() - this->passenger_routing_swept.base() >= revision_interval);
+		const uint64_t generation = GetPassengerServiceDatabase().PrecomputedPolicyGeneration();
+		/* A new table renumbers its rows: finish an interrupted row-limited sweep over every packet. */
+		if (this->passenger_routing_sweeping && this->passenger_routing_rows_from != UINT64_MAX && this->passenger_routing_generation != generation) this->passenger_routing_rows_from = UINT64_MAX;
 		if (!this->passenger_routing_sweeping && (this->passenger_routing_dirty || revision_due || this->passenger_routing_rows != rows)) {
-			this->passenger_routing_swept = _state_ticks;
+			/* More rows of the same Hyperpath table can only plan ODs to their own destinations. */
+			const bool rows_only = !this->passenger_routing_dirty && !revision_due && this->passenger_routing_generation == generation &&
+					this->passenger_routing_rows != UINT64_MAX && rows > this->passenger_routing_rows && !GetPassengerServiceDatabase().RevisionAffectsWaitingPlans();
 			this->passenger_routing_sweeping = true;
 			this->passenger_routing_cursor = 0;
 			this->passenger_routing_end = this->routing_packets.empty() ? 0 : this->routing_packets.rbegin()->base();
 			if (_settings_game.linkgraph.passenger_journey_hyperpath && !this->legacy_journey_packets.empty()) this->passenger_routing_end = std::max(this->passenger_routing_end, this->legacy_journey_packets.rbegin()->base());
-			this->passenger_routing_dirty = false;
-			this->passenger_routing_revision = revision;
+			if (rows_only) {
+				/* Not a full sweep: a pending publication keeps its own bounded deadline. */
+				this->passenger_routing_rows_from = this->passenger_routing_rows;
+			} else {
+				this->passenger_routing_swept = _state_ticks;
+				this->passenger_routing_rows_from = UINT64_MAX;
+				this->passenger_routing_dirty = false;
+				this->passenger_routing_revision = revision;
+			}
 			this->passenger_routing_rows = rows;
+			this->passenger_routing_generation = generation;
+			this->passenger_routing_published = false;
+			RecordPassengerGenerationSweep(rows_only);
 		}
+		/* A wake during a sweep stays pending for the rows published after its start. A wake
+		 * for rows this list already swept must not keep it scheduled. */
+		if (!this->passenger_routing_sweeping && this->passenger_routing_rows == rows) this->passenger_routing_published = false;
 		if (this->passenger_routing_work >= PASSENGER_ROUTING_SLICE ||
 				(!this->passenger_routing_sweeping && (this->routing_events.empty() || this->routing_events.begin()->first > _state_ticks))) {
 			this->UpdatePassengerRoutingSchedule();
@@ -1973,6 +1991,12 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 			if (sweep) {
 				id = this->NextPassengerGenerationPacket(this->passenger_routing_cursor);
 				if (id == CargoPacketID::Invalid() || id.base() > this->passenger_routing_end) { this->passenger_routing_sweeping = false; continue; }
+				if (!this->InPassengerGenerationSweep(*CargoPacket::Get(id))) {
+					/* Outside a row-limited sweep: no plan and no national work; the station slice bounds the scan. */
+					this->passenger_routing_cursor = id.base() + 1;
+					++this->passenger_routing_work; ++this->passenger_generation_skipped; RecordPassengerGenerationSkip();
+					continue;
+				}
 			} else if (due) {
 				id = this->routing_events.begin()->second;
 			} else break;
@@ -2048,8 +2072,9 @@ size_t StationCargoList::RoutePassengerJourneys(CargoType cargo, StationID stati
 		}
 		for (const auto &[key, packet] : relocated) this->packets.Insert(key, packet);
 		moved = relocated.size();
-		this->passenger_routing_dirty = false;
+		this->passenger_routing_dirty = false; this->passenger_routing_published = false;
 		this->passenger_routing_revision = revision; this->passenger_routing_rows = rows;
+		this->passenger_routing_generation = GetPassengerServiceDatabase().PrecomputedPolicyGeneration();
 		if (precomputed) this->RebuildWaitingIndex();
 	}
 	this->UpdatePassengerRoutingSchedule();

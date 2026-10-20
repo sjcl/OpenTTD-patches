@@ -5015,6 +5015,7 @@ static bool ConPassengerJourneyStats(std::span<std::string_view> argv)
 	}
 	IConsolePrint(CC_DEFAULT, "Passenger capacity records: packets={}; passengers={}; microseconds={}", events.capacity_missed_packets, events.capacity_missed_passengers, events.capacity_record_nanoseconds / 1000);
 	IConsolePrint(CC_DEFAULT, "Passenger unchanged generation: packets={}", events.unchanged_generation_packets);
+	IConsolePrint(CC_DEFAULT, "Passenger generation sweeps: full={}; row_limited={}; skipped_packets={}", events.full_sweeps, events.row_limited_sweeps, events.skipped_generation_packets);
 	{
 		static constexpr std::array filter_modes{"off", "on", "alternate", "index", "validate"};
 		const auto mode = GetPassengerServiceDatabase().GetHyperpathBoardingFilterMode();

@@ -105,6 +105,12 @@ public:
 	PassengerPrecomputedPlan Plan(StationID origin, StationID destination, StateTicks ready, OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0, OrderListID failed = OrderListID::Invalid()) const;
 	bool Finished() const { return !this->graph_build && (this->failed || this->destination == this->graph->stations.size()); }
 	bool MemoryRejected() const { return this->failed; }
+	/** Rows are published in graph station order: destination's row is published once GetDiagnostic().destinations
+	 * exceeds this ordinal. INVALID for a destination absent from this generation's graph. */
+	uint32_t RowOrdinal(StationID destination) const
+	{
+		return !this->graph_build && destination.base() < this->graph->station_index.size() ? this->graph->station_index[destination.base()] : INVALID;
+	}
 	uint64_t MemberRefreshes() const { return this->member_refreshes; }
 	const PassengerPrecomputedDiagnostic &GetDiagnostic() const { return this->diagnostic; }
 	PassengerHyperpathMemoryDiagnostic InspectMemory() const;
