@@ -1166,7 +1166,7 @@ bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
 		if (!this->parallel) {
 			const size_t cpus = std::max(1U, std::thread::hardware_concurrency());
 			const uint64_t bytes = uint64_t(this->graph->states) * 256 + uint64_t(this->graph->integrated ? this->graph->logical_edges : this->graph->edge_count) * 32 + 65536;
-			workers = static_cast<uint>(std::min<size_t>({workers, 8, cpus, DestinationWorkerPool::SCRATCH_LIMIT / bytes / 4, this->graph->stations.size() - this->destination}));
+			workers = static_cast<uint>(std::min<uint64_t>({workers, 8, cpus, DestinationWorkerPool::SCRATCH_LIMIT / bytes / 4, this->graph->stations.size() - this->destination}));
 			size_t permitted = 0; while (permitted < workers && (!this->parallel_start_hook || this->parallel_start_hook(static_cast<uint>(permitted)))) ++permitted;
 			if (permitted == 0) { if (workers != 0) { this->parallel_unavailable = true; ++this->parallel_diagnostic.fallbacks; } return false; }
 			auto &pool = WorkerPool();
