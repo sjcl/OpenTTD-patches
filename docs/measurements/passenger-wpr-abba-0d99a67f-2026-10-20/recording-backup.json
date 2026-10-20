@@ -1,0 +1,83 @@
+{
+  "path": "C:\\Users\\bebe\\.codex\\visualizations\\2026\\10\\19\\01a15484-1ab3-7172-aee8-1a55c6d1c3b4\\passenger-wpr-recordings-abba-0d99a67f-2026-10-20",
+  "files": {
+    "Release/openttd.exe": {
+      "bytes": 17009664,
+      "sha256": "f696ec97296fa5e191277eb36d20360c5a6690a95382eb60773a8d9e0d99742b",
+      "read_only": true
+    },
+    "Release/openttd.pdb": {
+      "bytes": 144658432,
+      "sha256": "5855866ff9c08c6863759d2928158a129c6aed8b3d1cde60af1e9aaed45e73d6",
+      "read_only": true
+    },
+    "build-identity.json": {
+      "bytes": 1310,
+      "sha256": "07299ec038808b48498a3d4cda5123387ebaff1f7bf04d24838337f9b6b8c93e",
+      "read_only": true
+    },
+    "baseline/Release/openttd.exe": {
+      "bytes": 17012224,
+      "sha256": "bcf35a4918bc5f1e5c2f2bf7378953940bc5619354225e7906372dac4390483c",
+      "read_only": true
+    },
+    "baseline/Release/openttd.pdb": {
+      "bytes": 144809984,
+      "sha256": "e2dc60fc0d82a553ed56b367c51dda198dae7f73ff04082354b2b5db381eafe8",
+      "read_only": true
+    },
+    "baseline/build-identity.json": {
+      "bytes": 1310,
+      "sha256": "e2260734d9d433f3819b32f27d269787927974211dafa9f87833ed89d4c2e756",
+      "read_only": true
+    },
+    "validate/result.sav": {
+      "bytes": 46656212,
+      "sha256": "1f2039e7367f0825bb7430cd284f066bcfd27957248012d857c51b4297e6fc86",
+      "read_only": true
+    },
+    "01-A1/legacy/cpu.etl": {
+      "bytes": 91226112,
+      "sha256": "b39fbad42ce453c0689c863d8bd944c246c7561e0098836ccd0b39f4e00f3eea",
+      "read_only": true
+    },
+    "01-A1/legacy/result.sav": {
+      "bytes": 46681056,
+      "sha256": "99c0d7df7a6fdd14d86697bff4e6770e9eac30950218fa762ab7cfa127aeae29",
+      "read_only": true
+    },
+    "01-A1/hyperpath/cpu.etl": {
+      "bytes": 83886080,
+      "sha256": "e7019b5ff2d5867626d1fa49c2af51cf22fc78f5e0b0300ab043b8632393d650",
+      "read_only": true
+    },
+    "01-A1/hyperpath/result.sav": {
+      "bytes": 46700876,
+      "sha256": "152fdb575d75c9ffd76beae01e0eda663417b5d0ac54aed345a6d7657ba04aec",
+      "read_only": true
+    },
+    "02-B1/legacy/cpu.etl": {
+      "bytes": 98566144,
+      "sha256": "59c4158c2ed5a7e278052104d4e2e7883dc21e2a7a4575e79ae56831dd64a8a8",
+      "read_only": true
+    },
+    "02-B1/legacy/result.sav": {
+      "bytes": 46681052,
+      "sha256": "d8949b2576682d7cc9fed2c4071b7cb94ddefa236c1c1927712a84b7d3fda58b",
+      "read_only": true
+    },
+    "02-B1/hyperpath/cpu.etl": {
+      "bytes": 87031808,
+      "sha256": "cdd96d57c7393204c4d145afe01c654d910d72f429674fc9391a2ed5f0638e60",
+      "read_only": true
+    },
+    "02-B1/hyperpath/result.sav": {
+      "bytes": 46673724,
+      "sha256": "7cb93aab070908e95bcf10ab7cf399a2994d0fb542246e60631851198f983873",
+      "read_only": true
+    }
+  },
+  "recorded_traces": 4,
+  "abba_complete": false,
+  "profile_sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82"
+}

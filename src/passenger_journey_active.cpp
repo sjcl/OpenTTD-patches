@@ -1455,7 +1455,7 @@ void PassengerJourneyLoadingContext::RefreshBoardingRevision()
 {
 	const auto revision = GetPassengerServiceDatabase().BoardingRevision();
 	if (this->pending_revision == revision) return;
-	this->pending_plans.clear(); this->hyperpath_rides.clear(); this->hyperpath_boardings.clear(); this->hyperpath_memberships.clear();
+	this->pending_plans.clear(); this->hyperpath_rides.clear(); this->hyperpath_boardings.clear();
 	this->retired_plans.clear();
 	this->pending_revision = revision;
 	this->hyperpath_memo_serial = NextHyperpathMemoSerial();
@@ -1505,15 +1505,7 @@ bool PassengerJourneyLoadingContext::MayUseHyperpathPolicy(const CargoPacket &re
 	this->RefreshBoardingRevision();
 	const auto *arriving = OrderList::GetIfValid(representative.GetPassengerArrivingService());
 	auto previous = arriving != nullptr && arriving->GetCargoDistRouteGeneration() == representative.GetPassengerArrivingIncarnation() ? arriving->index : OrderListID::Invalid();
-	auto key = [&](const PassengerJourneyExecution &policy) {
-		return HyperpathMembershipKey{HyperpathKey{vehicle->First()->index, cargo, vehicle->First()->cur_real_order_index,
-				policy.generation, policy.boarding, policy.alighting, previous, OrderListID::Invalid()}, vehicle->First()->orders->index, policy.signature, current_occurrences};
-	};
-	/* Without an arriving carrier the table answers base membership exactly from two small
-	 * bit arrays; a memo lookup with this key would cost more than the answer. */
-	const bool direct = previous == OrderListID::Invalid();
-	auto cached = direct ? this->hyperpath_memberships.end() : this->hyperpath_memberships.find(key(intent));
-	const bool current = cached != this->hyperpath_memberships.end() || db.IsCurrent(intent);
+	const bool current = db.IsCurrent(intent);
 	if (current && intent.boarding != vehicle->First()->last_station_visited) return false;
 	/* A failed carrier's local policy may be cold or evicted: unknown, admitted conservatively and
 	 * reported as uncertain. Base membership is always known. Exact mode builds the local policy. */
@@ -1523,26 +1515,18 @@ bool PassengerJourneyLoadingContext::MayUseHyperpathPolicy(const CargoPacket &re
 		if (!known.has_value() && certain != nullptr) *certain = false;
 		return known.value_or(true);
 	};
-	auto inspect = [&](const PassengerJourneyExecution &policy, auto entry) {
+	/* Base membership is exact and immutable while the table's rows are: the database answers it
+	 * from its masks, or for a transfer state from its shared row cache. Membership contains
+	 * neither a concrete ride nor live legality. */
+	auto inspect = [&](const PassengerJourneyExecution &policy) {
 		if (policy.boarding != vehicle->First()->last_station_visited) return false;
-		if (direct) {
-			return (base && db.MayBoardHyperpath(policy, cargo, current_occurrences, previous, OrderListID::Invalid())) ||
-					(adjusted && failed_member(policy));
-		}
-		if (entry == this->hyperpath_memberships.end()) {
-			auto [found, inserted] = this->hyperpath_memberships.try_emplace(key(policy)); entry = found;
-			if (inserted) entry->second = db.MayBoardHyperpath(policy, cargo, current_occurrences, previous, OrderListID::Invalid());
-		}
-		/* Base membership is exact and immutable for this frozen revision. Keep
-		 * failed policies on the table's cache so a cold unknown is never latched.
-		 * Membership entries contain neither a concrete ride nor live legality. */
-		return (base && entry->second) || (adjusted && failed_member(policy));
+		return (base && db.MayBoardHyperpath(policy, cargo, current_occurrences, previous, OrderListID::Invalid())) || (adjusted && failed_member(policy));
 	};
-	if (current) return inspect(intent, cached);
+	if (current) return inspect(intent);
 	const auto &plan = this->RetiredPlan(cargo, intent, previous);
 	if (!plan.ride) return false;
 	if (plan.ride->kind != PassengerRideKind::HyperpathIntent) return true;
-	return inspect(*plan.ride, this->hyperpath_memberships.end());
+	return inspect(*plan.ride);
 }
 
 int64_t PassengerJourneyLoadingContext::ExpectedHyperpathWait(const CargoPacket &packet, const Vehicle *vehicle, CargoType cargo)
@@ -1665,7 +1649,6 @@ void PassengerJourneyLoadingContext::Invalidate(const Vehicle *vehicle)
 	for (auto it = this->boarding.lower_bound({id, CargoType{0}}); it != this->boarding.end() && it->first.first == id;) it = this->boarding.erase(it);
 	for (auto it = this->decisions.lower_bound({id, CargoType{0}}); it != this->decisions.end() && it->first.first == id;) it = this->decisions.erase(it);
 	std::erase_if(this->hyperpath_boardings, [id](const auto &item) { return std::get<0>(item.first) == id; });
-	std::erase_if(this->hyperpath_memberships, [id](const auto &item) { return std::get<0>(std::get<0>(item.first)) == id; });
 	this->hyperpath_memo_serial = NextHyperpathMemoSerial(); // Group memos are keyed by consist; drop them all.
 }
 

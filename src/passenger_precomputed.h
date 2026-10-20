@@ -105,6 +105,7 @@ public:
 	PassengerPrecomputedPlan Plan(StationID origin, StationID destination, StateTicks ready, OrderListID excluded = OrderListID::Invalid(), uint32_t sample = 0, OrderListID failed = OrderListID::Invalid()) const;
 	bool Finished() const { return !this->graph_build && (this->failed || this->destination == this->graph->stations.size()); }
 	bool MemoryRejected() const { return this->failed; }
+	uint64_t MemberRefreshes() const { return this->member_refreshes; }
 	const PassengerPrecomputedDiagnostic &GetDiagnostic() const { return this->diagnostic; }
 	PassengerHyperpathMemoryDiagnostic InspectMemory() const;
 	std::vector<uint64_t> InspectBuildingPolicyRow(StationID destination) const; ///< Explicit diagnostic, called from a row-publication observer only.
@@ -382,6 +383,7 @@ private:
 	std::shared_ptr<const GraphSnapshot> graph = std::make_shared<GraphSnapshot>();
 	std::shared_ptr<GraphSnapshot> building_graph; ///< Exists only during cooperative preparation.
 	std::map<OrderListID, Member> refreshed_members; ///< Live bindings never mutate the frozen graph.
+	uint64_t member_refreshes = 0; ///< Derived count of binding refreshes: rides selected before one may carry an old generation.
 
 	struct WorkerGeneration;
 	struct WorkerMetrics;

@@ -1,0 +1,32 @@
+27c27
+< movq	0xf8(%r14), %r15
+---
+> movq	0xe8(%r14), %r15
+88c88
+< cmpq	%rax, 0x100(%r14)
+---
+> cmpq	%rax, 0xf0(%r14)
+115c115
+< incq	0x100(%r14)
+---
+> incq	0xf0(%r14)
+117c117
+< movq	0xf8(%r14), %rcx
+---
+> movq	0xe8(%r14), %rcx
+225c225
+< movq	0xf8(%r14), %r10
+---
+> movq	0xe8(%r14), %r10
+239c239
+< movq	0xf8(%r14), %r10
+---
+> movq	0xe8(%r14), %r10
+265c265
+< movq	0xf8(%r14), %r11
+---
+> movq	0xe8(%r14), %r11
+297c297
+< movq	0xf8(%r14), %r11
+---
+> movq	0xe8(%r14), %r11

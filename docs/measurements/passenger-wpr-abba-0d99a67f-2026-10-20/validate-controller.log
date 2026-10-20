@@ -1,0 +1,116 @@
+{
+  "exit_code": 0,
+  "canonical_equal": false,
+  "canonical_fields": 24,
+  "differences": {
+    "company_deliveries": [
+      13595,
+      13665
+    ],
+    "loading_digest": [
+      5759760310152142397,
+      9267037949524039485
+    ],
+    "payment_digest": [
+      13774651420232285578,
+      12423382329216331998
+    ],
+    "database_digest": [
+      16064563056932437984,
+      13628481927781099768
+    ],
+    "packets": [
+      469547,
+      469694
+    ],
+    "journey_packets": [
+      456954,
+      457157
+    ],
+    "packet_state_digest": [
+      12763629749201381160,
+      7175063568840262956
+    ],
+    "published_revision": [
+      1777,
+      1776
+    ],
+    "cargo_units": [
+      546198,
+      546230
+    ],
+    "ownership_digest": [
+      5786729106522441514,
+      1245049033224824192
+    ],
+    "known_od_units": [
+      467965,
+      468168
+    ]
+  },
+  "diagnostics": {
+    "memo": {
+      "hits": 0,
+      "validated": 13603108,
+      "conservative": 9192,
+      "violations": 0,
+      "lookup_duplicates": 0
+    },
+    "lookup": {
+      "rebuilds": 2737,
+      "indexed_groups": 204178,
+      "validated_groups": 1046780,
+      "violations": 0
+    }
+  },
+  "exact_ticks": true,
+  "saved_replay": {
+    "ready": true,
+    "elapsed_us": 55223368
+  },
+  "warm_complete": true,
+  "background_ready": {
+    "completed": true,
+    "initial": 0,
+    "total": 13,
+    "elapsed_us": 18,
+    "tick_before": 3197276448,
+    "tick_after": 3197276448
+  },
+  "validation_only": true,
+  "simulation_timing_valid": false,
+  "command": [
+    "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+    "-B",
+    "C:\\Users\\bebe\\.codex\\worktrees\\3abe\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+    "run",
+    "C:\\Users\\bebe\\.codex\\worktrees\\3abe\\OpenTTD-patches\\build-wpr-abba-0d99a67f-2026-10-20\\Release\\openttd.exe",
+    "C:\\Users\\bebe\\.codex\\worktrees\\3abe\\OpenTTD-patches\\build-wpr-abba-0d99a67f-2026-10-20\\input",
+    "C:\\Users\\bebe\\.codex\\worktrees\\3abe\\OpenTTD-patches\\build-wpr-abba-0d99a67f-2026-10-20\\validate",
+    "--ticks",
+    "2048",
+    "--timeout",
+    "2400",
+    "--measurement-wait",
+    "2400",
+    "--resume",
+    "--precomputed",
+    "--hyperpath",
+    "--warm-precomputed",
+    "--wait-background-ready",
+    "--hyperpath-filter-mode",
+    "validate",
+    "--main-thread-affinity-mask",
+    "1",
+    "--lang",
+    "C:\\Users\\bebe\\.codex\\worktrees\\3abe\\OpenTTD-patches\\build-wpr-abba-0d99a67f-2026-10-20\\lang",
+    "--wait-saved-replay",
+    "--validation-only"
+  ],
+  "passed": false
+}
+Traceback (most recent call last):
+  File "C:\Users\bebe\.codex\worktrees\3abe\OpenTTD-patches\build-wpr-abba-0d99a67f-2026-10-20\validate.py", line 30, in <module>
+    assert quality['passed'],'Validation failed; retained evidence, do not retry'
+           ~~~~~~~^^^^^^^^^^
+AssertionError: Validation failed; retained evidence, do not retry

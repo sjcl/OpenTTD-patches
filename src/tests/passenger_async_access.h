@@ -45,6 +45,7 @@ struct PassengerPrecomputedTestAccess {
 	template <typename Table> static bool Idle(const Table &table) { return table.ParallelIdle(); }
 	static bool Serial(const PassengerPrecomputedTable &table) { return table.serial_destination == table.destination; }
 	static bool Pending(const PassengerPrecomputedTable &table) { return table.parallel_credit != 0; }
+	static bool RefreshService(PassengerPrecomputedTable &table, const PassengerPeriodicService &service) { return table.RefreshService(service); }
 	static void ExpirePreparationWait(PassengerPrecomputedTable &table) { table.preparation_wait_limit = std::chrono::milliseconds(0); }
 	/** Rotating eviction of every failed-carrier local policy, as a full cache would do. */
 	static void EvictLocalPolicies(const PassengerPrecomputedTable &table)
@@ -73,5 +74,28 @@ struct PassengerServiceDatabaseTestAccess {
 	static PassengerPrecomputedTable &Table(PassengerServiceDatabase &db, CargoType cargo) { return db.precomputed[cargo]; }
 	static const PassengerPrecomputedTable &Retained(const PassengerServiceDatabase &db, CargoType cargo) { return db.retained_precomputed[cargo]; }
 	static PassengerPrecomputedTable &Retained(PassengerServiceDatabase &db, CargoType cargo) { return db.retained_precomputed[cargo]; }
+	/** Cached-only membership without the derived row cache. */
+	static std::optional<bool> UncachedMembership(const PassengerServiceDatabase &db, const PassengerJourneyExecution &intent, CargoType cargo,
+			const std::array<uint32_t, 2> &occurrences, OrderListID previous, OrderListID failed)
+	{
+		if (intent.signature != uint64_t(cargo) + 1) return false;
+		for (size_t index = 0; index < 2; ++index) {
+			if (intent.generation != (index != 0 ? db.retained_precomputed_policy_generation : db.precomputed_policy_generation)) continue;
+			return (index != 0 ? db.retained_precomputed : db.precomputed)[cargo].ContainsCached(intent.boarding, intent.alighting, occurrences[index], previous, failed);
+		}
+		return false;
+	}
+	/** BoardHyperpath without its derived row-plan cache. */
+	static PassengerPrecomputedPlan UncachedBoardHyperpath(const PassengerServiceDatabase &db, const PassengerJourneyExecution &intent, CargoType cargo,
+			OrderListID service, VehicleOrderID order, OrderListID previous, OrderListID failed)
+	{
+		for (bool retained : {false, true}) {
+			if (intent.generation != (retained ? db.retained_precomputed_policy_generation : db.precomputed_policy_generation)) continue;
+			auto plan = (retained ? db.retained_precomputed : db.precomputed)[cargo].Board(intent.boarding, intent.alighting, intent.not_before, service, order, previous, failed);
+			if (plan.ride && !db.IsCurrent(*plan.ride)) { plan.ride.reset(); plan.state = PassengerPrecomputedPlan::State::Building; }
+			return plan;
+		}
+		return {};
+	}
 };
 #endif

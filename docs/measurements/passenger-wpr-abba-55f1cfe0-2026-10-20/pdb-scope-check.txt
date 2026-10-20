@@ -1,0 +1,21 @@
+StateGameLoop:
+ 74524 | S_GPROC32 [size = 76] `StateGameLoop_LinkGraphPauseControl`
+176560 | S_GPROC32 [size = 56] `StateGameLoop`
+CanBoard:
+257584 | S_GPROC32 [size = 80] `PassengerJourneyLoadingContext::CanBoard`
+287368 | S_LPROC32 [size = 88] `PassengerJourneyLoadingContext::CanBoardUncached`
+         inlinee: 0x17622 (CanBoard)
+MayUseHyperpathPolicy:
+341196 | S_GPROC32 [size = 96] `PassengerJourneyLoadingContext::MayUseHyperpathPolicy`
+343788 | S_UDT [size = 76] `PassengerJourneyLoadingContext::MayUseHyperpathPolicy::<lambda_0>`
+343868 | S_LPROC32 [size = 120] `PassengerJourneyLoadingContext::MayUseHyperpathPolicy::<lambda_0>::operator()`
+PlanPrecomputed:
+261220 | S_GPROC32 [size = 84] `PassengerServiceDatabase::PlanPrecomputed`
+ResolveHyperpath:
+308976 | S_LPROC32 [size = 88] `PassengerJourneyLoadingContext::ResolveHyperpath`
+Board:
+         type=0x248D3 (const PassengerBoardingFailure*), flags = param | optimized away
+         type=0x248D3 (const PassengerBoardingFailure*), flags = param | optimized away
+         type=0x248D3 (const PassengerBoardingFailure*), flags = param | optimized away
+SharedHyperpathPlan:
+289264 | S_GPROC32 [size = 88] `PassengerServiceDatabase::SharedHyperpathPlan`

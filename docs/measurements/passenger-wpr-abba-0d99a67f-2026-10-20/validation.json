@@ -1,0 +1,385 @@
+{
+  "A_commit": "6c11c67fd08115ce370fbfb182cdc952f37d75fd",
+  "B_commit": "0d99a67f800bbc13d8e2c0b8a48be07d3e25dd13",
+  "recorded_traces": 4,
+  "canonical_valid_traces": 3,
+  "abba_complete": false,
+  "canonical_equivalent": false,
+  "native_tests_B": 781,
+  "native_assertions_B": 11281973,
+  "same_input": true,
+  "same_capture_profile": true,
+  "runs": {
+    "01-A1/legacy": {
+      "exact_ticks": 2048,
+      "canonical": {
+        "previous_6c11c67f": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        }
+      },
+      "window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "raw_csv_hashes_match": true,
+      "unresolved_product_functions": {},
+      "invalid_event_times_us": [
+        41215334
+      ],
+      "invalid_events_outside_markers": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 41039547700,
+          "stack_samples": 41036,
+          "exclusive_total_ns": 41039547700,
+          "exclusive_samples": 41036
+        },
+        "main": {
+          "stack_total_ns": 39259859200,
+          "stack_samples": 39252,
+          "exclusive_total_ns": 39259859200,
+          "exclusive_samples": 39252
+        },
+        "simulation_stack": {
+          "stack_total_ns": 35373558600,
+          "stack_samples": 35367,
+          "exclusive_total_ns": 35373558600,
+          "exclusive_samples": 35367
+        }
+      },
+      "payments_valid": true
+    },
+    "01-A1/hyperpath": {
+      "exact_ticks": 2048,
+      "canonical": {
+        "previous_6c11c67f": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        }
+      },
+      "window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "raw_csv_hashes_match": true,
+      "unresolved_product_functions": {},
+      "invalid_event_times_us": [
+        36892214
+      ],
+      "invalid_events_outside_markers": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 39938484900,
+          "stack_samples": 39927,
+          "exclusive_total_ns": 39938484900,
+          "exclusive_samples": 39927
+        },
+        "main": {
+          "stack_total_ns": 34838210300,
+          "stack_samples": 34829,
+          "exclusive_total_ns": 34838210300,
+          "exclusive_samples": 34829
+        },
+        "simulation_stack": {
+          "stack_total_ns": 34152975300,
+          "stack_samples": 34144,
+          "exclusive_total_ns": 34152975300,
+          "exclusive_samples": 34144
+        }
+      },
+      "payments_valid": true
+    },
+    "02-B1/legacy": {
+      "exact_ticks": 2048,
+      "canonical": {
+        "previous_6c11c67f": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        },
+        "first_A_this_series": {
+          "equal": true,
+          "fields": 24,
+          "differences": {}
+        }
+      },
+      "window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "raw_csv_hashes_match": true,
+      "unresolved_product_functions": {},
+      "invalid_event_times_us": [
+        44002517
+      ],
+      "invalid_events_outside_markers": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 44006486800,
+          "stack_samples": 44004,
+          "exclusive_total_ns": 44006486800,
+          "exclusive_samples": 44004
+        },
+        "main": {
+          "stack_total_ns": 42173240700,
+          "stack_samples": 42169,
+          "exclusive_total_ns": 42173240700,
+          "exclusive_samples": 42169
+        },
+        "simulation_stack": {
+          "stack_total_ns": 38201969800,
+          "stack_samples": 38198,
+          "exclusive_total_ns": 38201969800,
+          "exclusive_samples": 38198
+        }
+      },
+      "payments_valid": true
+    },
+    "02-B1/hyperpath": {
+      "exact_ticks": 2048,
+      "canonical": {
+        "previous_6c11c67f": {
+          "equal": false,
+          "fields": 24,
+          "differences": {
+            "cargo_units": [
+              546198,
+              546082
+            ],
+            "company_deliveries": [
+              13595,
+              13647
+            ],
+            "database_digest": [
+              16064563056932437984,
+              5555598662768065810
+            ],
+            "journey_packets": [
+              456954,
+              456992
+            ],
+            "known_od_units": [
+              467965,
+              468008
+            ],
+            "loading_digest": [
+              5759760310152142397,
+              13110572373424954604
+            ],
+            "ownership_digest": [
+              5786729106522441514,
+              6636989440178595733
+            ],
+            "packet_state_digest": [
+              12763629749201381160,
+              3411611219648325321
+            ],
+            "packets": [
+              469547,
+              469581
+            ],
+            "payment_digest": [
+              13774651420232285578,
+              2424413008291368806
+            ],
+            "published_revision": [
+              1777,
+              1776
+            ]
+          }
+        },
+        "first_A_this_series": {
+          "equal": false,
+          "fields": 24,
+          "differences": {
+            "cargo_units": [
+              546198,
+              546082
+            ],
+            "company_deliveries": [
+              13595,
+              13647
+            ],
+            "database_digest": [
+              16064563056932437984,
+              5555598662768065810
+            ],
+            "journey_packets": [
+              456954,
+              456992
+            ],
+            "known_od_units": [
+              467965,
+              468008
+            ],
+            "loading_digest": [
+              5759760310152142397,
+              13110572373424954604
+            ],
+            "ownership_digest": [
+              5786729106522441514,
+              6636989440178595733
+            ],
+            "packet_state_digest": [
+              12763629749201381160,
+              3411611219648325321
+            ],
+            "packets": [
+              469547,
+              469581
+            ],
+            "payment_digest": [
+              13774651420232285578,
+              2424413008291368806
+            ],
+            "published_revision": [
+              1777,
+              1776
+            ]
+          }
+        }
+      },
+      "window_valid": true,
+      "lost_events": 0,
+      "lost_buffers": 0,
+      "raw_csv_hashes_match": true,
+      "unresolved_product_functions": {},
+      "invalid_event_times_us": [
+        36728197
+      ],
+      "invalid_events_outside_markers": true,
+      "conservation_checks": {
+        "all": {
+          "stack_total_ns": 39936495400,
+          "stack_samples": 39924,
+          "exclusive_total_ns": 39936495400,
+          "exclusive_samples": 39924
+        },
+        "main": {
+          "stack_total_ns": 34828970900,
+          "stack_samples": 34819,
+          "exclusive_total_ns": 34828970900,
+          "exclusive_samples": 34819
+        },
+        "simulation_stack": {
+          "stack_total_ns": 34138812500,
+          "stack_samples": 34129,
+          "exclusive_total_ns": 34138812500,
+          "exclusive_samples": 34129
+        }
+      },
+      "payments_valid": true
+    }
+  },
+  "separate_validate": {
+    "exit_code": 0,
+    "canonical_equal": false,
+    "canonical_fields": 24,
+    "differences": {
+      "company_deliveries": [
+        13595,
+        13665
+      ],
+      "loading_digest": [
+        5759760310152142397,
+        9267037949524039485
+      ],
+      "payment_digest": [
+        13774651420232285578,
+        12423382329216331998
+      ],
+      "database_digest": [
+        16064563056932437984,
+        13628481927781099768
+      ],
+      "packets": [
+        469547,
+        469694
+      ],
+      "journey_packets": [
+        456954,
+        457157
+      ],
+      "packet_state_digest": [
+        12763629749201381160,
+        7175063568840262956
+      ],
+      "published_revision": [
+        1777,
+        1776
+      ],
+      "cargo_units": [
+        546198,
+        546230
+      ],
+      "ownership_digest": [
+        5786729106522441514,
+        1245049033224824192
+      ],
+      "known_od_units": [
+        467965,
+        468168
+      ]
+    },
+    "diagnostics": {
+      "memo": {
+        "hits": 0,
+        "validated": 13603108,
+        "conservative": 9192,
+        "violations": 0,
+        "lookup_duplicates": 0
+      },
+      "lookup": {
+        "rebuilds": 2737,
+        "indexed_groups": 204178,
+        "validated_groups": 1046780,
+        "violations": 0
+      }
+    },
+    "exact_ticks": true,
+    "saved_replay": {
+      "ready": true,
+      "elapsed_us": 55223368
+    },
+    "warm_complete": true,
+    "background_ready": {
+      "completed": true,
+      "initial": 0,
+      "total": 13,
+      "elapsed_us": 18,
+      "tick_before": 3197276448,
+      "tick_after": 3197276448
+    },
+    "validation_only": true,
+    "simulation_timing_valid": false,
+    "command": [
+      "C:\\Users\\bebe\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+      "-B",
+      "C:\\Users\\bebe\\.codex\\worktrees\\3abe\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+      "run",
+      "C:\\Users\\bebe\\.codex\\worktrees\\3abe\\OpenTTD-patches\\build-wpr-abba-0d99a67f-2026-10-20\\Release\\openttd.exe",
+      "C:\\Users\\bebe\\.codex\\worktrees\\3abe\\OpenTTD-patches\\build-wpr-abba-0d99a67f-2026-10-20\\input",
+      "C:\\Users\\bebe\\.codex\\worktrees\\3abe\\OpenTTD-patches\\build-wpr-abba-0d99a67f-2026-10-20\\validate",
+      "--ticks",
+      "2048",
+      "--timeout",
+      "2400",
+      "--measurement-wait",
+      "2400",
+      "--resume",
+      "--precomputed",
+      "--hyperpath",
+      "--warm-precomputed",
+      "--wait-background-ready",
+      "--hyperpath-filter-mode",
+      "validate",
+      "--main-thread-affinity-mask",
+      "1",
+      "--lang",
+      "C:\\Users\\bebe\\.codex\\worktrees\\3abe\\OpenTTD-patches\\build-wpr-abba-0d99a67f-2026-10-20\\lang",
+      "--wait-saved-replay",
+      "--validation-only"
+    ],
+    "passed": false
+  }
+}

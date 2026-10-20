@@ -1,0 +1,81 @@
+run,label,mode,metric,ns,samples,ms_per_tick
+01-A1/legacy,A,legacy,MayUseHyperpathPolicy,1820696200,1821,0.88901181640625
+01-A1/legacy,A,legacy,MayUseHyperpathPolicy self,429950600,430,0.20993681640625
+01-A1/legacy,A,legacy,ResolveHyperpath,381985800,382,0.18651650390625
+01-A1/legacy,A,legacy,BoardHyperpath,0,0,0.0
+01-A1/legacy,A,legacy,Board,306996500,307,0.149900634765625
+01-A1/legacy,A,legacy,ResolveHyperpath / Board union,381985800,382,0.18651650390625
+01-A1/legacy,A,legacy,StateGameLoop,35373558600,35367,17.27224541015625
+01-A1/legacy,A,legacy,StepImpl self,193353200,193,0.0944107421875
+01-A1/legacy,A,legacy,StepImpl inclusive,321588000,321,0.157025390625
+01-A1/legacy,A,legacy,RetiredPlan,724898000,725,0.3539541015625
+01-A1/legacy,A,legacy,RetiredPlan -> PlanPrecomputed,572924900,573,0.279748486328125
+01-A1/legacy,A,legacy,HyperpathLookupCandidates,154009500,154,0.075199951171875
+01-A1/legacy,A,legacy,HyperpathLookupCandidates -> PlanPrecomputed,0,0,0.0
+01-A1/legacy,A,legacy,SharedHyperpathPlan,1997300,2,0.000975244140625
+01-A1/legacy,A,legacy,PlanPrecomputed,792128200,792,0.38678134765625
+01-A1/legacy,A,legacy,SharedHyperpathPlan self,1997300,2,0.000975244140625
+01-A1/legacy,A,legacy,RetiredPlan -> SharedHyperpathPlan,1997300,2,0.000975244140625
+01-A1/legacy,A,legacy,HyperpathLookupCandidates -> SharedHyperpathPlan,0,0,0.0
+01-A1/legacy,A,legacy,TickPrecomputed,327734600,327,0.16002666015625
+01-A1/legacy,A,legacy,worker PrepareHyperpathFinish,0,0,0.0
+01-A1/hyperpath,A,hyperpath,MayUseHyperpathPolicy,1066753300,1067,0.520875634765625
+01-A1/hyperpath,A,hyperpath,MayUseHyperpathPolicy self,267941200,268,0.1308306640625
+01-A1/hyperpath,A,hyperpath,ResolveHyperpath,437890100,438,0.213813525390625
+01-A1/hyperpath,A,hyperpath,BoardHyperpath,0,0,0.0
+01-A1/hyperpath,A,hyperpath,Board,353930400,354,0.172817578125
+01-A1/hyperpath,A,hyperpath,ResolveHyperpath / Board union,437890100,438,0.213813525390625
+01-A1/hyperpath,A,hyperpath,StateGameLoop,34152975300,34144,16.676257470703124
+01-A1/hyperpath,A,hyperpath,StepImpl self,24032000,24,0.011734375
+01-A1/hyperpath,A,hyperpath,StepImpl inclusive,192987900,192,0.094232373046875
+01-A1/hyperpath,A,hyperpath,RetiredPlan,141953100,142,0.069313037109375
+01-A1/hyperpath,A,hyperpath,RetiredPlan -> PlanPrecomputed,48974900,49,0.023913525390625
+01-A1/hyperpath,A,hyperpath,HyperpathLookupCandidates,268054900,268,0.130886181640625
+01-A1/hyperpath,A,hyperpath,HyperpathLookupCandidates -> PlanPrecomputed,40986700,41,0.020013037109375
+01-A1/hyperpath,A,hyperpath,SharedHyperpathPlan,209944100,210,0.102511767578125
+01-A1/hyperpath,A,hyperpath,PlanPrecomputed,350465700,350,0.171125830078125
+01-A1/hyperpath,A,hyperpath,SharedHyperpathPlan self,107987400,108,0.05272822265625
+01-A1/hyperpath,A,hyperpath,RetiredPlan -> SharedHyperpathPlan,141953100,142,0.069313037109375
+01-A1/hyperpath,A,hyperpath,HyperpathLookupCandidates -> SharedHyperpathPlan,67991000,68,0.03319873046875
+01-A1/hyperpath,A,hyperpath,TickPrecomputed,210975600,210,0.1030154296875
+01-A1/hyperpath,A,hyperpath,worker PrepareHyperpathFinish,430041500,430,0.209981201171875
+02-B1/legacy,B,legacy,MayUseHyperpathPolicy,1465871700,1466,0.715757666015625
+02-B1/legacy,B,legacy,MayUseHyperpathPolicy self,260004900,260,0.126955517578125
+02-B1/legacy,B,legacy,ResolveHyperpath,403931500,404,0.197232177734375
+02-B1/legacy,B,legacy,BoardHyperpath,335955200,336,0.164040625
+02-B1/legacy,B,legacy,Board,332952800,333,0.162574609375
+02-B1/legacy,B,legacy,ResolveHyperpath / Board union,403931500,404,0.197232177734375
+02-B1/legacy,B,legacy,StateGameLoop,38201969800,38198,18.65330556640625
+02-B1/legacy,B,legacy,StepImpl self,206471900,206,0.100816357421875
+02-B1/legacy,B,legacy,StepImpl inclusive,325638100,325,0.159002978515625
+02-B1/legacy,B,legacy,RetiredPlan,913801000,914,0.44619189453125
+02-B1/legacy,B,legacy,RetiredPlan -> PlanPrecomputed,604865300,605,0.295344384765625
+02-B1/legacy,B,legacy,HyperpathLookupCandidates,155979100,156,0.076161669921875
+02-B1/legacy,B,legacy,HyperpathLookupCandidates -> PlanPrecomputed,0,0,0.0
+02-B1/legacy,B,legacy,SharedHyperpathPlan,6999200,7,0.003417578125
+02-B1/legacy,B,legacy,PlanPrecomputed,834163600,834,0.4073064453125
+02-B1/legacy,B,legacy,SharedHyperpathPlan self,6999200,7,0.003417578125
+02-B1/legacy,B,legacy,RetiredPlan -> SharedHyperpathPlan,6999200,7,0.003417578125
+02-B1/legacy,B,legacy,HyperpathLookupCandidates -> SharedHyperpathPlan,0,0,0.0
+02-B1/legacy,B,legacy,TickPrecomputed,335641500,335,0.163887451171875
+02-B1/legacy,B,legacy,worker PrepareHyperpathFinish,0,0,0.0
+02-B1/hyperpath,B,hyperpath,MayUseHyperpathPolicy,546937700,547,0.267059423828125
+02-B1/hyperpath,B,hyperpath,MayUseHyperpathPolicy self,132962600,133,0.06492314453125
+02-B1/hyperpath,B,hyperpath,ResolveHyperpath,426922800,427,0.2084583984375
+02-B1/hyperpath,B,hyperpath,BoardHyperpath,318936900,319,0.155730908203125
+02-B1/hyperpath,B,hyperpath,Board,288934600,289,0.14108134765625
+02-B1/hyperpath,B,hyperpath,ResolveHyperpath / Board union,426922800,427,0.2084583984375
+02-B1/hyperpath,B,hyperpath,StateGameLoop,34138812500,34129,16.669342041015625
+02-B1/hyperpath,B,hyperpath,StepImpl self,22025600,22,0.0107546875
+02-B1/hyperpath,B,hyperpath,StepImpl inclusive,185621800,185,0.09063564453125
+02-B1/hyperpath,B,hyperpath,RetiredPlan,114985800,115,0.05614541015625
+02-B1/hyperpath,B,hyperpath,RetiredPlan -> PlanPrecomputed,51001500,51,0.024903076171875
+02-B1/hyperpath,B,hyperpath,HyperpathLookupCandidates,235093900,235,0.114791943359375
+02-B1/hyperpath,B,hyperpath,HyperpathLookupCandidates -> PlanPrecomputed,34010200,34,0.01660654296875
+02-B1/hyperpath,B,hyperpath,SharedHyperpathPlan,161000400,161,0.0786134765625
+02-B1/hyperpath,B,hyperpath,PlanPrecomputed,361637400,361,0.17658076171875
+02-B1/hyperpath,B,hyperpath,SharedHyperpathPlan self,6000000,6,0.0029296875
+02-B1/hyperpath,B,hyperpath,RetiredPlan -> SharedHyperpathPlan,113987200,114,0.0556578125
+02-B1/hyperpath,B,hyperpath,HyperpathLookupCandidates -> SharedHyperpathPlan,47013200,47,0.0229556640625
+02-B1/hyperpath,B,hyperpath,TickPrecomputed,206731200,206,0.10094296875
+02-B1/hyperpath,B,hyperpath,worker PrepareHyperpathFinish,417182000,417,0.2037021484375

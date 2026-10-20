@@ -1,0 +1,58 @@
+{
+  "A": "6c11c67fd08115ce370fbfb182cdc952f37d75fd",
+  "B": "0d99a67f800bbc13d8e2c0b8a48be07d3e25dd13",
+  "run": "02-B1/hyperpath",
+  "fields_compared": 24,
+  "changed_fields": 11,
+  "differences": {
+    "cargo_units": [
+      546198,
+      546082
+    ],
+    "company_deliveries": [
+      13595,
+      13647
+    ],
+    "database_digest": [
+      16064563056932437984,
+      5555598662768065810
+    ],
+    "journey_packets": [
+      456954,
+      456992
+    ],
+    "known_od_units": [
+      467965,
+      468008
+    ],
+    "loading_digest": [
+      5759760310152142397,
+      13110572373424954604
+    ],
+    "ownership_digest": [
+      5786729106522441514,
+      6636989440178595733
+    ],
+    "packet_state_digest": [
+      12763629749201381160,
+      3411611219648325321
+    ],
+    "packets": [
+      469547,
+      469581
+    ],
+    "payment_digest": [
+      13774651420232285578,
+      2424413008291368806
+    ],
+    "published_revision": [
+      1777,
+      1776
+    ]
+  },
+  "completed_traces": 4,
+  "planned_traces": 8,
+  "abba_complete": false,
+  "performance_equivalence": false,
+  "reason": "Canonical mismatch; stopped queue under AGENTS.md / docs/passenger-wpr-runbook.md section 8. No reruns or baseline replacement."
+}

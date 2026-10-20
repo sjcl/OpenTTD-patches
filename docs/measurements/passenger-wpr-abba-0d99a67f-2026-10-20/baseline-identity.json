@@ -1,0 +1,31 @@
+{
+  "product_commit": "6c11c67fd08115ce370fbfb182cdc952f37d75fd",
+  "src_tree": "89328604d5b4f70d19314ea9494a07cb1dd8d823",
+  "compiler_versions": {
+    "clang-cl.exe": "clang version 23.1.3 (https://github.com/llvm/llvm-project 0d261d1ca552c95a8f007e061c787ac7132fbcbc)\nTarget: x86_64-pc-windows-msvc\nThread model: posix\nInstalledDir: C:\\Program Files\\LLVM\\bin\nBuild config: +alloc:rpmalloc",
+    "lld-link.exe": "LLD 23.1.3 (https://github.com/llvm/llvm-project 0d261d1ca552c95a8f007e061c787ac7132fbcbc)"
+  },
+  "asserts": false,
+  "pgo": false,
+  "lto": "thin",
+  "debug_information": "/Z7",
+  "files": {
+    "Release/openttd.exe": {
+      "bytes": 17012224,
+      "sha256": "bcf35a4918bc5f1e5c2f2bf7378953940bc5619354225e7906372dac4390483c"
+    },
+    "Release/openttd.pdb": {
+      "bytes": 144809984,
+      "sha256": "e2dc60fc0d82a553ed56b367c51dda198dae7f73ff04082354b2b5db381eafe8"
+    },
+    "Release/openttd_test.exe": {
+      "bytes": 26211840,
+      "sha256": "eea1a4eaf3cb80f97a3d6d301a31d513e393f0b1035d5612f80a8c9242e57e90"
+    },
+    "Release/openttd_test.pdb": {
+      "bytes": 174432256,
+      "sha256": "f10258d808fdac8670d2392ff0a384722649ccc39b2d37ea790e1d19f5730ccd"
+    }
+  },
+  "instrumentation": "Same copied-TU exact-tick/canonical/WPR hooks as 8f829b8c; no product changes"
+}

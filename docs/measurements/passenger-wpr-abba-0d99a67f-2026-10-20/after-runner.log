@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\Users\bebe\.codex\worktrees\3abe\OpenTTD-patches\build-wpr-abba-0d99a67f-2026-10-20\after.py", line 6, in <module>
+    if (WORK/'recorder-stop.txt').exists() and not (WORK/'captures-complete.txt').exists():raise RuntimeError('Capture queue stopped before completion')
+                                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Capture queue stopped before completion
