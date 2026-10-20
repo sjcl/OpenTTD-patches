@@ -1,0 +1,5 @@
+script C:/Users/bebe/.codex/worktrees/ba19/OpenTTD-patches/build-real-preparation-20261020/waiting/initial/B1/legacy/on-1-console.txt
+getfulldate
+setting linkgraph.passenger_journey_hyperpath false
+passenger_journey_stats waiting_arm
+script

@@ -1,0 +1,12 @@
+{
+  "ready_detected_seconds": 27.694486300000335,
+  "peak": {
+    "peak_working_bytes": 4749824000,
+    "peak_commit_bytes": 4770209792,
+    "process_cpu_seconds": 94.71875
+  },
+  "contamination": [],
+  "census_count": 14,
+  "binary_sha256": "f230b6db059cd7ba2fc561765dd084909a18b99aa7b982894fd6c39af368688c",
+  "pid": 77712
+}

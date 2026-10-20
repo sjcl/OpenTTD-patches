@@ -1,0 +1,17 @@
+{
+  "cpu": [
+    {
+      "Name": "AMD Ryzen 9 9950X 16-Core Processor            ",
+      "NumberOfCores": 16,
+      "NumberOfLogicalProcessors": 32,
+      "MaxClockSpeed": 4300
+    }
+  ],
+  "memory_bytes": 100265259008,
+  "os": {
+    "Caption": "Microsoft Windows 11 Pro",
+    "Version": "10.0.26200",
+    "BuildNumber": "26200"
+  },
+  "power_scheme": "電源設定の GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (バランス)"
+}

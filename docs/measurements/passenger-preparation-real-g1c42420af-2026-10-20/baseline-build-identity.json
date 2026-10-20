@@ -1,0 +1,70 @@
+{
+  "product_commit": "8f200282e83246898de702d014aa6acda0a95905",
+  "label": "baseline",
+  "files": {
+    "cpu-sampled.wpaProfile": {
+      "bytes": 4034,
+      "sha256": "5092304c54ce1f2d1e34f73cc09c6d8b91513a7aba76e6c16fd1f4403067682c"
+    },
+    "lang/english.lng": {
+      "bytes": 252384,
+      "sha256": "6b428c98951dc4c332107e63f55b8a8dcb757e4c5d9b80363318894e20892e0f"
+    },
+    "Release/openttd.exe": {
+      "bytes": 16077312,
+      "sha256": "fb178035c4f851ca644318af31296fde73cd6e4f6d22eadb6984eb3fd3cec7fa"
+    },
+    "Release/openttd.pdb": {
+      "bytes": 143110144,
+      "sha256": "3944239675adb7b3b36acfabcb0768fb01bf1c2014ff94d291e8a497e8a89108"
+    },
+    "Release/openttd_test.exe": {
+      "bytes": 25702400,
+      "sha256": "6e6d473cc51b1c2ebb70348346a13c9d8166d41c5b9f17a9d7724adc47ce6650"
+    },
+    "Release/openttd_test.pdb": {
+      "bytes": 170749952,
+      "sha256": "9cf28550517e88c7b6eb5e6673490777c0ece1fe0eae326af305a63ce3bbf725"
+    }
+  },
+  "compiler": "clang version 23.1.3 (https://github.com/llvm/llvm-project 0d261d1ca552c95a8f007e061c787ac7132fbcbc)\nTarget: x86_64-pc-windows-msvc\nThread model: posix\nInstalledDir: C:\\Program Files\\LLVM\\bin\nBuild config: +alloc:rpmalloc\n",
+  "flags": {
+    "asserts": true,
+    "lto": false,
+    "pgo": false,
+    "CRT": "MT",
+    "release": "/O2 /Ob2 /DNDEBUG /Zi"
+  },
+  "instrumentation": {
+    "revision": "8f200282e83246898de702d014aa6acda0a95905",
+    "compatibility_change": "Select only build_precomputed timer, as documented in the WPR runbook",
+    "files": {
+      "save-integrity/cargopacket.cpp": "96a8f77d277d45a54881790a7023ad69de6b7f1821edbeebeadde8c291bb7f2b",
+      "save-integrity/cargopacket_sl.cpp": "dd2463faef00c3d272533c181b4a8498fa5718eac013790c5546798cd8b7d5f8",
+      "save-integrity/command.cpp": "d1830ec8d84457eed725b2881c21330de2e1748c035d5ca64467bdebcff0e7b6",
+      "save-integrity/console_cmds.cpp": "9324fca2fa52ec047e31f5e9df57b3245563b84b31c2a4d702cce4f73d6dbc11",
+      "save-integrity/integrity.h": "189872eade5c0e1d9663c5253cd551718b2bc2aff096cb03d451f33b6590bd05",
+      "save-integrity/passenger_service_database.cpp": "cf1318a1f3d04074ad8bc52cf7234e2b50b777c61216f8c6eb1f6108fa82d34d",
+      "save-integrity/wpr_gate.h": "64793e1253d3040ee8b8855b9c23a1d00b3db7690e26caf2716480d8750b8b24",
+      "real-map-driver/null_v.cpp": "a5c10a219285ff1f74f2a89e31a043396e87ad3878dcd0a3a62326d5f7c9c200",
+      "real-map-driver/win32.cpp": "6f3bb37d078595064995a82c44c21106c692ee34a99c337defda6829a4ffb8f8"
+    }
+  },
+  "waiting_instrumentation": {
+    "scope": "Copied translation units only; observe public preparation APIs and first sync; exit singleplayer before StateGameLoop",
+    "files": {
+      "save-integrity/cargopacket.cpp": "96a8f77d277d45a54881790a7023ad69de6b7f1821edbeebeadde8c291bb7f2b",
+      "save-integrity/cargopacket_sl.cpp": "dd2463faef00c3d272533c181b4a8498fa5718eac013790c5546798cd8b7d5f8",
+      "save-integrity/command.cpp": "d1830ec8d84457eed725b2881c21330de2e1748c035d5ca64467bdebcff0e7b6",
+      "save-integrity/console_cmds.cpp": "78e48344ff32bbd50bcf8203c10a6203cc20de902742ade5dca46c3bb18b58a0",
+      "save-integrity/integrity.h": "189872eade5c0e1d9663c5253cd551718b2bc2aff096cb03d451f33b6590bd05",
+      "save-integrity/passenger_service_database.cpp": "89a8cf93683d53daaa4e98fef1ff465d95dfad1134521bb04a4f0ebcea707ab1",
+      "save-integrity/wpr_gate.h": "64793e1253d3040ee8b8855b9c23a1d00b3db7690e26caf2716480d8750b8b24",
+      "real-map-driver/null_v.cpp": "a5c10a219285ff1f74f2a89e31a043396e87ad3878dcd0a3a62326d5f7c9c200",
+      "real-map-driver/win32.cpp": "6f3bb37d078595064995a82c44c21106c692ee34a99c337defda6829a4ffb8f8",
+      "waiting-probe/network_client.cpp": "cde2c47eee7697c2aed803018e0c23bd68d158b1268a50cd8c8e815dfd2ef432",
+      "waiting-probe/openttd.cpp": "8209225521a3791290ed460016256933c9965cc9fd55f20dbca3b56b5ae7ffcc",
+      "waiting-probe/waiting.hpp": "cb522c5c8da2fcc903cf83d96fe085a80e411f23ca3d423646c060db242b0ec6"
+    }
+  }
+}

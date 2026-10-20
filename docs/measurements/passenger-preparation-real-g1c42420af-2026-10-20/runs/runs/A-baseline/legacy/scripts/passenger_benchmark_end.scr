@@ -1,0 +1,8 @@
+script C:/Users/bebe/.codex/worktrees/ba19/OpenTTD-patches/build-real-preparation-20261020/runs/A-baseline/legacy/on-1-console.txt
+getfulldate
+passenger_journey_stats inventory
+passenger_journey_stats total
+fps
+passenger_journey_stats save_integrity
+save C:/Users/bebe/.codex/worktrees/ba19/OpenTTD-patches/build-real-preparation-20261020/runs/A-baseline/legacy/result
+script

@@ -1,0 +1,130 @@
+{
+  "path": "C:\\Users\\bebe\\OpenTTD-measurements\\passenger-waiting-real-20261020-fe663cfa",
+  "files": {
+    "binaries/baseline/build-identity.json": {
+      "bytes": 4009,
+      "sha256": "5407e8869b71bdceba9f27b9034ae63ac13ea72302a453f7d68a8d000a221815"
+    },
+    "binaries/baseline/cpu-sampled.wpaProfile": {
+      "bytes": 4034,
+      "sha256": "5092304c54ce1f2d1e34f73cc09c6d8b91513a7aba76e6c16fd1f4403067682c"
+    },
+    "binaries/baseline/lang/english.lng": {
+      "bytes": 252384,
+      "sha256": "6b428c98951dc4c332107e63f55b8a8dcb757e4c5d9b80363318894e20892e0f"
+    },
+    "binaries/baseline/Release/openttd.exe": {
+      "bytes": 16077312,
+      "sha256": "fb178035c4f851ca644318af31296fde73cd6e4f6d22eadb6984eb3fd3cec7fa"
+    },
+    "binaries/baseline/Release/openttd.pdb": {
+      "bytes": 143110144,
+      "sha256": "3944239675adb7b3b36acfabcb0768fb01bf1c2014ff94d291e8a497e8a89108"
+    },
+    "binaries/baseline/Release/openttd_test.exe": {
+      "bytes": 25702400,
+      "sha256": "6e6d473cc51b1c2ebb70348346a13c9d8166d41c5b9f17a9d7724adc47ce6650"
+    },
+    "binaries/baseline/Release/openttd_test.pdb": {
+      "bytes": 170749952,
+      "sha256": "9cf28550517e88c7b6eb5e6673490777c0ece1fe0eae326af305a63ce3bbf725"
+    },
+    "binaries/candidate/build-identity.json": {
+      "bytes": 4010,
+      "sha256": "013cce5885e3f61d1e32322c65d7d15ec7a80ba0dfd8806e79bd375bf03df25c"
+    },
+    "binaries/candidate/cpu-sampled.wpaProfile": {
+      "bytes": 4034,
+      "sha256": "5092304c54ce1f2d1e34f73cc09c6d8b91513a7aba76e6c16fd1f4403067682c"
+    },
+    "binaries/candidate/lang/english.lng": {
+      "bytes": 252384,
+      "sha256": "6b428c98951dc4c332107e63f55b8a8dcb757e4c5d9b80363318894e20892e0f"
+    },
+    "binaries/candidate/Release/openttd.exe": {
+      "bytes": 16062464,
+      "sha256": "f230b6db059cd7ba2fc561765dd084909a18b99aa7b982894fd6c39af368688c"
+    },
+    "binaries/candidate/Release/openttd.pdb": {
+      "bytes": 142647296,
+      "sha256": "76d6a4eeb16e804e053e9c9c1ce55cb5689280e11a4d59208934effcc613aa0e"
+    },
+    "binaries/candidate/Release/openttd_test.exe": {
+      "bytes": 25768960,
+      "sha256": "81d024a3c3085da801df423b439d81f0b438be26f62ecbb84089f37d15097bbb"
+    },
+    "binaries/candidate/Release/openttd_test.pdb": {
+      "bytes": 170430464,
+      "sha256": "095abe809485ba25e9a0e7d7e4d53cc62fe050bd9891dfe9c62807b630d3ef15"
+    },
+    "fixture-generator/build-identity.json": {
+      "bytes": 2535,
+      "sha256": "462434b26217bb6c893e72600af2fa6ac5f1a78226a1b0bf5f042c453838bff2"
+    },
+    "fixture-generator/lang/english.lng": {
+      "bytes": 252384,
+      "sha256": "6b428c98951dc4c332107e63f55b8a8dcb757e4c5d9b80363318894e20892e0f"
+    },
+    "fixture-generator/Release/openttd.exe": {
+      "bytes": 16055296,
+      "sha256": "d3d390e2ff571fd7fe2be64245711de9b94538346f5a02523f445dbe627f8b08"
+    },
+    "fixture-generator/Release/openttd.pdb": {
+      "bytes": 142606336,
+      "sha256": "2d85c09c3765b1b7e53576dc97c710802541432d947916c4d59f99718ffc3e2d"
+    },
+    "frozen-input.zip": {
+      "bytes": 445110600,
+      "sha256": "941eadc17f23f7ebd3fb743a600c27f6886ad7941ca007035e9975eade5f2d3b"
+    },
+    "inputs/retained-hyperpath-mp-unpaused.sav": {
+      "bytes": 48307168,
+      "sha256": "ac7801f9e5d1e7313e6fc501e430fd0705bf54f393d85df6107f22fff3b9eeff"
+    },
+    "inputs/retained-hyperpath.sav": {
+      "bytes": 48307168,
+      "sha256": "2ca578c155eadcf7ccba5875b8d7858ddf4a75795fe162ce33513425de873f94"
+    },
+    "inputs/retained-legacy.sav": {
+      "bytes": 48298708,
+      "sha256": "68e531ca21687ff348207299cf01880fce2b3f48a1d4cdf784b8a18067c7a3b4"
+    },
+    "traces/excluded-normal-hyperpath.etl": {
+      "bytes": 153092096,
+      "sha256": "c2606bcdbab89679cec366c599e0aace5c00c34bff03cab29d308e4539f9dd9f"
+    },
+    "traces/excluded-normal-legacy.etl": {
+      "bytes": 96468992,
+      "sha256": "5d4347a2c0f400734c77f0f9f66e669b1d2386b9adaa859d1fa73384fee7e0ee"
+    },
+    "traces/pilot.etl": {
+      "bytes": 70254592,
+      "sha256": "5ec2fb1cf1989fe18990d33cab94ea18bdb2d13c445a3ed6c3019f0133278b35"
+    },
+    "excluded-normal-baseline/build-identity.json": {
+      "bytes": 2534,
+      "sha256": "d13c37ac6cbe6e9e674c14502367f74f4324f9fd73ef4fc0cc2d3c6cb410a069"
+    },
+    "excluded-normal-baseline/lang/english.lng": {
+      "bytes": 252384,
+      "sha256": "6b428c98951dc4c332107e63f55b8a8dcb757e4c5d9b80363318894e20892e0f"
+    },
+    "excluded-normal-baseline/Release/openttd.exe": {
+      "bytes": 16072704,
+      "sha256": "8f61cad1b5ce608a2030da6c360e5e4f9e3c5d6300324f9a5e522450112024c2"
+    },
+    "excluded-normal-baseline/Release/openttd.pdb": {
+      "bytes": 143073280,
+      "sha256": "f5c8522d75ae6218e489508700039299ba13dc4f0d1c2d84703634e4f32cf401"
+    }
+  },
+  "independent_copies": true,
+  "original_save_unchanged": true,
+  "input_sha256": "22743c39125f5ac35a813144506040f3693b40d0f374514a0bb8c3c20eed9bb7",
+  "trace_use": "Only the pilot is method evidence. Both normal-tick ETLs are retained but excluded after the user narrowed scope.",
+  "trace_binary_pairing": {
+    "excluded-normal-legacy.etl": "excluded-normal-baseline/Release/openttd.exe + openttd.pdb",
+    "excluded-normal-hyperpath.etl": "excluded-normal-baseline/Release/openttd.exe + openttd.pdb",
+    "waiting": "binaries/baseline and binaries/candidate; waiting metrics do not use ETLs"
+  }
+}

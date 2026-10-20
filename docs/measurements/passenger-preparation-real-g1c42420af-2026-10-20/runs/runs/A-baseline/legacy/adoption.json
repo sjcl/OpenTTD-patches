@@ -1,0 +1,31 @@
+{
+  "quality": {
+    "valid": true,
+    "lost_events": 0,
+    "lost_buffers": 0,
+    "markers": {
+      "begin": 1826485,
+      "end": 39178635
+    }
+  },
+  "window_audit_return": {
+    "mode": "legacy",
+    "marker_begin_us": 1826485,
+    "marker_end_us": 39178635,
+    "game_pid": 36408,
+    "valid": true,
+    "overlapping_competing_processes": [],
+    "relevant_processes": [
+      {
+        "name": "openttd.exe",
+        "pid": 36408,
+        "start_us": null,
+        "end_us": null,
+        "own_game": true,
+        "overlaps_window": true
+      }
+    ],
+    "method": "Kernel process lifetimes in ETL; MIN/MAX denote trace boundaries. Match the runner build/test/game names, excluding only the measured openttd.exe PID. Units are microseconds."
+  },
+  "accepted": true
+}

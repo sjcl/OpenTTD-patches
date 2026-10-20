@@ -1,0 +1,1358 @@
+{
+  "docs/.gitattributes": {
+    "bytes": 446,
+    "sha256": "177c2d693f0efe8f6d09379fe3787a4d861b88fc2fd277c13b7549c9d3b7fef4"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/.gitattributes": {
+    "bytes": 40,
+    "sha256": "7c309ad1d7a1566f07cb214bf51acf9265f535b858e4574201ab5d7d035fabca"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/attempts.json": {
+    "bytes": 2148,
+    "sha256": "5047d4bef3201d9ebcc2dc675f4b9e058a845022a8cbb6e88e3de91ec9ab23dc"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/backup-manifest.json": {
+    "bytes": 5376,
+    "sha256": "931d97a3c662b9489cdec1a01dad23b6d5d1ee465f935ccd013f48ec04e8d266"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/baseline-build-identity.json": {
+    "bytes": 4009,
+    "sha256": "5407e8869b71bdceba9f27b9034ae63ac13ea72302a453f7d68a8d000a221815"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/baseline-instrumentation.json": {
+    "bytes": 1128,
+    "sha256": "9e31a2a1018b96b8806e12c63c1cf2a64a1b7d842bc1e2d13231857196ef404c"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/baseline-waiting-instrumentation.json": {
+    "bytes": 1413,
+    "sha256": "1f5e290922849395a8afe4e556535a05f926486ccdde9b295b5872c2f8b324ee"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/baseline-build.command.json": {
+    "bytes": 312,
+    "sha256": "c68c5c47a1e58bbdd09c812bcddaa5cae997eec657d8327ffcc79ddf4cded8dc"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/baseline-configure.command.json": {
+    "bytes": 1136,
+    "sha256": "47b927c166737bb80be4a58f07e28e0e2da2fb31c333730e14552b6c7b8aa473"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/baseline-prepare.command.json": {
+    "bytes": 496,
+    "sha256": "d153ad87c5b4765e265fed4d75829c91c50777fdddc66a7e055836d1954b5240"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/baseline-wpr-prepare.command.json": {
+    "bytes": 297,
+    "sha256": "9aaaf447f7b20addaf92dc29faebabd81452b706e4a366a37902f4c54fe76f6a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/clang-cl.command.1.tlog.gz": {
+    "bytes": 27293,
+    "sha256": "5a56cd054da08f6ee4d4195a52291a2076a6dcf3b6782217ea7f488e30afb831"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/CMakeCache.txt.gz": {
+    "bytes": 7612,
+    "sha256": "6bd36cdfef1f8c4749ac5c81ace3407e36d2a5626e0c435c7f8c3dca70f7488a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/real-map-driver/null_v.cpp.gz": {
+    "bytes": 2868,
+    "sha256": "fdb64d637b95aa615dde88bd0569dd38f66531faaa4ab48345724d6395baf4eb"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/real-map-driver/win32.cpp.gz": {
+    "bytes": 9145,
+    "sha256": "bcb9cb171da79fed44e5cd6a0d1ef397e1021ca34d80dcc11dde6144892ca6e0"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/save-integrity/cargopacket.cpp.gz": {
+    "bytes": 29358,
+    "sha256": "482ff4c05656b429a96f90d954fec6601aa6c908a6293ba34bbe4f144480a640"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/save-integrity/cargopacket_sl.cpp.gz": {
+    "bytes": 4907,
+    "sha256": "47873914f554b91b8de1a587a91411c10698478668e44b47cf91c60817628c32"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/save-integrity/command.cpp.gz": {
+    "bytes": 11123,
+    "sha256": "dda3d4734fe8d9440def49c270f4a4881c5fcb5ede4f8442488d8d71eabda567"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/save-integrity/console_cmds.cpp.gz": {
+    "bytes": 55546,
+    "sha256": "4f73a0cf045e30a5177919cf0ed631cb3d79d234f1897d45057adecda75adb02"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/save-integrity/integrity.h.gz": {
+    "bytes": 2065,
+    "sha256": "4a750bda866a4b6064336c1345e84f72412e44aed5f056721eb2837d6890c320"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/save-integrity/passenger_service_database.cpp.gz": {
+    "bytes": 36880,
+    "sha256": "6fba0389f1ea90aca6e9dbc03a0b115ab901e083e06b0d7db9e881f6e7819f65"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/save-integrity/wpr_gate.h.gz": {
+    "bytes": 386,
+    "sha256": "50de00b91371f15fc4b627267a9b607b7c970b845ed1ba598422fd5d33637cbb"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/waiting-probe/network_client.cpp.gz": {
+    "bytes": 16544,
+    "sha256": "bc3b6352731483a2dd59377c89362e4404ac7691fa4d69184bd9df3e3e2acfec"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/waiting-probe/openttd.cpp.gz": {
+    "bytes": 19021,
+    "sha256": "9b8511ca8bac6d73ae84a012c25a3d607ef0f1c906422dbc0e1aff21d947fc11"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/baseline/waiting-probe/waiting.hpp.gz": {
+    "bytes": 2408,
+    "sha256": "b01f56cb28581ecabf18d440875cafbf73185df121241ae9af15dad842f3a529"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/candidate-build.command.json": {
+    "bytes": 282,
+    "sha256": "6d7d7f024474117621f4580d3535a760325495e2ddc68aa5189c7fd5deee4ea6"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/candidate-configure.command.json": {
+    "bytes": 1056,
+    "sha256": "5a84881d5cbad6a7909323205ed9914f365a0643b53dc22edde57dfc273b1b99"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/candidate-prepare.command.json": {
+    "bytes": 416,
+    "sha256": "286aa2740de552646003eb391f73c33fc32cc2042b65218427cae88f43e1a173"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/candidate-wpr-prepare.command.json": {
+    "bytes": 267,
+    "sha256": "095ffea548cc25ea1b5a2bcba62b0385430eebb5029a67a52f062dbe082f1b78"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/clang-cl.command.1.tlog.gz": {
+    "bytes": 23629,
+    "sha256": "f1f2c4a580e7a7a36a156a1fa6b3413ab4f872c175fd69ec466eb3878989ff2e"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/CMakeCache.txt.gz": {
+    "bytes": 7701,
+    "sha256": "f9c84b9401c556f2cdeacc50adbc41dc8dc4150a85fbe54d86d4140046e204c6"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/real-map-driver/null_v.cpp.gz": {
+    "bytes": 2838,
+    "sha256": "8da47fff302c594399a95c93376971d810d3c1e00bdbabbf5665f4b04f355fd3"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/real-map-driver/win32.cpp.gz": {
+    "bytes": 9106,
+    "sha256": "163f7253440d78f4fdb1a26f9edbfeb7e6ebe27fad8586c754702465a9647b88"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/save-integrity/cargopacket.cpp.gz": {
+    "bytes": 29319,
+    "sha256": "5cee95a96007b3bb43f154bd7ebf856f92dd3c267c1048ab1f35f8848e39bb51"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/save-integrity/cargopacket_sl.cpp.gz": {
+    "bytes": 4882,
+    "sha256": "1e84c8d6f1447fee22b28c7934e7b9af8ccdb752c89e6821d703ca786b8e64ed"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/save-integrity/command.cpp.gz": {
+    "bytes": 11085,
+    "sha256": "2cf8ae1720b0ce1b784a09e41a923795958eac00f705e284f26286dca28fa6bf"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/save-integrity/console_cmds.cpp.gz": {
+    "bytes": 55840,
+    "sha256": "e968b3965a7cec1bba5a5026b432d4ba98472594895465a41984efe88054b5f1"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/save-integrity/integrity.h.gz": {
+    "bytes": 2032,
+    "sha256": "c864577da090aaaab49c6a87ffb1f1573269c563ec3c263c67b5b9aa698ec50f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/save-integrity/passenger_service_database.cpp.gz": {
+    "bytes": 37791,
+    "sha256": "0868cdc43381ee5ae34c09586c7a793250625eb0c47994b86753f44f23ff7bdc"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/save-integrity/wpr_gate.h.gz": {
+    "bytes": 386,
+    "sha256": "50de00b91371f15fc4b627267a9b607b7c970b845ed1ba598422fd5d33637cbb"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/waiting-probe/network_client.cpp.gz": {
+    "bytes": 16504,
+    "sha256": "57d5905c1fc17c180b58d96a089ca464a23718b9a79ee5ac4760dec449556822"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/waiting-probe/openttd.cpp.gz": {
+    "bytes": 18972,
+    "sha256": "f1436e5de17c0a5c3b16d3417636af094f5b22d38b15833b38adc2f6bb63896c"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/build/candidate/waiting-probe/waiting.hpp.gz": {
+    "bytes": 2376,
+    "sha256": "fe91427e6e3915b161eede7d00f7a8206974897463d25495acb941f00d65b54f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/candidate-build-identity.json": {
+    "bytes": 4010,
+    "sha256": "013cce5885e3f61d1e32322c65d7d15ec7a80ba0dfd8806e79bd375bf03df25c"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/candidate-instrumentation.json": {
+    "bytes": 1128,
+    "sha256": "ca26823a9de084ca58df0044d1335ec0f5cbc8067add2e88a1d585fd6d579873"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/candidate-waiting-instrumentation.json": {
+    "bytes": 1413,
+    "sha256": "2a2a3c82ca3835221051cd7577c589141e5ca59dd4130f3fe15344b8fb5e5ce0"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/canonical-comparisons.json": {
+    "bytes": 2183,
+    "sha256": "627c8da20f4e872b10d3331d96df9f6f3f9e91d3cfa73f5e1abb12c922494bce"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/check_results.py": {
+    "bytes": 2168,
+    "sha256": "1a762dddc096e5fbeb21d2a88714e7ceeff1429df0385678c42f3ca03e2940c4"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/collect.py": {
+    "bytes": 6228,
+    "sha256": "94beafb37986d785e654ae3b402bcfebf6346af73c7ec79de1fcccecc2fc1ee9"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/estimated_prepare_compat.py": {
+    "bytes": 10268,
+    "sha256": "f42d27d446a2f7bdfb3f3bf30445f59f3c53a8b8e927688c51ecd9c604e6356d"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/make_runner.py": {
+    "bytes": 2300,
+    "sha256": "31a4ab37b8f1ecbc7ed3dfb765e118b18d52eb8108e4450c88e6fa02d4d1b4fb"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/normal-tick-excluded.json": {
+    "bytes": 265,
+    "sha256": "669d22fc7b4c09e0192b6d8e9b5d9866dc8ddf3158502e9a65d34b0574cb1a7c"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/package.py": {
+    "bytes": 9868,
+    "sha256": "81f3e2a78c7688dd80fc5474cb55e3122464b2d9a4eb99ac97c0001b2c9614e9"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/prepare.py": {
+    "bytes": 6504,
+    "sha256": "f00d0edf1e0edc8e217ac6bbd2c025ff0da096e006c9570a908f60759bf3022e"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/probes.hpp": {
+    "bytes": 6287,
+    "sha256": "fd8116b3988fb88ee1be945c7fbefadc5ebd239a3c8509e4f9fe8756501ae2b0"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/profile-interval.txt": {
+    "bytes": 44,
+    "sha256": "db5b9029f79e08b17b6f8194219b94853e7e347541a39a508258e81f2d318830"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/record.ps1": {
+    "bytes": 5542,
+    "sha256": "46ba3fd128cf3b474f27dc3129d4ac42841235449b6443e2afc548f0ecfea0e4"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/report.py": {
+    "bytes": 11621,
+    "sha256": "3e73fb946394a1ba8595a923b01e198d24e2322a1be209c6d72030d1dc6f647a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/runner-compat.json": {
+    "bytes": 739,
+    "sha256": "aa79209cae99ae388c02a4576f1544992288674776233bebaa0e6ffa82b09003"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/snapshot.py": {
+    "bytes": 2334,
+    "sha256": "4c4c3a07015e0e928b61b6d594444a41fd62be87a47fb4b34125cc7a9a5ad595"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/verify.py": {
+    "bytes": 4629,
+    "sha256": "754051f8a9d0a6d514b6fabe2fe3194be6d86ad656b707e3580d756e0e7af7c8"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/waiting.hpp": {
+    "bytes": 6703,
+    "sha256": "ffadc6477eb36c841d21bf206847a8e5ba11561fcc8ff2ea68c27252b4bc2790"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/waiting_instrument.py": {
+    "bytes": 4029,
+    "sha256": "a93759fd3cfc8a2f3d25a3174392470305d7be59e18b51b9a0a139adcb956bb9"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/waiting_run.py": {
+    "bytes": 10093,
+    "sha256": "3b468357b74bbe5cbfa1060786df4978f94113e0ea3c16f2c9410dceace66081"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/checks/wpr-status-before.txt": {
+    "bytes": 157,
+    "sha256": "11aec49c08f15b8ff509d0214d6b259f56b3ba5b74134ea4f1a51c2bd87211cf"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/cpu.wprp": {
+    "bytes": 2002,
+    "sha256": "e0a89dab28d5379469aa3ad23f65e8c87256014951065dae14b9429998251a82"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/host.json": {
+    "bytes": 432,
+    "sha256": "7828df5ba62fcc4907493ea2ebf6c37dacf9a5567afe9668a5a08d221bb0b01c"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/input/identity.json": {
+    "bytes": 633,
+    "sha256": "1b99b2bfcbc606483532020f086b2c2aa85fed944c046eb9e807704694ab910e"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/input/openttd.cfg": {
+    "bytes": 118,
+    "sha256": "aa780e6c4ab05742d9e38335e36cde5db8986fb3a0ebf1321d76890f1bee2e07"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/input/package.json": {
+    "bytes": 44034,
+    "sha256": "c1e48d2ff44aec456beb3bbcf27df81e1b4624a273fe9719f7edecabe3d46684"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/baseline-build.log.gz": {
+    "bytes": 1627,
+    "sha256": "6dbef6dbe0ced2c3db5bdf64ac9b5fa5ab6ebbe101ed64bdadccce58835f71e6"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/baseline-configure.log.gz": {
+    "bytes": 846,
+    "sha256": "0b060f06a65a6a35f2ea482b53e02ac868c05ed63254ddd39e101d9068717a11"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/baseline-native.log.gz": {
+    "bytes": 1708,
+    "sha256": "60382824a4920a5315d6ad4baeead86a4b68ac6944dbefdfe0c8c835ca9fdf3d"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/baseline-prepare.log.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/baseline-waiting-native.log.gz": {
+    "bytes": 1706,
+    "sha256": "4af732fbaec5ea61c6d1fe11b900cbe858c9ea73cec401becaafc0757dce7a82"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/baseline-wpr-prepare.log.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/candidate-build.log.gz": {
+    "bytes": 1587,
+    "sha256": "a6779c9bd76878fa24ba6b4e457a25194e9da0a50f3af2aed361ae14a455f790"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/candidate-configure.log.gz": {
+    "bytes": 828,
+    "sha256": "a285c3f4b3c769cb77f31a54369f2ebee21fdb7d3c5066658bfe0b885b3b784e"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/candidate-native.log.gz": {
+    "bytes": 1661,
+    "sha256": "95e2da2a9f6c68f411a049929b91a66778153f1c369973925eece9251b481b67"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/candidate-prepare.log.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/candidate-waiting-native.log.gz": {
+    "bytes": 1662,
+    "sha256": "79cb08c6b516367afa25f930db7e373bfa689847601ae7ed24151799c4800de9"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/candidate-wpr-prepare.log.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/collect-normal.log.gz": {
+    "bytes": 398,
+    "sha256": "3fa5eafba3651f0d5650cec6c3a2b055f36fb8b80364e0e400161148f5cdfdd8"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/fixtures-mp.log.gz": {
+    "bytes": 1315,
+    "sha256": "1a8e4901303baeddfd8933669820fb4b287fceff87f2352e97daa1f38be44be8"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/fixtures.log.gz": {
+    "bytes": 186,
+    "sha256": "67f6a8e22658747d557e023c5c9b538a31004e285deb3a784c522641d29d61c9"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/freeze.log.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/preflight-runner.log.gz": {
+    "bytes": 1378,
+    "sha256": "a40d1ca13f085886ffb65c8e11a27cebeb7de02d3c1bd86587675dc011f63c66"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/recorder.log.gz": {
+    "bytes": 679,
+    "sha256": "663def8730ce36b172dd8266af7857248fc938187b8ba49ebfd5fbf34334edbe"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/waiting-initial-continued.log.gz": {
+    "bytes": 206,
+    "sha256": "b2d5c78f62a4829e961faf3a3f304355b7bd7ff3a18bbccdc50504960de0197d"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/waiting-initial-repeat.log.gz": {
+    "bytes": 145,
+    "sha256": "cfd8339303755d02974597cd50c8e514ec890c2cc95502c457c87882e17d2eea"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/waiting-initial.log.gz": {
+    "bytes": 791,
+    "sha256": "3a0d17adbb446d38edd0215ba6793ca08f5ea9c6375fed22706f19a9282535f7"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/waiting-multiplayer-clean.log.gz": {
+    "bytes": 183,
+    "sha256": "bd9506f5ba0bf35fb210d8b53fd6d612660254e6ad0f43a7906b1d0aefff7df0"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/waiting-multiplayer.log.gz": {
+    "bytes": 392,
+    "sha256": "efbabbf83a7945a65c17c0293af92480c7eeb541913fc89624f433e9b14ec42c"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/waiting-pilot.log.gz": {
+    "bytes": 149,
+    "sha256": "3ba51268626dc468f61d3277fda7ec1dd403e02d9765ace6cd8ae0ef6a9a2f6a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/waiting-replay.log.gz": {
+    "bytes": 222,
+    "sha256": "e3a86000b91e6b1a593f0218745d4d1b8d8c5a1ece9c3edb39f3d62334ddbf80"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/logs/waiting-workers8.log.gz": {
+    "bytes": 167,
+    "sha256": "423206b047bd7d172bc45ba5698f4d59538156530a5ee8bb375daa2c3459514b"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/pilot/recorder-markers.txt": {
+    "bytes": 345,
+    "sha256": "8fcf80f7a581a72c3ca5e6888121917ded0fa7732270a5020f8f8e64f3e74cdc"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/pilot/trace-stats.txt": {
+    "bytes": 956,
+    "sha256": "05c0615b05b18df4e1d7c0caf1126f76be1a238e726f448d3dd8acf79f2618ed"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/pilot-quality.json": {
+    "bytes": 295,
+    "sha256": "93bd9a4260b58e42b7729dac3eb5aabba211057a84781884adb2535e266d768d"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/hyperpath/on-1-console.txt.gz": {
+    "bytes": 5212,
+    "sha256": "6da12675dc20fc3e0a7b8ea95b4976f6e7a7f02c558ce6e39b0e7d7b40428652"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/hyperpath/openttd.cfg": {
+    "bytes": 118,
+    "sha256": "aa780e6c4ab05742d9e38335e36cde5db8986fb3a0ebf1321d76890f1bee2e07"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/hyperpath/preparation-probes.json": {
+    "bytes": 881,
+    "sha256": "c2170a0bc66dc042e08991191d8d6bc2909def82a37c4d004574689b2e7b6007"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/hyperpath/process.json": {
+    "bytes": 3052,
+    "sha256": "2be34b3607312af7d4cc6717a8dc879db22ffc751cd5f293fe475663e8ef6eb0"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/hyperpath/save-integrity.json": {
+    "bytes": 648,
+    "sha256": "62033beca24839d58fd08983267f566c07380120250f01f673176d6b810b8b04"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/hyperpath/scripts/game_start.scr": {
+    "bytes": 1089,
+    "sha256": "7b0958b16e095c9ab7f5d5d551c908957719046f13b614727dd7dbaac7e42a3e"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/hyperpath/scripts/passenger_benchmark_end.scr": {
+    "bytes": 368,
+    "sha256": "94fd7e4c1d1ce30fabc8a174a187ab48d264fc430e4d3441215b8575f4fb17be"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/hyperpath/stderr.txt.gz": {
+    "bytes": 8407,
+    "sha256": "a5fdab6e37ae06cdcb2d18f3b946c92ca9603ead23d39b2c0b8a39ff819748dd"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/hyperpath/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/legacy/on-1-console.txt.gz": {
+    "bytes": 5228,
+    "sha256": "741ae57471f9ff7c0af2289ab1fe115502819a656a5f7e82c3dd6ee03ed28b6f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/legacy/openttd.cfg": {
+    "bytes": 118,
+    "sha256": "aa780e6c4ab05742d9e38335e36cde5db8986fb3a0ebf1321d76890f1bee2e07"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/legacy/preparation-probes.json": {
+    "bytes": 885,
+    "sha256": "06265656e294fdd4b56eff56eba7fee1247ab1f6440fb8bbcf86495b443caa46"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/legacy/process.json": {
+    "bytes": 3046,
+    "sha256": "e60bd6a92020c784b893ac999e1e6e6002a42c39e1c48e5ece6c305e48a856c1"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/legacy/save-integrity.json": {
+    "bytes": 646,
+    "sha256": "886f6dc38df20947add42ad92c3eba9e941a4e41b6c701ca28492cc4be03917b"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/legacy/scripts/game_start.scr": {
+    "bytes": 1081,
+    "sha256": "1fdb2ad30d5a3ddc0ddaa90ec989702cbe7549349febc37d127ae5379974232d"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/legacy/scripts/passenger_benchmark_end.scr": {
+    "bytes": 362,
+    "sha256": "253d46aee06c36dac07cde026f993c94d6fd472a65e744ce0dabbc12376315fd"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/legacy/stderr.txt.gz": {
+    "bytes": 8407,
+    "sha256": "a5fdab6e37ae06cdcb2d18f3b946c92ca9603ead23d39b2c0b8a39ff819748dd"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures/legacy/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures-mp/hyperpath/on-1-console.txt.gz": {
+    "bytes": 5161,
+    "sha256": "c64ae2984327d7f8bca0917c992b28b80d5459412fc9490e0e28bed1847972ff"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures-mp/hyperpath/openttd.cfg": {
+    "bytes": 118,
+    "sha256": "aa780e6c4ab05742d9e38335e36cde5db8986fb3a0ebf1321d76890f1bee2e07"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures-mp/hyperpath/process.json": {
+    "bytes": 2875,
+    "sha256": "68a466c3393a40346489ee434c400232a16653046507fb83ba3d792b04c68851"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures-mp/hyperpath/save-integrity.json": {
+    "bytes": 648,
+    "sha256": "62033beca24839d58fd08983267f566c07380120250f01f673176d6b810b8b04"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures-mp/hyperpath/scripts/game_start.scr": {
+    "bytes": 881,
+    "sha256": "d14d3830c8150528f907e61054e816cde316a139c9d244f773f01aee7510d9ff"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures-mp/hyperpath/scripts/passenger_benchmark_end.scr": {
+    "bytes": 374,
+    "sha256": "144630be0953e7fc32d1d715d65733433941b3e14a09a087feae8edfed0f90c5"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures-mp/hyperpath/stderr.txt.gz": {
+    "bytes": 8405,
+    "sha256": "eebcac21a7e47a386a2ea990eb0901d8109ab0900b9f9422b8bd517b9e5f1f5b"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/fixtures-mp/hyperpath/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/preflight-hyperpath/on-1-console.txt.gz": {
+    "bytes": 5013,
+    "sha256": "59880dabf0c70c3a4c05d4901ce4b07a240de55b875404b3638d53b407d20ac1"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/preflight-hyperpath/openttd.cfg": {
+    "bytes": 118,
+    "sha256": "aa780e6c4ab05742d9e38335e36cde5db8986fb3a0ebf1321d76890f1bee2e07"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/preflight-hyperpath/process.json": {
+    "bytes": 3068,
+    "sha256": "f0a58610a65708187ba9b07b349e4335558d0aff903aadf426bbfc327a609867"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/preflight-hyperpath/save-integrity.json": {
+    "bytes": 657,
+    "sha256": "402b14d031d35816c40cb7ae457bf9a78ee5707d3d4f574408a7ecedc6fad8dd"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/preflight-hyperpath/scripts/game_start.scr": {
+    "bytes": 947,
+    "sha256": "2a1bea3ca6e202cb3202a0ace9a8d976fed8f2a9b2a53197c16c3ba9fbfd3512"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/preflight-hyperpath/scripts/passenger_benchmark_end.scr": {
+    "bytes": 370,
+    "sha256": "6ee850606a398c29646e11c5244d42f483acd8cc94cf857a13c32edb65e38e57"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/preflight-hyperpath/stderr.txt.gz": {
+    "bytes": 8407,
+    "sha256": "a5fdab6e37ae06cdcb2d18f3b946c92ca9603ead23d39b2c0b8a39ff819748dd"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/preflight-hyperpath/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/hyperpath/actual-ticks.json": {
+    "bytes": 48520,
+    "sha256": "2b338cb8d7f4c23afc92c0f2ad69ca7dfb4499c13dff79c3628a4df2e770aad8"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/hyperpath/on-1-console.txt.gz": {
+    "bytes": 5795,
+    "sha256": "275db5dbb39b89a2030ab22768c7389499107479b5421fb70560e6002eeaca50"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/hyperpath/openttd.cfg": {
+    "bytes": 118,
+    "sha256": "aa780e6c4ab05742d9e38335e36cde5db8986fb3a0ebf1321d76890f1bee2e07"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/hyperpath/process.json": {
+    "bytes": 135620,
+    "sha256": "6e7f29cd89a25b6ba426dab8bd3bb1d4f1d05ea059df58d6359c75b1715c96f9"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/hyperpath/save-integrity.json": {
+    "bytes": 657,
+    "sha256": "38d0ad57fcfbada47f33d914fa38865ffb3665dd35ed0902b6eddc4306367728"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/hyperpath/scripts/game_start.scr": {
+    "bytes": 719,
+    "sha256": "a019cdcc75e281371e9ef93ae86a950f8c372c569d3b6a3a9641a370d7866762"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/hyperpath/scripts/passenger_benchmark_end.scr": {
+    "bytes": 382,
+    "sha256": "dfe27c4c1d13d5ec751f34f3bd1262f4c7cc00e301fe59efb723b4654001230e"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/hyperpath/stderr.txt.gz": {
+    "bytes": 21894,
+    "sha256": "e386a597aea953c89c93c663f123bff09953f848b40a4cc1c9b5d9430aacaf51"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/hyperpath/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/legacy/actual-ticks.json": {
+    "bytes": 47854,
+    "sha256": "6f6d2c909c5046b84bfc242a1d3df0b2aa564ebe7f28def7c542f8ef5f721a89"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/legacy/adoption.json": {
+    "bytes": 781,
+    "sha256": "fdd5be243d050ef8c23992e8c3d9f5e0298aafd1314d003f28fbf357cf74ba23"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/legacy/on-1-console.txt.gz": {
+    "bytes": 5830,
+    "sha256": "f95f3402393033defc71fd4fb12cb8372afd2720d7f6ec097867e3c1042322e8"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/legacy/openttd.cfg": {
+    "bytes": 118,
+    "sha256": "aa780e6c4ab05742d9e38335e36cde5db8986fb3a0ebf1321d76890f1bee2e07"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/legacy/preparation-probes.json": {
+    "bytes": 883,
+    "sha256": "4d3c1f15f21ec0d3723f369daa9aa6cb7f8ec217f0c04b5f5dad891cc9ebadce"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/legacy/process.json": {
+    "bytes": 134957,
+    "sha256": "c28db951b9b53cce01b47bafb821c031035c28621e58dc256e6a4d394944d81c"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/legacy/save-integrity.json": {
+    "bytes": 656,
+    "sha256": "6f069df2792408c255e53ae5830ead3acfd94454fd813c21faedcd2babbbf58a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/legacy/scripts/game_start.scr": {
+    "bytes": 717,
+    "sha256": "74a5f0d08d69e48d632951eef9f5f85279b3a89ca80af7c73513904b7c7aae90"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/legacy/scripts/passenger_benchmark_end.scr": {
+    "bytes": 376,
+    "sha256": "52c182b7f1df9a4e4a526deaed5a1433cde2881b04fe515f8df10b3046a86e9c"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/legacy/stderr.txt.gz": {
+    "bytes": 21932,
+    "sha256": "2c73100314dcbfad2c7dd80212669e10009ddf2fe873f60329debe3a8fd600e1"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/legacy/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/runs/A-baseline/legacy/window-audit.json": {
+    "bytes": 543,
+    "sha256": "089c72a8ea5757eb679f4a8b8e8110ee9bd4fdc06c3a752e3908d947db758980"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/hyperpath/adoption.json": {
+    "bytes": 218,
+    "sha256": "4ec1b4b7faf8ea2e24570fa547a41f90240a74344a086cb37853062c6a4e8b4b"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/hyperpath/launch.json": {
+    "bytes": 553,
+    "sha256": "14722219d7d94082831468e015bf8a275a6bccbc1657b6cd614d80c6f954d16a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/hyperpath/live-observer.json": {
+    "bytes": 178,
+    "sha256": "918d6f44785f490e3679d7d61a214bb5b684280f638e7acd70099f7890d6090c"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/hyperpath/observed.json": {
+    "bytes": 327,
+    "sha256": "f6191b7b6a86bac104036996ba08279409121c94dc1bfa0b1b644a0a35c9fc24"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/hyperpath/on-1-console.txt.gz": {
+    "bytes": 368,
+    "sha256": "3b2bc036c9bbc757a22cac4fa0637696c226e77ad091d31af96cb2b51f4ae1dd"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/hyperpath/openttd.cfg": {
+    "bytes": 329,
+    "sha256": "0b4490169e6de2b2c053419e854c062c3d809e7e1ebbe5facca5230c8fa9df9f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/hyperpath/save-integrity.json": {
+    "bytes": 657,
+    "sha256": "402b14d031d35816c40cb7ae457bf9a78ee5707d3d4f574408a7ecedc6fad8dd"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/hyperpath/scripts/game_start.scr": {
+    "bytes": 243,
+    "sha256": "b24a38b780856a429a5c7c3f3dab5ac240c3b3d6c882e6d6a179145c7874508e"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/hyperpath/stderr.txt.gz": {
+    "bytes": 8239,
+    "sha256": "5c06c17e6974679cb3b88af31a9a96eebf7965857b027065dcbb349330376151"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/hyperpath/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/hyperpath/waiting-armed.json": {
+    "bytes": 32,
+    "sha256": "bb7e8561f6e514878e940d40697e7c8995bbd3f5b4fff2737e67d3b04223be2a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/hyperpath/waiting-ready.json": {
+    "bytes": 615,
+    "sha256": "245ae4ecaad037acf7973dfc2949698786d4349eaa0b0df89592d1efe9a83722"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/legacy/launch.json": {
+    "bytes": 553,
+    "sha256": "14722219d7d94082831468e015bf8a275a6bccbc1657b6cd614d80c6f954d16a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/legacy/on-1-console.txt.gz": {
+    "bytes": 366,
+    "sha256": "18e2d3f87fb7802e3fe43ad4b30f00c83b44cd9fb9851d3f16874addeb9f125b"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/legacy/openttd.cfg": {
+    "bytes": 329,
+    "sha256": "0b4490169e6de2b2c053419e854c062c3d809e7e1ebbe5facca5230c8fa9df9f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/legacy/save-integrity.json": {
+    "bytes": 655,
+    "sha256": "372a3ed4b1462f21e6889d1ee8f61289266c64cabab3b6218315ef953742437e"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/legacy/scripts/game_start.scr": {
+    "bytes": 241,
+    "sha256": "5905db9f39bd55dd0491b3915e1b45723284cb2075245a15b11bbbc9554aa900"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/legacy/stderr.txt.gz": {
+    "bytes": 8239,
+    "sha256": "5c06c17e6974679cb3b88af31a9a96eebf7965857b027065dcbb349330376151"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/legacy/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/legacy/waiting-armed.json": {
+    "bytes": 32,
+    "sha256": "3572812c3b32e857c1e73e743394f1fc61d8d36db8199c6b995012bdceaabd5a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A1/legacy/waiting-ready.json": {
+    "bytes": 616,
+    "sha256": "d3599d2e29b8784454e38e139f292cec27a965bad7214b90af58f2679c9200b5"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A2/legacy/adoption.json": {
+    "bytes": 215,
+    "sha256": "128bc1956b6d8080487fd3de3b7719ba024b1bd8eac25b60ebb27ee059a4180e"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A2/legacy/launch.json": {
+    "bytes": 553,
+    "sha256": "14722219d7d94082831468e015bf8a275a6bccbc1657b6cd614d80c6f954d16a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A2/legacy/live-observer.json": {
+    "bytes": 177,
+    "sha256": "cee4370078db8735cabfac6d0639e822dd2b9501fbc53d209c1ebcc0f0ac8452"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A2/legacy/observed.json": {
+    "bytes": 328,
+    "sha256": "de0a0fcbf3a0103ac073b46ce1df82f7ac1974d044fde426d3b9ecedf3531bac"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A2/legacy/on-1-console.txt.gz": {
+    "bytes": 366,
+    "sha256": "bad64f79f9843ebc9bae36667c98a7dfca25f463aaeff1fe646ec07115d08fe8"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A2/legacy/openttd.cfg": {
+    "bytes": 329,
+    "sha256": "0b4490169e6de2b2c053419e854c062c3d809e7e1ebbe5facca5230c8fa9df9f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A2/legacy/save-integrity.json": {
+    "bytes": 655,
+    "sha256": "372a3ed4b1462f21e6889d1ee8f61289266c64cabab3b6218315ef953742437e"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A2/legacy/scripts/game_start.scr": {
+    "bytes": 241,
+    "sha256": "2a473758c05593bc50519bceebea56c0ec7c8202b64df37da7a830fa7b4251ad"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A2/legacy/stderr.txt.gz": {
+    "bytes": 8239,
+    "sha256": "5c06c17e6974679cb3b88af31a9a96eebf7965857b027065dcbb349330376151"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A2/legacy/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A2/legacy/waiting-armed.json": {
+    "bytes": 32,
+    "sha256": "aacd878982f007e91bf85f57e95e7cd2c36156afec8ebcddaf618ce3fbb2498b"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/A2/legacy/waiting-ready.json": {
+    "bytes": 616,
+    "sha256": "59665f112a4dff044247de0a12aa4ed77ab6601e78f50241f971e458bcb3e604"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/hyperpath/adoption.json": {
+    "bytes": 219,
+    "sha256": "42d6eb3b8e707303aebe369e3791ba6d2fcd9599cb07aa5e71ffdfb3b22132f7"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/hyperpath/launch.json": {
+    "bytes": 554,
+    "sha256": "12f52c5e20b3c5db8666b405d86c36acdf77a4db236523cfcbba677abb305ab2"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/hyperpath/live-observer.json": {
+    "bytes": 175,
+    "sha256": "e31791c76a9d4dcf704a9e9b1640f86d3c4505652422d90a350a0db7e2e838ff"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/hyperpath/observed.json": {
+    "bytes": 326,
+    "sha256": "b5ee20aa3cc33bbae057dc36171e6d1db6fdcf8f9b85663fd01ee9699d1ae8de"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/hyperpath/on-1-console.txt.gz": {
+    "bytes": 368,
+    "sha256": "44aafb4f3a60878ce0e629990f7f4c87e4fc9c72620e134d1f54c208b74d6f33"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/hyperpath/openttd.cfg": {
+    "bytes": 330,
+    "sha256": "993afd8e2b288d9d9e41c811a9d690d6b379a6c71a0ddfe744353c4b2e4392df"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/hyperpath/save-integrity.json": {
+    "bytes": 657,
+    "sha256": "402b14d031d35816c40cb7ae457bf9a78ee5707d3d4f574408a7ecedc6fad8dd"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/hyperpath/scripts/game_start.scr": {
+    "bytes": 243,
+    "sha256": "b7f6b934dc3200996e81f3abbd91146aa950eaf82c20b88e4fd76ac100032abd"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/hyperpath/stderr.txt.gz": {
+    "bytes": 8251,
+    "sha256": "08a016c8638eba6e24aca9a8715ed2bc5320d79e27c019956f6dcc6c6ee61059"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/hyperpath/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/hyperpath/waiting-armed.json": {
+    "bytes": 31,
+    "sha256": "b01226d9bf0bd75f7349d91ec39e74bce229b2961c2d57189810a93899075f88"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/hyperpath/waiting-ready.json": {
+    "bytes": 615,
+    "sha256": "276b96524c390965f806c6312dc109bf16ea49e36518712c750babb6842dee2a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/legacy/adoption.json": {
+    "bytes": 216,
+    "sha256": "a758281bf24bd238e235e0e48d4cffe1043b21fef7109713898b58bff6d37216"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/legacy/launch.json": {
+    "bytes": 554,
+    "sha256": "12f52c5e20b3c5db8666b405d86c36acdf77a4db236523cfcbba677abb305ab2"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/legacy/live-observer.json": {
+    "bytes": 177,
+    "sha256": "beeaa5092a2d402ecb0287e298188906390e5917a342b6677c95017831ed3139"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/legacy/observed.json": {
+    "bytes": 327,
+    "sha256": "67c9b0490606d8d557ce90f6db23964566df732513fee34b2d23947159bc88e7"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/legacy/on-1-console.txt.gz": {
+    "bytes": 365,
+    "sha256": "3c70b950920d114a00d58511999737a261e406de0ab9aa974e6091cbadbaebe8"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/legacy/openttd.cfg": {
+    "bytes": 330,
+    "sha256": "993afd8e2b288d9d9e41c811a9d690d6b379a6c71a0ddfe744353c4b2e4392df"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/legacy/save-integrity.json": {
+    "bytes": 655,
+    "sha256": "372a3ed4b1462f21e6889d1ee8f61289266c64cabab3b6218315ef953742437e"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/legacy/scripts/game_start.scr": {
+    "bytes": 241,
+    "sha256": "69d042a45a94827475af0364b00f8b019595b176716be193e175c60f5f9f85e7"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/legacy/stderr.txt.gz": {
+    "bytes": 8251,
+    "sha256": "08a016c8638eba6e24aca9a8715ed2bc5320d79e27c019956f6dcc6c6ee61059"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/legacy/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/legacy/waiting-armed.json": {
+    "bytes": 32,
+    "sha256": "05ca046eb526e54cd42b3cd0caabf3720cfa525a74af6e7566001526c210da57"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/B1/legacy/waiting-ready.json": {
+    "bytes": 618,
+    "sha256": "f7a4b094b70a3cf2daa1bb757638533d5023a6fb4ef9096ebfaea1a88bb4f163"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/pilot/hyperpath/adoption.json": {
+    "bytes": 219,
+    "sha256": "42d6eb3b8e707303aebe369e3791ba6d2fcd9599cb07aa5e71ffdfb3b22132f7"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/pilot/hyperpath/launch.json": {
+    "bytes": 554,
+    "sha256": "12f52c5e20b3c5db8666b405d86c36acdf77a4db236523cfcbba677abb305ab2"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/pilot/hyperpath/observed.json": {
+    "bytes": 306,
+    "sha256": "0b96326f320c2710a5d42b30142282bea2658bc377ffdaff104960808def20ea"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/pilot/hyperpath/on-1-console.txt.gz": {
+    "bytes": 368,
+    "sha256": "55971b89715e41cd26ae0e42494ee12ce77fc163a958fa22fa1cf135b2c64f30"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/pilot/hyperpath/openttd.cfg": {
+    "bytes": 330,
+    "sha256": "993afd8e2b288d9d9e41c811a9d690d6b379a6c71a0ddfe744353c4b2e4392df"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/pilot/hyperpath/save-integrity.json": {
+    "bytes": 657,
+    "sha256": "402b14d031d35816c40cb7ae457bf9a78ee5707d3d4f574408a7ecedc6fad8dd"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/pilot/hyperpath/scripts/game_start.scr": {
+    "bytes": 246,
+    "sha256": "2fd0d6f8e5ed57bb0f870686eb26ef49011a5549f648686d94c76bf64b559674"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/pilot/hyperpath/stderr.txt.gz": {
+    "bytes": 8251,
+    "sha256": "08a016c8638eba6e24aca9a8715ed2bc5320d79e27c019956f6dcc6c6ee61059"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/pilot/hyperpath/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/pilot/hyperpath/waiting-armed.json": {
+    "bytes": 32,
+    "sha256": "ea998cfef79d5dcc2176199d37a3a096143f85f3ba1f52d6e9aa5c97ba2eb2c4"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/pilot/hyperpath/waiting-ready.json": {
+    "bytes": 614,
+    "sha256": "120f0ca5f52255e0fe7bd5ba21ef2094f52c779aac3655deb075549818336aae"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/workers8/hyperpath/adoption.json": {
+    "bytes": 219,
+    "sha256": "42d6eb3b8e707303aebe369e3791ba6d2fcd9599cb07aa5e71ffdfb3b22132f7"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/workers8/hyperpath/launch.json": {
+    "bytes": 554,
+    "sha256": "12f52c5e20b3c5db8666b405d86c36acdf77a4db236523cfcbba677abb305ab2"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/workers8/hyperpath/live-observer.json": {
+    "bytes": 171,
+    "sha256": "158ea92fd35e9139ef9ccbce9ede68537dc1ee078d4a7351cfeaa25aa3f3bf01"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/workers8/hyperpath/observed.json": {
+    "bytes": 323,
+    "sha256": "a0ca11c4d51358171dd3e99ae66d70736459c9aa32df0bc84a6318461ade6504"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/workers8/hyperpath/on-1-console.txt.gz": {
+    "bytes": 366,
+    "sha256": "f876563aa3072a09e24a86f1c50d1889d61d07b0c03910d8ccf4322e519d92ba"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/workers8/hyperpath/openttd.cfg": {
+    "bytes": 330,
+    "sha256": "2d9b8651daab50a0ce567e53bf029cce57f2a63bb94668ec6619c12ca1b8fda6"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/workers8/hyperpath/save-integrity.json": {
+    "bytes": 657,
+    "sha256": "402b14d031d35816c40cb7ae457bf9a78ee5707d3d4f574408a7ecedc6fad8dd"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/workers8/hyperpath/scripts/game_start.scr": {
+    "bytes": 249,
+    "sha256": "0b7e59ce6c41533cb58466332b36b03d277f1513230815fd4db1b4de81bf0427"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/workers8/hyperpath/stderr.txt.gz": {
+    "bytes": 8251,
+    "sha256": "08a016c8638eba6e24aca9a8715ed2bc5320d79e27c019956f6dcc6c6ee61059"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/workers8/hyperpath/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/workers8/hyperpath/waiting-armed.json": {
+    "bytes": 31,
+    "sha256": "064dd738980e3131b5429ebcb790447b30de7540530b8b6db341ef2523fb2caa"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/initial/workers8/hyperpath/waiting-ready.json": {
+    "bytes": 611,
+    "sha256": "3ca047183b8a323bbebe9e9dd0fd6cb6b99aa86f33f3f2f5cf7a7a51c31b56f4"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer/baseline/client/openttd.cfg": {
+    "bytes": 329,
+    "sha256": "0b4490169e6de2b2c053419e854c062c3d809e7e1ebbe5facca5230c8fa9df9f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer/baseline/server/launch.json": {
+    "bytes": 510,
+    "sha256": "d5f397a5d8e5488d2a7d06bbf60536039dfe9d784b3fe0de1eba5606399737bf"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer/baseline/server/openttd.cfg": {
+    "bytes": 329,
+    "sha256": "0b4490169e6de2b2c053419e854c062c3d809e7e1ebbe5facca5230c8fa9df9f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer/baseline/server/scripts/game_start.scr": {
+    "bytes": 87,
+    "sha256": "ab03e213dce14ea6408e88cdc6d663cfa4c5bc7489d35952e50d35d6bdce50b4"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer/baseline/server/stderr.txt.gz": {
+    "bytes": 2841,
+    "sha256": "18e3a4b69aad520e4aba711d67541aac25691246ea3519944a1454d2fe55bc3f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer/baseline/server/stdout.txt.gz": {
+    "bytes": 141,
+    "sha256": "0dd9bdb905ef48557df244b72da52abef7f96c5158043d061d77f4f514a6b01c"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/adoption.json": {
+    "bytes": 279,
+    "sha256": "0c957cdf22c511b9ca1a54eb55dbc4f6e5e97e2995e31928bb5fae6361f28748"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/canonical-comparison.json": {
+    "bytes": 40,
+    "sha256": "84759354f7c05ee799f15ef94f507fd9ca5d27cc20b989e32483a05a6cf07f8a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/client/launch.json": {
+    "bytes": 557,
+    "sha256": "8eca0fa36a453e614aa3cbbef7f219ef0121b6f1549a0ca1a71b230432938723"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/client/live-observer.json": {
+    "bytes": 173,
+    "sha256": "c5a850565c857f558d74c022099b73e4f1c5e47aa9a4b46c160987a470100490"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/client/observed.json": {
+    "bytes": 329,
+    "sha256": "28ee417880538c1ebc0b6e92583db63fef3825860149b778e0a044de045af9f0"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/client/openttd.cfg": {
+    "bytes": 329,
+    "sha256": "0b4490169e6de2b2c053419e854c062c3d809e7e1ebbe5facca5230c8fa9df9f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/client/save-integrity.json": {
+    "bytes": 648,
+    "sha256": "62033beca24839d58fd08983267f566c07380120250f01f673176d6b810b8b04"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/client/stderr.txt.gz": {
+    "bytes": 8403,
+    "sha256": "1f60bc6723763034a86aa29fcdae71b3ff3b7164eaedfa9ff079b3b470dddf70"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/client/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/client/waiting-armed.json": {
+    "bytes": 32,
+    "sha256": "5f22a90b1a32e128fbf354c07504f1eb90006dd1d5b42349a9d7b988151e6c36"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/client/waiting-ready.json": {
+    "bytes": 588,
+    "sha256": "7d5a6c08f937b6e95bb392b966b6796482d694f893d9b949a52891c004ec2f64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/server/launch.json": {
+    "bytes": 510,
+    "sha256": "d5f397a5d8e5488d2a7d06bbf60536039dfe9d784b3fe0de1eba5606399737bf"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/server/openttd.cfg": {
+    "bytes": 329,
+    "sha256": "0b4490169e6de2b2c053419e854c062c3d809e7e1ebbe5facca5230c8fa9df9f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/server/save-integrity.json": {
+    "bytes": 648,
+    "sha256": "62033beca24839d58fd08983267f566c07380120250f01f673176d6b810b8b04"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/server/scripts/game_start.scr": {
+    "bytes": 87,
+    "sha256": "ab03e213dce14ea6408e88cdc6d663cfa4c5bc7489d35952e50d35d6bdce50b4"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/server/stderr.txt.gz": {
+    "bytes": 10312,
+    "sha256": "ff21fe5f6771883dedd7743573b96291480843ea2009ffdc7e7d897d39c2802a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/baseline/server/stdout.txt.gz": {
+    "bytes": 456,
+    "sha256": "ce530dd3a5a1d6bbe67dbb09e5abbb54d167e6be645be770c6dc761dda1dfaf1"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/adoption.json": {
+    "bytes": 280,
+    "sha256": "a8769eaac787eba8ddbc4f8e75f712a59e86d7d3ea9763cf9826da022c8752b7"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/canonical-comparison.json": {
+    "bytes": 40,
+    "sha256": "84759354f7c05ee799f15ef94f507fd9ca5d27cc20b989e32483a05a6cf07f8a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/client/launch.json": {
+    "bytes": 558,
+    "sha256": "efd841d78fbf44e22417ab3ef976345382474dbb843edb7bb890f9f6f7129514"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/client/live-observer.json": {
+    "bytes": 172,
+    "sha256": "21483fcc2c77c2d9bdea490991ca8f6691fe031bd4a3b5f25fa5b7e6ac40842f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/client/observed.json": {
+    "bytes": 326,
+    "sha256": "b810d1d6ed26aeb7f59ee4dd4b7d17a50700c967daeb7d938dee3f6f0165d9eb"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/client/openttd.cfg": {
+    "bytes": 330,
+    "sha256": "993afd8e2b288d9d9e41c811a9d690d6b379a6c71a0ddfe744353c4b2e4392df"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/client/save-integrity.json": {
+    "bytes": 648,
+    "sha256": "62033beca24839d58fd08983267f566c07380120250f01f673176d6b810b8b04"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/client/stderr.txt.gz": {
+    "bytes": 8415,
+    "sha256": "c8c6d1376b0b3b23a47852b6d52741f53bb33e79d7dc4b9b0e51aed905d2fc08"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/client/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/client/waiting-armed.json": {
+    "bytes": 32,
+    "sha256": "c2b4c3d1e83101f85ae9426bddfaec84e10dd484083c4baed5c87aa88918e33b"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/client/waiting-ready.json": {
+    "bytes": 607,
+    "sha256": "815ed8b8fc5fd96e3cea5e5519336cbe1b9aa9ba86ad64829d09675b3d031993"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/server/launch.json": {
+    "bytes": 511,
+    "sha256": "74aabb8ec65fc0d08609d4de44bc06e5a71ba72be6a434fb974ee167fc96af8a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/server/openttd.cfg": {
+    "bytes": 330,
+    "sha256": "993afd8e2b288d9d9e41c811a9d690d6b379a6c71a0ddfe744353c4b2e4392df"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/server/save-integrity.json": {
+    "bytes": 648,
+    "sha256": "62033beca24839d58fd08983267f566c07380120250f01f673176d6b810b8b04"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/server/scripts/game_start.scr": {
+    "bytes": 87,
+    "sha256": "ab03e213dce14ea6408e88cdc6d663cfa4c5bc7489d35952e50d35d6bdce50b4"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/server/stderr.txt.gz": {
+    "bytes": 9094,
+    "sha256": "7aa037bb85d62ee55c5f9812ae1cf270d270161aad059e0bc74783889ff7fad0"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/multiplayer-clean/candidate/server/stdout.txt.gz": {
+    "bytes": 467,
+    "sha256": "c0f884e6d8efb0c125a6b74954fec52ff72ba865e676a7b523a4ebb28bd1ff45"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/hyperpath/adoption.json": {
+    "bytes": 217,
+    "sha256": "ba33356c2af13000c25a48b98cf7923843b2328c85e3977f07aaee8dcd4f0d1b"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/hyperpath/launch.json": {
+    "bytes": 553,
+    "sha256": "14722219d7d94082831468e015bf8a275a6bccbc1657b6cd614d80c6f954d16a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/hyperpath/live-observer.json": {
+    "bytes": 177,
+    "sha256": "1130b975f9453ba583a0adb7676a90315e0147920daa131fb23467eeb808c5fe"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/hyperpath/observed.json": {
+    "bytes": 328,
+    "sha256": "5942adfdada19abed36b2fffe7eb335c6dd23e64b3fff14df998440d675a6c8f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/hyperpath/on-1-console.txt.gz": {
+    "bytes": 365,
+    "sha256": "26cc5be5b3d229fcb94748836249a28fde7a2c58f5302859f0881a2ef31e0d25"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/hyperpath/openttd.cfg": {
+    "bytes": 329,
+    "sha256": "0b4490169e6de2b2c053419e854c062c3d809e7e1ebbe5facca5230c8fa9df9f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/hyperpath/save-integrity.json": {
+    "bytes": 648,
+    "sha256": "62033beca24839d58fd08983267f566c07380120250f01f673176d6b810b8b04"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/hyperpath/scripts/game_start.scr": {
+    "bytes": 242,
+    "sha256": "b73f8f76e6fe62b72d188af7cffc86b559d4592cf51e2dee85d8547ec4a8dfc0"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/hyperpath/stderr.txt.gz": {
+    "bytes": 8237,
+    "sha256": "7cdb601d7c30203fc1d7043faa3eaea9fcb70447ed2980c501a9162b753b031f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/hyperpath/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/hyperpath/waiting-armed.json": {
+    "bytes": 32,
+    "sha256": "94f8584c570424e417e87ce0c0c991d073c9532d59e0a862f380418d7cdb4515"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/hyperpath/waiting-ready.json": {
+    "bytes": 588,
+    "sha256": "e25329ffd717b2887e5e4579055319e2d4617070918a2394749e827676906385"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/legacy/adoption.json": {
+    "bytes": 214,
+    "sha256": "cb4126c67c8e016c7c01cae985b5f46ffbd95ebb6742e9e42f32357906a3f21d"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/legacy/launch.json": {
+    "bytes": 553,
+    "sha256": "14722219d7d94082831468e015bf8a275a6bccbc1657b6cd614d80c6f954d16a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/legacy/live-observer.json": {
+    "bytes": 179,
+    "sha256": "b154da2f18d97b6d1920cc85792f804e1e0a069c124c981ad838e5f5dacc1eda"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/legacy/observed.json": {
+    "bytes": 325,
+    "sha256": "3a95dd7d2937ce37cccbc054ec17a45b2d43b705928528c80f026b25c2b8068e"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/legacy/on-1-console.txt.gz": {
+    "bytes": 363,
+    "sha256": "5f2f905b22e023072fadf95c5103edc618b87dd0819094951c1571c38070ca8a"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/legacy/openttd.cfg": {
+    "bytes": 329,
+    "sha256": "0b4490169e6de2b2c053419e854c062c3d809e7e1ebbe5facca5230c8fa9df9f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/legacy/save-integrity.json": {
+    "bytes": 646,
+    "sha256": "886f6dc38df20947add42ad92c3eba9e941a4e41b6c701ca28492cc4be03917b"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/legacy/scripts/game_start.scr": {
+    "bytes": 240,
+    "sha256": "e36e667c008e869e10210e621aa47d039d529bd15698677361493dd79db140e2"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/legacy/stderr.txt.gz": {
+    "bytes": 8237,
+    "sha256": "7cdb601d7c30203fc1d7043faa3eaea9fcb70447ed2980c501a9162b753b031f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/legacy/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/legacy/waiting-armed.json": {
+    "bytes": 32,
+    "sha256": "4c3d34e3320316bcb6173e1946484eab74b856b6604c572d44adaf3b56ead685"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/A1/legacy/waiting-ready.json": {
+    "bytes": 594,
+    "sha256": "441d5ae6c60fcd64b59b5358a4daf115bebd625737d486ff71bdb787d59e8ddd"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/hyperpath/adoption.json": {
+    "bytes": 218,
+    "sha256": "4b916b46940f2b08b58ee1eaff2124dc88342c28e87a7b4900c476fbb7dbe3cf"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/hyperpath/launch.json": {
+    "bytes": 554,
+    "sha256": "12f52c5e20b3c5db8666b405d86c36acdf77a4db236523cfcbba677abb305ab2"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/hyperpath/live-observer.json": {
+    "bytes": 174,
+    "sha256": "235059da618c4412f58f056be6ac21cbc46724a927f4213758388701ce04cf5d"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/hyperpath/observed.json": {
+    "bytes": 328,
+    "sha256": "71144e90b431aa0deef6fe83af6e74031d69f730c7f46cfd571705b4556daa93"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/hyperpath/on-1-console.txt.gz": {
+    "bytes": 365,
+    "sha256": "180b6fb57be5a662b418f023fa584d5d3b0191d88d5a801a334bd0b4f45c5b3e"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/hyperpath/openttd.cfg": {
+    "bytes": 330,
+    "sha256": "993afd8e2b288d9d9e41c811a9d690d6b379a6c71a0ddfe744353c4b2e4392df"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/hyperpath/save-integrity.json": {
+    "bytes": 648,
+    "sha256": "62033beca24839d58fd08983267f566c07380120250f01f673176d6b810b8b04"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/hyperpath/scripts/game_start.scr": {
+    "bytes": 242,
+    "sha256": "2cac2f49931e9e88364bec181055b7e650ea5c0dccaa9413e4c7d5eb39a6c341"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/hyperpath/stderr.txt.gz": {
+    "bytes": 8234,
+    "sha256": "97994be20c5bb47e5224776ec0d7cc3e42ffd9bab96569ca0e38b98a862d4385"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/hyperpath/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/hyperpath/waiting-armed.json": {
+    "bytes": 32,
+    "sha256": "a406f5eaa65b57e905b9e8d00c9777f96a3fb15b5efd8fcae7178c5b13e61a5b"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/hyperpath/waiting-ready.json": {
+    "bytes": 609,
+    "sha256": "a61e8f5672dcf856a057eeca99f408295f96fa02d487b60da0626c96b53fa11e"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/legacy/adoption.json": {
+    "bytes": 215,
+    "sha256": "42520c37d5067b0b691e6317ff2b17025b0bfc4577e98f1d1741c6ed9fa0c33f"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/legacy/launch.json": {
+    "bytes": 554,
+    "sha256": "12f52c5e20b3c5db8666b405d86c36acdf77a4db236523cfcbba677abb305ab2"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/legacy/live-observer.json": {
+    "bytes": 178,
+    "sha256": "e9feb8fe3d289c47a3b0ec5259016b6d611aab904edbd67256dccca40ddd4366"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/legacy/observed.json": {
+    "bytes": 328,
+    "sha256": "deafb52cbdbfbfaf59ffcbdfea312f2d11c721215afc9815218641b8bb2570d8"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/legacy/on-1-console.txt.gz": {
+    "bytes": 363,
+    "sha256": "e2ab9d198f80c4eec92092a8789d8add7a648b02d2bfcf8f01f1554027fabfef"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/legacy/openttd.cfg": {
+    "bytes": 330,
+    "sha256": "993afd8e2b288d9d9e41c811a9d690d6b379a6c71a0ddfe744353c4b2e4392df"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/legacy/save-integrity.json": {
+    "bytes": 646,
+    "sha256": "886f6dc38df20947add42ad92c3eba9e941a4e41b6c701ca28492cc4be03917b"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/legacy/scripts/game_start.scr": {
+    "bytes": 240,
+    "sha256": "2816e5a3a023f7053144c23bd2eac6d935f0765680ac2d03744b387faab88962"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/legacy/stderr.txt.gz": {
+    "bytes": 8234,
+    "sha256": "97994be20c5bb47e5224776ec0d7cc3e42ffd9bab96569ca0e38b98a862d4385"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/legacy/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/legacy/waiting-armed.json": {
+    "bytes": 32,
+    "sha256": "913c9ce5aeb5c8aa1a1cc75345f743ff44e7483fe78a309e5079e20140406396"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/B1/legacy/waiting-ready.json": {
+    "bytes": 602,
+    "sha256": "40813a16cd467bb5230b4dc73163b2594437b8edc1fa7b01c854647840039b45"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/workers8/hyperpath/adoption.json": {
+    "bytes": 218,
+    "sha256": "4b916b46940f2b08b58ee1eaff2124dc88342c28e87a7b4900c476fbb7dbe3cf"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/workers8/hyperpath/launch.json": {
+    "bytes": 554,
+    "sha256": "12f52c5e20b3c5db8666b405d86c36acdf77a4db236523cfcbba677abb305ab2"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/workers8/hyperpath/live-observer.json": {
+    "bytes": 175,
+    "sha256": "392f3b290713c2d89e13f7723dd6e896da9189765d5cd268cd9eff9915203340"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/workers8/hyperpath/observed.json": {
+    "bytes": 327,
+    "sha256": "dd02a0b25997ec18d49559939f38a596ed76d8fbeb1b521fbc28e1fe36a41b41"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/workers8/hyperpath/on-1-console.txt.gz": {
+    "bytes": 363,
+    "sha256": "49b00ba8183a5b4b59ad89fb2e5ae9f6b76950d04d2a46871085dc98eb4f5ddf"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/workers8/hyperpath/openttd.cfg": {
+    "bytes": 330,
+    "sha256": "2d9b8651daab50a0ce567e53bf029cce57f2a63bb94668ec6619c12ca1b8fda6"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/workers8/hyperpath/save-integrity.json": {
+    "bytes": 648,
+    "sha256": "62033beca24839d58fd08983267f566c07380120250f01f673176d6b810b8b04"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/workers8/hyperpath/scripts/game_start.scr": {
+    "bytes": 248,
+    "sha256": "0ac1628ec343aa0f7396532ffa6b5ae8fda06978e41463a16f4580a7b581e835"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/workers8/hyperpath/stderr.txt.gz": {
+    "bytes": 8234,
+    "sha256": "97994be20c5bb47e5224776ec0d7cc3e42ffd9bab96569ca0e38b98a862d4385"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/workers8/hyperpath/stdout.txt.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/workers8/hyperpath/waiting-armed.json": {
+    "bytes": 32,
+    "sha256": "6a3cdb4447d906e9c91d73b7dbe3310945e1bb9019164207e254cb7c11478da5"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/runs/waiting/replay/workers8/hyperpath/waiting-ready.json": {
+    "bytes": 605,
+    "sha256": "2dde881b090ecc1a11c96f008ea82cc1f97fa7308e3618e7e4633118d37172f2"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/source-identity.json": {
+    "bytes": 558,
+    "sha256": "d53bba806744da3c8b65ec24f7a50bc502e8aff3c1fb76c01caaef430d25d322"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/summary.json": {
+    "bytes": 17343,
+    "sha256": "fb14e3ae0399914d61571caf4e5d235b361ca578b136a0581987e35d45c1b277"
+  },
+  "docs/measurements/passenger-preparation-real-g1c42420af-2026-10-20/validation.json": {
+    "bytes": 1254,
+    "sha256": "e202def425229a0582ee8b5e03d8542a9ef03286091e190df117cb9f46575489"
+  },
+  "docs/passenger-waiting-real-g1c42420af-2026-10-20.md": {
+    "bytes": 9223,
+    "sha256": "e117f1cbc4bec58ccd0e1751543850741e136ccead7a9382c8b75ee61d565087"
+  },
+  "docs/passenger-wpr-runbook.md": {
+    "bytes": 32019,
+    "sha256": "ec461203c7e4850ee3022070bd927980a1133dced989bea30a43545f0945706d"
+  }
+}

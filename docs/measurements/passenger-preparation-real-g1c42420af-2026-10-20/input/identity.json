@@ -1,0 +1,20 @@
+{
+  "source": "C:/Users/bebe/OneDrive/ドキュメント/OpenTTD/save/g1c42420af.sav",
+  "bytes": 48312608,
+  "sha256": "22743c39125f5ac35a813144506040f3693b40d0f374514a0bb8c3c20eed9bb7",
+  "tick": 3201034745,
+  "fixtures": {
+    "legacy": {
+      "bytes": 48298708,
+      "sha256": "68e531ca21687ff348207299cf01880fce2b3f48a1d4cdf784b8a18067c7a3b4"
+    },
+    "hyperpath": {
+      "bytes": 48307168,
+      "sha256": "2ca578c155eadcf7ccba5875b8d7858ddf4a75795fe162ce33513425de873f94"
+    },
+    "hyperpath_mp": {
+      "bytes": 48307168,
+      "sha256": "ac7801f9e5d1e7313e6fc501e430fd0705bf54f393d85df6107f22fff3b9eeff"
+    }
+  }
+}

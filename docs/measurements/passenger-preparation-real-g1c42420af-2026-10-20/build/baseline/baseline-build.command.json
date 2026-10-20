@@ -1,0 +1,16 @@
+[
+  "cmake",
+  "--build",
+  "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-real-preparation-20261020\\baseline-build",
+  "--config",
+  "Release",
+  "--target",
+  "openttd_test",
+  "openttd",
+  "--parallel",
+  "12",
+  "--",
+  "/nodeReuse:false",
+  "/p:MultiProcCL=true",
+  "/p:CL_MPCount=12"
+]

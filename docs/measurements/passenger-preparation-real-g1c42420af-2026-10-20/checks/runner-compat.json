@@ -1,0 +1,13 @@
+{
+  "original": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\utils\\passenger_precomputed_real_map.py",
+  "original_sha256": "52d1562303b28b59a190ff58fe06cdaf5fb09779a882aa7dc25e0195e5279e28",
+  "copy": "C:\\Users\\bebe\\.codex\\worktrees\\ba19\\OpenTTD-patches\\build-real-preparation-20261020\\real_runner.py",
+  "copy_sha256": "a45ad5c0909503d935c41e24227d2bdcaff5466386aae60609b5ad0a24e9ea42",
+  "changes": [
+    "Point Python imports to the repository utilities",
+    "Measure paused replay before any setting changes",
+    "Set requested local worker count before replay",
+    "Measure initial preparation before existing warm-up verification",
+    "Optional cost replacement fixture at an unchanged StateTicks"
+  ]
+}

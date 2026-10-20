@@ -1,0 +1,15 @@
+{
+  "revision": "8f200282e83246898de702d014aa6acda0a95905",
+  "compatibility_change": "Select only build_precomputed timer, as documented in the WPR runbook",
+  "files": {
+    "save-integrity/cargopacket.cpp": "96a8f77d277d45a54881790a7023ad69de6b7f1821edbeebeadde8c291bb7f2b",
+    "save-integrity/cargopacket_sl.cpp": "dd2463faef00c3d272533c181b4a8498fa5718eac013790c5546798cd8b7d5f8",
+    "save-integrity/command.cpp": "d1830ec8d84457eed725b2881c21330de2e1748c035d5ca64467bdebcff0e7b6",
+    "save-integrity/console_cmds.cpp": "9324fca2fa52ec047e31f5e9df57b3245563b84b31c2a4d702cce4f73d6dbc11",
+    "save-integrity/integrity.h": "189872eade5c0e1d9663c5253cd551718b2bc2aff096cb03d451f33b6590bd05",
+    "save-integrity/passenger_service_database.cpp": "cf1318a1f3d04074ad8bc52cf7234e2b50b777c61216f8c6eb1f6108fa82d34d",
+    "save-integrity/wpr_gate.h": "64793e1253d3040ee8b8855b9c23a1d00b3db7690e26caf2716480d8750b8b24",
+    "real-map-driver/null_v.cpp": "a5c10a219285ff1f74f2a89e31a043396e87ad3878dcd0a3a62326d5f7c9c200",
+    "real-map-driver/win32.cpp": "6f3bb37d078595064995a82c44c21106c692ee34a99c337defda6829a4ffb8f8"
+  }
+}

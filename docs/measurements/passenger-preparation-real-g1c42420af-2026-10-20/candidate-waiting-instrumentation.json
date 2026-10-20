@@ -1,0 +1,17 @@
+{
+  "scope": "Copied translation units only; observe public preparation APIs and first sync; exit singleplayer before StateGameLoop",
+  "files": {
+    "save-integrity/cargopacket.cpp": "d2911acf583da57afddc87394c7ada6f23b47f95aaa91188e59847876e4ced42",
+    "save-integrity/cargopacket_sl.cpp": "b5f85245e4a2d144d73d927699f3fd9791c445ff5c9833b5ba05ae721642ff24",
+    "save-integrity/command.cpp": "4642b956d63de09948a338cac67e71533b9cf090f69a525811f16e7b22ef1938",
+    "save-integrity/console_cmds.cpp": "ee6247bed2377ee819f5bcdb1082fce691f1c07fcde1b4fc5f5e460dcb080af3",
+    "save-integrity/integrity.h": "6b809300bf19a213ee7d797424136f2172bb0d2d6513c092fa4b587403f64b5b",
+    "save-integrity/passenger_service_database.cpp": "ca32a0b363ef09b51e5f3944df0f429ed4e32861942494fa63eed07c4645b83f",
+    "save-integrity/wpr_gate.h": "64793e1253d3040ee8b8855b9c23a1d00b3db7690e26caf2716480d8750b8b24",
+    "real-map-driver/null_v.cpp": "502bd068b62a8f916d3f1baafe75f697d8aaf71da74aea9ca1407e8c7c1ab220",
+    "real-map-driver/win32.cpp": "4b38f569de4bf0ba837bcf6002be13f8ef7cbe4c5662c640be5b123612cc5a92",
+    "waiting-probe/network_client.cpp": "a1b9d39383d345ea007236a25e166828de4679bc74ff3a02455e5a618714a89c",
+    "waiting-probe/openttd.cpp": "a8f487e68b242af837be284e5166a761fcdc6e02f93e571140dc36ce59ca39cc",
+    "waiting-probe/waiting.hpp": "2d991a4948f93fa65e37138ccc5a32c430d951666ddde589ad9cce54896193ee"
+  }
+}

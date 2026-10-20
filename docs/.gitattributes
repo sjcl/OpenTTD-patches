@@ -1,6 +1,8 @@
 # Keep the report hash and runbook line endings stable across Windows checkouts.
+.gitattributes text eol=lf
 passenger-hyperpath-validate-6aeaff68-2026-10-19.md text eol=lf
 passenger-wpr-runbook.md text eol=lf
 passenger-wpr-loading-scratch-8f829b8c-2026-10-19.md text eol=lf
 passenger-wpr-clang-thin-merged-2026-10-19.md text eol=lf
 passenger-wpr-abba-6c11c67f-2026-10-19.md text eol=lf
+passenger-waiting-real-g1c42420af-2026-10-20.md text eol=lf

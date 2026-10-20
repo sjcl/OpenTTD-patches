@@ -1,0 +1,9 @@
+{
+  "accepted": true,
+  "exit_code": 0,
+  "input_sha256": "2ca578c155eadcf7ccba5875b8d7858ddf4a75795fe162ce33513425de873f94",
+  "label": "baseline",
+  "mode": "hyperpath",
+  "replay": true,
+  "tick_unchanged": true
+}
