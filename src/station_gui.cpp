@@ -1555,11 +1555,13 @@ struct StationViewWindow : public Window {
 			else other = true;
 		}
 		auto mode = GetStationCargoGroupingMode(this->current_mode == MODE_PLANNED, passengers, other);
-		this->GetWidget<NWidgetStacked>(WID_SV_PASSENGER_GROUPING_SEL)->SetDisplayedPlane(mode == StationCargoGroupingMode::Conventional ? SZSP_NONE : 0);
-		this->GetWidget<NWidgetStacked>(WID_SV_CARGO_GROUPING_SEL)->SetDisplayedPlane(mode == StationCargoGroupingMode::Passengers ? SZSP_NONE : 0);
+		bool passenger_changed = this->GetWidget<NWidgetStacked>(WID_SV_PASSENGER_GROUPING_SEL)->SetDisplayedPlane(mode == StationCargoGroupingMode::Conventional ? SZSP_NONE : 0);
+		bool cargo_changed = this->GetWidget<NWidgetStacked>(WID_SV_CARGO_GROUPING_SEL)->SetDisplayedPlane(mode == StationCargoGroupingMode::Passengers ? SZSP_NONE : 0);
 		this->GetWidget<NWidgetCore>(WID_SV_GROUP)->SetString(mode == StationCargoGroupingMode::Mixed ? STR_STATION_VIEW_GROUP_OTHER_CARGO : STR_STATION_VIEW_GROUP);
-		if (mode == this->grouping_mode) return false;
-		this->grouping_mode = mode; this->ReInit(); return true;
+		if (mode == this->grouping_mode && !passenger_changed && !cargo_changed) return false;
+		this->grouping_mode = mode;
+		this->ReInit();
+		return true;
 	}
 
 	void OnPaint() override
