@@ -44,9 +44,9 @@ struct PassengerTimedSearchScratch {
 	bool in_use = false;
 
 	struct Frontier { size_t head = SIZE_MAX, tail = SIZE_MAX; };
-	static constexpr size_t PAGE_SIZE = 64, PAGE_COUNT = (size_t{UINT16_MAX} + 1) / PAGE_SIZE;
-	using Page = std::array<Frontier, PAGE_SIZE>;
-	std::array<std::unique_ptr<Page>, PAGE_COUNT> frontiers{};
+	static constexpr size_t FRONTIER_PAGE_SIZE = 64, FRONTIER_PAGE_COUNT = (size_t{UINT16_MAX} + 1) / FRONTIER_PAGE_SIZE;
+	using Page = std::array<Frontier, FRONTIER_PAGE_SIZE>;
+	std::array<std::unique_ptr<Page>, FRONTIER_PAGE_COUNT> frontiers{};
 	size_t pages = 0;
 	std::vector<StationID> touched;
 	std::vector<VehicleID> &Loading(std::vector<VehicleID> &) { return this->loading; }
@@ -66,15 +66,15 @@ struct PassengerTimedSearchScratch {
 	};
 	Range At(StationID station) const
 	{
-		const auto &page = this->frontiers[station.base() / PAGE_SIZE];
-		return {&this->labels, page ? (*page)[station.base() % PAGE_SIZE].head : SIZE_MAX};
+		const auto &page = this->frontiers[station.base() / FRONTIER_PAGE_SIZE];
+		return {&this->labels, page ? (*page)[station.base() % FRONTIER_PAGE_SIZE].head : SIZE_MAX};
 	}
 	void Append(StationID station, size_t index)
 	{
 		const size_t slot = station.base();
-		auto &page = this->frontiers[slot / PAGE_SIZE];
+		auto &page = this->frontiers[slot / FRONTIER_PAGE_SIZE];
 		if (!page) { page = std::make_unique<Page>(); ++this->pages; }
-		auto &row = (*page)[slot % PAGE_SIZE];
+		auto &row = (*page)[slot % FRONTIER_PAGE_SIZE];
 		if (row.head == SIZE_MAX) {
 			this->touched.push_back(station);
 			row.head = index;
@@ -99,7 +99,7 @@ struct PassengerTimedSearchScratch {
 	}
 	void Clear()
 	{
-		for (StationID station : this->touched) (*this->frontiers[station.base() / PAGE_SIZE])[station.base() % PAGE_SIZE] = {};
+		for (StationID station : this->touched) (*this->frontiers[station.base() / FRONTIER_PAGE_SIZE])[station.base() % FRONTIER_PAGE_SIZE] = {};
 		this->touched.clear();
 		/* Erase path identities before retaining storage; no old labels remain
 		 * live or readable by the next search, including on a budget exit. */
