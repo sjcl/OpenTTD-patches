@@ -2993,7 +2993,7 @@ TEST_CASE("Hyperpath does not board an express for a local-only destination", "[
 TEST_CASE("Hyperpath capacity failures change the local policy and copy through packet splits", "[passenger][hyperpath][replan][save]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
-	auto *fast = f.Train({Stop(A), Stop(D)}); auto *slow = f.Train({Stop(A, 220), Stop(D, 220)});
+	auto *fast = f.Train({Stop(A), Stop(D)}); auto *slow = f.Train({Stop(A, 20), Stop(D, 220)});
 	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
 	fast->cargo.Append(f.Packet(100));
 	auto *packet = f.Packet(20); const auto id = packet->index;
@@ -3015,6 +3015,61 @@ TEST_CASE("Hyperpath capacity failures change the local policy and copy through 
 	CHECK_FALSE(slow->cargo.Packets()->front()->GetPassengerBoardingFailure().Present());
 	CHECK(CargoPacket::Get(id)->GetPassengerBoardingFailure().count == 3);
 	CHECK(CargoPacket::Get(id)->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
+}
+
+TEST_CASE("Hyperpath rejected detours retain boarding failures and every original carrier", "[passenger][hyperpath][capacity-cost][boarding][determinism]")
+{
+	using Mode = PassengerServiceDatabase::HyperpathFilterMode;
+	for (bool multiple : {false, true}) for (Mode mode : {Mode::Off, Mode::Index, Mode::Validate}) {
+		CAPTURE(multiple, static_cast<int>(mode));
+		Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+		auto *fast = f.Train({Stop(A), Stop(D)});
+		auto *other = multiple ? f.Train({Stop(A, 207), Stop(D, 205)}) : f.Train({Stop(A, 258), Stop(D, 258)});
+		auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+		db.SetHyperpathBoardingFilterMode(mode);
+		fast->cargo.Append(f.Packet(100));
+		auto *packet = f.Packet(20);
+		REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+		const auto intent = packet->GetPassengerJourney();
+		StationCargoList waiting; waiting.passenger_index_cargo = PAX; waiting.Append(packet, D);
+		PassengerJourneyLoadingContext loading;
+		for (uint8_t count = 1; count <= 3; ++count) {
+			++_state_ticks; waiting.RecordCapacityMiss(std::array{D}, fast, PAX, loading);
+			CHECK(packet->GetPassengerBoardingFailure().count == count);
+		}
+		const auto failure = packet->GetPassengerBoardingFailure();
+		REQUIRE(packet->GetPassengerFailedService(_state_ticks) == fast->orders->index);
+		const auto &table = PassengerServiceDatabaseTestAccess::Table(db, PAX);
+		const auto saved = db.Save(); GameRandomSeedChecker seeds;
+		for (unsigned epoch = 0; epoch < 2; ++epoch) {
+			PassengerPrecomputedTestAccess::EvictLocalPolicies(table);
+			PassengerJourneyLoadingContext fresh;
+			REQUIRE(waiting.HasCargoFor(std::array{D}, fast, &fresh, PAX));
+			CHECK(waiting.HasCargoFor(std::array{D}, other, &fresh, PAX) == multiple);
+			CHECK(packet->GetPassengerJourney() == intent); CHECK(packet->GetPassengerBoardingFailure() == failure);
+			std::vector<PassengerPrecomputedTable::DisplayCandidate> displayed; size_t work = 4096;
+			REQUIRE(db.HyperpathDisplayCandidates(PAX, intent, OrderListID::Invalid(), fast->orders->index, displayed, work));
+			CHECK(displayed.size() == (multiple ? 2 : 1));
+			CHECK(std::any_of(displayed.begin(), displayed.end(), [&](const auto &c) { return c.service == fast->orders->index; }));
+			CHECK(db.Save() == saved); CHECK(seeds.Check());
+		}
+		// The successful part clears its failure; the waiting remainder keeps the saturated record.
+		fast->cargo.Truncate();
+		REQUIRE(waiting.Load(5, &fast->cargo, std::array{D}, TileIndex{0}, fast, &loading) == 5);
+		CHECK_FALSE(fast->cargo.Packets()->front()->GetPassengerBoardingFailure().Present());
+		CHECK(packet->GetPassengerBoardingFailure() == failure);
+		_state_ticks = failure.since + failure.Hold(intent.waiting_limit);
+		CHECK(packet->GetPassengerFailedService(_state_ticks) == OrderListID::Invalid());
+		BeginPassengerJourneyTick();
+		waiting.RoutePassengerJourneys(PAX, A, true);
+		CHECK_FALSE(packet->GetPassengerBoardingFailure().Present());
+		PassengerJourneyLoadingContext after_expiry;
+		REQUIRE(waiting.Load(15, &fast->cargo, std::array{D}, TileIndex{0}, fast, &after_expiry) == 15);
+		CHECK(waiting.AvailableCount() == 0);
+		for (const auto *loaded : *fast->cargo.Packets()) CHECK_FALSE(loaded->GetPassengerBoardingFailure().Present());
+		CHECK(GetPassengerWaitingEventDiagnostic().hyperpath_memo_violations == 0);
+		CHECK(GetPassengerWaitingEventDiagnostic().hyperpath_index_violations == 0);
+	}
 }
 
 TEST_CASE("Hyperpath capacity misses do not depend on pending-index residency", "[passenger][hyperpath][replan][determinism]")
@@ -3042,7 +3097,7 @@ TEST_CASE("Hyperpath capacity misses do not depend on pending-index residency", 
 TEST_CASE("Hyperpath reservations retain failures until physical boarding and restore a shared policy on return", "[passenger][hyperpath][boarding][reservation]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
-	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 220), Stop(D, 220)});
+	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 20), Stop(D, 220)});
 	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
 	fast->cargo.Append(f.Packet(100));
 	auto *packet = f.Packet(20); PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, D));
@@ -5308,7 +5363,7 @@ TEST_CASE("Hyperpath conservative membership cannot mutate a rejected binding or
 TEST_CASE("Hyperpath cold local membership defers evaluation until the FIFO cohort is selected", "[passenger][hyperpath][boarding][replan]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
-	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 220), Stop(D, 220)});
+	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 20), Stop(D, 220)});
 	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
 	auto *packet = f.Packet(20); PassengerJourneyActiveContext context(nullptr, A);
 	REQUIRE(context.PlanWaiting(*packet, PAX, D));
@@ -5333,7 +5388,7 @@ TEST_CASE("Hyperpath cold local membership defers evaluation until the FIFO coho
 TEST_CASE("Hyperpath membership memo releases a retired policy before replanning", "[passenger][hyperpath][boarding][generation]")
 {
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
-	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 220), Stop(D, 220)});
+	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 20), Stop(D, 220)});
 	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
 	auto *packet = f.Packet(); PassengerJourneyActiveContext context(nullptr, A); REQUIRE(context.PlanWaiting(*packet, PAX, D));
 	const auto old = packet->GetPassengerJourney(); PassengerJourneyLoadingContext loading;
@@ -5362,7 +5417,9 @@ TEST_CASE("Hyperpath long-headway capacity failure adapts at the first full depa
 	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
 	auto *fast = f.Train({Stop(A, 11800), Stop(D, 100)});
 	PeriodicTrain *alternative = nullptr;
-	SECTION("Use a slower alternative") { alternative = f.Train({Stop(A, 16000), Stop(D, 16000)}); }
+	bool reroute = false;
+	SECTION("Use a slower alternative below twice the cost") { alternative = f.Train({Stop(A, 2000), Stop(D, 7000)}); reroute = true; }
+	SECTION("Retain the original policy above twice the cost") { alternative = f.Train({Stop(A, 16000), Stop(D, 16000)}); }
 	SECTION("Restore reachability when there is no alternative") {}
 	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
 	fast->cargo.Append(f.Packet(100));
@@ -5376,7 +5433,7 @@ TEST_CASE("Hyperpath long-headway capacity failure adapts at the first full depa
 	CHECK(GetPassengerWaitingEventDiagnostic().capacity_missed_packets == diagnostic.capacity_missed_packets + 1);
 	CHECK(packet->GetPassengerFailedService(_state_ticks) == fast->orders->index);
 	CHECK(packet->GetPassengerBoardingFailure().since == NOW);
-	if (alternative != nullptr) {
+	if (reroute) {
 		CHECK_FALSE(waiting.HasCargoFor(std::array{D}, fast, &loading, PAX));
 		REQUIRE(waiting.Load(20, &alternative->cargo, std::array{D}, TileIndex{0}, alternative, &loading) == 20);
 	} else {
@@ -5709,6 +5766,177 @@ static StationPassengerService ResolveStationService(StationPassengerServiceCach
 	return cache.Resolve(PAX, packet, station);
 }
 
+/** Publish services before starting the next table build, retaining the frozen display policy. */
+static void PublishStationDisplayServices(PassengerServiceDatabase &db)
+{
+	_state_ticks += PassengerServiceDatabase::TIMETABLE_EPOCH;
+	for (int i = 0; i < 128 && db.IsBuilding(); ++i) db.Tick(PassengerServiceDatabase::BUILD_WORK, false);
+	REQUIRE_FALSE(db.IsBuilding());
+}
+
+TEST_CASE("Station Hyperpath reuses completed displays across timing-only service generations", "[passenger][hyperpath][station-gui][service-generation][determinism]")
+{
+	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	const bool retained = GENERATE(false, true);
+	const bool ambiguous = GENERATE(false, true);
+	auto *first = f.Train({Stop(A), Stop(D)}), *second = f.Train({Stop(A), Stop(D)});
+	first->group_id = Group::Create(first->owner, first->type)->index;
+	second->group_id = ambiguous ? Group::Create(second->owner, second->type)->index : first->group_id;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	const auto intent = packet->GetPassengerJourney();
+	if (retained) PassengerServiceDatabaseTestAccess::BeginReplacement(db, 17);
+	StationPassengerServiceCache cache; const StationPassengerService expected{first->group_id, ambiguous};
+	REQUIRE(ResolveStationService(cache, *packet) == expected);
+	const auto source = db.HyperpathDisplaySourceRevision();
+	for (int update = 0; update < 2; ++update) {
+		auto board = db.BoardHyperpath(intent, PAX, first->orders->index, 0); REQUIRE(board.ride);
+		const auto old_ride = *board.ride; REQUIRE(db.IsCurrent(old_ride));
+		REQUIRE(ValidatePassengerServiceRide(old_ride, first, PAX, true));
+		first->GetOrder(1)->SetTravelTime(140 + update * 10);
+		db.TimetableChanged(first->orders->index); PublishStationDisplayServices(db);
+		REQUIRE(db.Get(first->orders->index)->generation != old_ride.generation);
+		REQUIRE(db.HyperpathDisplaySourceRevision() == source); REQUIRE(db.IsCurrent(intent));
+		// Display reuse must not make a previously issued concrete boarding ride current.
+		CHECK_FALSE(db.IsCurrent(old_ride)); CHECK_FALSE(ValidatePassengerServiceRide(old_ride, first, PAX, true));
+		const auto before = cache.GetDiagnostics(); const auto wire = db.Save();
+		const auto queries = db.GetPrecomputedDiagnostic(PAX); GameRandomSeedChecker seeds;
+		CHECK(cache.Resolve(PAX, *packet, A) == expected); // No Advance needed to recover a lost name.
+		CHECK_FALSE(cache.Advance(0)); CHECK(cache.Resolve(PAX, *packet, A) == expected);
+		const auto after = cache.GetDiagnostics();
+		CHECK(after.generation_reuses == before.generation_reuses + 1);
+		CHECK(after.work == before.work); CHECK(after.candidates == before.candidates); CHECK(after.vehicles == before.vehicles);
+		CHECK(after.searches == 0); CHECK(after.representative_lost == before.representative_lost);
+		CHECK(db.Save() == wire); CHECK(packet->GetPassengerJourney() == intent); CHECK(packet->Count() == 10); CHECK(seeds.Check());
+		CHECK(db.GetPrecomputedDiagnostic(PAX).queries == queries.queries);
+		CHECK(db.GetPrecomputedDiagnostic(PAX).local_replans == queries.local_replans);
+		CHECK_FALSE(db.IsCurrent(old_ride)); CHECK_FALSE(ValidatePassengerServiceRide(old_ride, first, PAX, true));
+	}
+}
+
+TEST_CASE("Station Hyperpath revalidates changed nonrepresentative candidates before reusing generations", "[passenger][hyperpath][station-gui][service-generation]")
+{
+	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *first = f.Train({Stop(A), Stop(D)}), *second = Vehicle::Create<PeriodicTrain>(first);
+	first->group_id = Group::Create(first->owner, first->type)->index;
+	second->group_id = Group::Create(second->owner, second->type)->index;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	StationPassengerServiceCache cache;
+	REQUIRE(ResolveStationService(cache, *packet) == StationPassengerService{first->group_id, true});
+	const auto generation = db.Get(first->orders->index)->generation;
+	const auto before = cache.GetDiagnostics();
+	SECTION("Capacity of another shared vehicle changes") {
+		second->cargo_cap = 0; db.Invalidate(first->orders->index);
+	}
+	SECTION("Group of another shared vehicle changes") {
+		second->group_id = first->group_id; cache.Invalidate(first->orders->index);
+	}
+	// RefreshService still accepts this service. A valid representative alone cannot prove
+	// that the aggregate's previous ambiguity remains correct.
+	first->GetOrder(1)->SetTravelTime(150); db.TimetableChanged(first->orders->index); PublishStationDisplayServices(db);
+	REQUIRE(db.Get(first->orders->index)->generation != generation);
+	REQUIRE(db.HyperpathDisplayServiceGeneration(PAX, packet->GetPassengerJourney(), first->orders->index,
+			first->orders->GetCargoDistRouteGeneration()).has_value());
+	CHECK(ResolveStationService(cache, *packet) == StationPassengerService{first->group_id});
+	const auto after = cache.GetDiagnostics();
+	CHECK(after.candidates > before.candidates); CHECK(after.vehicles > before.vehicles);
+	CHECK(after.generation_reuses == before.generation_reuses);
+}
+
+TEST_CASE("Station Hyperpath retains completed evidence during background validation and timing republication", "[passenger][hyperpath][station-gui][service-generation]")
+{
+	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	const bool waiting_for_fleet = GENERATE(false, true);
+	auto *train = f.Train({Stop(A), Stop(D)}); train->group_id = Group::Create(train->owner, train->type)->index;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	StationPassengerServiceCache cache; const auto expected = ResolveStationService(cache, *packet);
+	REQUIRE(expected.group == train->group_id);
+	++_state_ticks; // Periodic validation intentionally stays idle while the game is paused.
+	cache.Advance(45000, 0); REQUIRE(cache.Resolve(PAX, *packet, A) == expected);
+	REQUIRE(cache.GetDiagnostics().searches > 0);
+	if (waiting_for_fleet) {
+		for (size_t i = 0; i < 100 && cache.GetDiagnostics().searches != 2; ++i) cache.Advance(100, 1);
+		REQUIRE(cache.GetDiagnostics().searches == 2); // The cursor has already read the old binding.
+	}
+	train->GetOrder(1)->SetTravelTime(150); db.TimetableChanged(train->orders->index); PublishStationDisplayServices(db);
+	const auto before = cache.GetDiagnostics();
+	CHECK(cache.Resolve(PAX, *packet, A) == expected);
+	CHECK(cache.GetDiagnostics().generation_reuses == before.generation_reuses + 1);
+	CHECK(cache.GetDiagnostics().work == before.work);
+	for (size_t i = 0; i < 100 && cache.GetDiagnostics().searches != 0; ++i) {
+		CHECK_FALSE(cache.Advance(100, 1)); CHECK(cache.Resolve(PAX, *packet, A) == expected);
+	}
+	CHECK(cache.GetDiagnostics().searches == 0); CHECK(cache.GetDiagnostics().representative_lost == before.representative_lost);
+}
+
+TEST_CASE("Station Hyperpath display bindings reject unsafe incompatible and recycled services", "[passenger][hyperpath][station-gui][service-generation]")
+{
+	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *train = f.Train({Stop(A), Stop(D)}); train->group_id = Group::Create(train->owner, train->type)->index;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	const auto intent = packet->GetPassengerJourney(); const auto service = train->orders->index;
+	const auto incarnation = train->orders->GetCargoDistRouteGeneration();
+	StationPassengerServiceCache cache; REQUIRE(ResolveStationService(cache, *packet).group == train->group_id);
+	SECTION("Unsafe service awaiting publication") { db.Invalidate(service); }
+	SECTION("Published service no longer permits boarding") {
+		train->GetOrder(0)->SetLoadType(OrderLoadType::NoLoad); db.Invalidate(service); PublishStationDisplayServices(db);
+	}
+	SECTION("Recycled order list ID has a different incarnation") {
+		train->orders->FreeChain(); train->orders = OrderList::Create(std::vector<Order>{Stop(A), Stop(D)}, train);
+		REQUIRE(train->orders->index == service); REQUIRE(train->orders->GetCargoDistRouteGeneration() != incarnation);
+		PublishStationDisplayServices(db);
+	}
+	CHECK_FALSE(db.HyperpathDisplayServiceGeneration(PAX, intent, service, incarnation).has_value());
+	CHECK(ResolveStationService(cache, *packet).label == StationPassengerServiceLabel::Updating);
+	CHECK(cache.GetDiagnostics().generation_reuses == 0); CHECK(cache.GetDiagnostics().stale_service > 0);
+}
+
+TEST_CASE("Station Hyperpath revalidates aggregates when an unsafe nonrepresentative service is republished", "[passenger][hyperpath][station-gui][service-generation]")
+{
+	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *first = f.Train({Stop(A), Stop(D)}), *second = f.Train({Stop(A), Stop(D)});
+	first->group_id = second->group_id = Group::Create(first->owner, first->type)->index;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	StationPassengerServiceCache cache; REQUIRE(ResolveStationService(cache, *packet) == StationPassengerService{first->group_id});
+	db.Invalidate(second->orders->index);
+	REQUIRE(ResolveStationService(cache, *packet) == StationPassengerService{first->group_id, true});
+	const auto before = cache.GetDiagnostics();
+	const auto source = db.HyperpathDisplaySourceRevision();
+	PublishStationDisplayServices(db);
+	REQUIRE(db.HyperpathDisplaySourceRevision() != source);
+	CHECK(ResolveStationService(cache, *packet) == StationPassengerService{first->group_id});
+	CHECK(cache.GetDiagnostics().candidates > before.candidates);
+	CHECK(cache.GetDiagnostics().generation_reuses == before.generation_reuses);
+}
+
+TEST_CASE("Station Hyperpath restarts partial aggregate work after candidate changes", "[passenger][hyperpath][station-gui][service-generation]")
+{
+	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *first = f.Train({Stop(A), Stop(D)}), *second = Vehicle::Create<PeriodicTrain>(first);
+	first->group_id = Group::Create(first->owner, first->type)->index;
+	second->group_id = Group::Create(second->owner, second->type)->index;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	StationPassengerServiceCache cache; cache.Resolve(PAX, *packet, A);
+	for (size_t i = 0; i < 100 && cache.GetDiagnostics().vehicles == 0; ++i) cache.Advance(100, 1);
+	REQUIRE(cache.GetDiagnostics().vehicles == 1); REQUIRE(cache.GetDiagnostics().complete == 0);
+	second->cargo_cap = 0; db.Invalidate(first->orders->index); PublishStationDisplayServices(db);
+	for (size_t i = 0; i < 200 && cache.GetDiagnostics().complete != 2; ++i) cache.Advance(100, 1);
+	CHECK(cache.GetDiagnostics().complete == 2);
+	CHECK(cache.Resolve(PAX, *packet, A) == StationPassengerService{first->group_id});
+	CHECK(cache.GetDiagnostics().generation_reuses == 0);
+}
+
 TEST_CASE("Station Hyperpath display reads groups without planning or mutating published state", "[passenger][hyperpath][station-gui][determinism]")
 {
 	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
@@ -5853,6 +6081,87 @@ TEST_CASE("Station Hyperpath policies make progress with one GUI Work per update
 	cache.Advance(1000); CHECK(cache.Resolve(PAX, *packet, A) == service); CHECK(cache.GetDiagnostics().work == work);
 }
 
+TEST_CASE("Station Hyperpath table replacement preserves unchanged displays before any GUI work", "[passenger][hyperpath][station-gui][service-table-generation][determinism]")
+{
+	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	const bool ambiguous = GENERATE(false, true);
+	auto *first = f.Train({Stop(A), Stop(B), Stop(C), Stop(D)}), *second = f.Train({Stop(A), Stop(B), Stop(C), Stop(D)});
+	first->group_id = Group::Create(first->owner, first->type)->index;
+	second->group_id = ambiguous ? Group::Create(second->owner, second->type)->index : first->group_id;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	StationPassengerServiceCache cache; const StationPassengerService expected{first->group_id, ambiguous};
+	auto packet_to = [](StationID destination) {
+		auto *packet = CargoPacket::Create(10, 0, A, TileIndex{0}, Money{0});
+		REQUIRE(packet->SetPassengerDestination(PAX, destination)); return packet;
+	};
+	std::vector<CargoPacket *> packets;
+	for (StationID destination : {B, C, D}) {
+		auto *packet = packet_to(destination);
+		REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, destination)); packets.push_back(packet);
+		REQUIRE(ResolveStationService(cache, *packet) == expected);
+	}
+	// Preserve existing destination history too, rather than clearing its revision on a table move.
+	PassengerServiceDatabaseTestAccess::DestinationChanged(db, D);
+	REQUIRE(ResolveStationService(cache, *packets.back()) == expected);
+	const auto before = cache.GetDiagnostics(); const auto epoch = db.HyperpathLookupEpoch();
+	PassengerServiceDatabaseTestAccess::BeginReplacement(db, 17);
+	REQUIRE(db.HyperpathLookupEpoch() != epoch);
+	const auto wire = db.Save(); const auto queries = db.GetPrecomputedDiagnostic(PAX); GameRandomSeedChecker seeds;
+	for (const auto *packet : packets) {
+		REQUIRE(db.IsCurrent(packet->GetPassengerJourney()));
+		CHECK(cache.Resolve(PAX, *packet, A) == expected); // No Advance(0) to hide a display regression.
+	}
+	CHECK_FALSE(cache.Advance(0, 0));
+	const auto after = cache.GetDiagnostics();
+	CHECK(after.work == before.work); CHECK(after.candidates == before.candidates); CHECK(after.vehicles == before.vehicles);
+	CHECK(after.searches == 0); CHECK(after.policy_revalidations == before.policy_revalidations);
+	CHECK(after.representative_lost == before.representative_lost);
+	CHECK(db.Save() == wire); CHECK(seeds.Check());
+	CHECK(db.GetPrecomputedDiagnostic(PAX).queries == queries.queries);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).local_replans == queries.local_replans);
+
+	// Publishing B retires that old row while the old C/D rows remain valid.
+	for (size_t i = 0; i < 10000 && db.IsCurrent(packets.front()->GetPassengerJourney()); ++i) db.TickPrecomputed(1);
+	REQUIRE_FALSE(db.IsCurrent(packets.front()->GetPassengerJourney()));
+	REQUIRE(db.IsCurrent(packets.back()->GetPassengerJourney()));
+	CHECK(cache.Resolve(PAX, *packets.front(), A).label == StationPassengerServiceLabel::Updating);
+	CHECK(cache.Resolve(PAX, *packets.back(), A) == expected);
+	CHECK(cache.GetDiagnostics().work == before.work); CHECK(cache.GetDiagnostics().candidates == before.candidates);
+	auto current = db.PlanPrecomputed(PAX, A, B, NOW); REQUIRE(current.ride);
+	auto *current_packet = packet_to(B);
+	current_packet->SetPassengerJourney(*current.ride, B);
+	REQUIRE(ResolveStationService(cache, *current_packet) == expected);
+	const auto current_before = cache.GetDiagnostics();
+	while (!db.PrecomputedFinished()) db.TickPrecomputed();
+	REQUIRE(db.IsCurrent(current_packet->GetPassengerJourney()));
+	CHECK(cache.Resolve(PAX, *current_packet, A) == expected); // Clearing retained leaves this new row intact.
+	CHECK(cache.Resolve(PAX, *packets.back(), A).label == StationPassengerServiceLabel::Updating);
+	CHECK(cache.GetDiagnostics().work == current_before.work); CHECK(cache.GetDiagnostics().candidates == current_before.candidates);
+}
+
+TEST_CASE("Station Hyperpath still invalidates displays when publication history is unavailable", "[passenger][hyperpath][station-gui][service-table-generation]")
+{
+	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	auto *train = f.Train({Stop(A), Stop(B), Stop(D)}); train->group_id = Group::Create(train->owner, train->type)->index;
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	StationPassengerServiceCache cache; REQUIRE(ResolveStationService(cache, *packet).group == train->group_id);
+	SECTION("The destination change log overflows") {
+		for (size_t i = 0; i <= PassengerServiceDatabase::HYPERPATH_DESTINATION_LOG; ++i) PassengerServiceDatabaseTestAccess::DestinationChanged(db, B);
+	}
+	SECTION("A load replaces table contents even if policy generations match") {
+		const auto wire = db.Save(); REQUIRE(db.Load(wire)); db.FinishLoad(true);
+	}
+	REQUIRE(db.IsCurrent(packet->GetPassengerJourney()));
+	const auto before = cache.GetDiagnostics();
+	CHECK(cache.Resolve(PAX, *packet, A).label == StationPassengerServiceLabel::Updating);
+	CHECK(cache.GetDiagnostics().work == before.work);
+	CHECK(ResolveStationService(cache, *packet).group == train->group_id);
+	CHECK(cache.GetDiagnostics().candidates > before.candidates);
+}
+
 TEST_CASE("Station completed Hyperpath caches invalidate on publication retirement", "[passenger][hyperpath][station-gui][service-progress]")
 {
 	struct GroupCleanup { ~GroupCleanup() { _group_pool.CleanPool(); } } groups;
@@ -5863,13 +6172,18 @@ TEST_CASE("Station completed Hyperpath caches invalidate on publication retireme
 	auto *packet = f.Packet(); REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
 	StationPassengerServiceCache cache;
 	CHECK(ResolveStationService(cache, *packet).group == train->group_id);
+	const auto candidates = cache.GetDiagnostics().candidates;
+	const auto intent = packet->GetPassengerJourney();
 	_settings_game.linkgraph.passenger_transfer_penalty = 17; db.TickPrecomputed(1);
 	CHECK(ResolveStationService(cache, *packet).group == train->group_id); // Retained generation remains usable.
 	while (!db.PrecomputedFinished()) db.TickPrecomputed();
+	CHECK_FALSE(db.HyperpathDisplayServiceGeneration(PAX, intent, train->orders->index, train->orders->GetCargoDistRouteGeneration()).has_value());
+	CHECK(cache.Resolve(PAX, *packet, A).label == StationPassengerServiceLabel::Updating);
 	CHECK(ResolveStationService(cache, *packet).label == StationPassengerServiceLabel::Updating);
 	CHECK(cache.GetDiagnostics().stale_policy > 0);
 	auto plan = db.PlanPrecomputed(PAX, A, D, NOW); REQUIRE(plan.ride); packet->SetPassengerJourney(*plan.ride, D);
 	CHECK(ResolveStationService(cache, *packet).group == train->group_id);
+	CHECK(cache.GetDiagnostics().candidates > candidates); CHECK(cache.GetDiagnostics().generation_reuses == 0);
 }
 
 TEST_CASE("Station paused cold Hyperpath retries keep the settled waiting label", "[passenger][hyperpath][station-gui][service-stability]")

@@ -218,6 +218,9 @@ public:
 	 * group depends on nothing else. */
 	static constexpr uint64_t HYPERPATH_DESTINATION_LOG = 1024;
 	uint64_t HyperpathLookupEpoch() const { return this->hyperpath_lookup_epoch; }
+	/** GUI policy contents lost their identity: discard/load/replay, excluding moves to retained.
+	 * Completed displays otherwise depend on IsCurrent and the destination change log. */
+	uint64_t HyperpathDisplayResetEpoch() const { return this->hyperpath_display_reset_epoch; }
 	uint64_t HyperpathDestinationChanges() const { return this->hyperpath_destination_changes; }
 	/** Destination of change number @p change; valid while HyperpathDestinationChanges() - change <= HYPERPATH_DESTINATION_LOG. */
 	StationID HyperpathChangedDestination(uint64_t change) const { return this->hyperpath_destination_log[change % HYPERPATH_DESTINATION_LOG]; }
@@ -244,6 +247,13 @@ public:
 	/** GUI-only read of the intent's current/retained published policy. Never replans a stale intent. */
 	bool HyperpathDisplayCandidates(CargoType cargo, const PassengerJourneyExecution &intent, OrderListID previous, OrderListID failed,
 			std::vector<PassengerPrecomputedTable::DisplayCandidate> &out, size_t &work) const;
+	/** GUI-only binding for an already enumerated member of an unchanged policy. Requires a live,
+	 * safe service and the intent's own current/retained table; never makes an old ride current. */
+	std::optional<uint64_t> HyperpathDisplayServiceGeneration(CargoType cargo, const PassengerJourneyExecution &intent,
+			OrderListID service, uint64_t incarnation) const;
+	/** Structural, fleet and facility invalidations and their publication, excluding timing-only republication.
+	 * Display aggregates also depend on their policy row and GUI group notifications. */
+	uint64_t HyperpathDisplaySourceRevision() const { return this->hyperpath_display_source_revision; }
 
 	PassengerPrecomputedPlan BoardHyperpath(const PassengerJourneyExecution &intent, CargoType cargo, OrderListID service,
 			VehicleOrderID boarding, OrderListID previous = OrderListID::Invalid(), OrderListID failed = OrderListID::Invalid()) const;
@@ -429,6 +439,8 @@ private:
 	bool policy_cache_enabled = true; ///< Local optional accelerator; absent from saves and routing admission.
 	HyperpathFilterMode hyperpath_boarding_filter = HyperpathFilterMode::Index; ///< Local derived boarding filter; identical decisions, absent from saves.
 	uint64_t hyperpath_lookup_epoch = 1, hyperpath_destination_changes = 0; ///< Derived; monotone across resets and loads.
+	uint64_t hyperpath_display_source_revision = 1; ///< Derived GUI dependencies; timing-only publications do not change fleet usability.
+	uint64_t hyperpath_display_reset_epoch = 1; ///< Derived GUI content identity, stable when a table moves to retained.
 	std::array<StationID, HYPERPATH_DESTINATION_LOG> hyperpath_destination_log{}; ///< Derived ring indexed by change number.
 	std::vector<uint64_t> hyperpath_destination_changed; ///< Derived: change count just after each destination's latest change.
 	void BumpHyperpathDestination(StationID destination)

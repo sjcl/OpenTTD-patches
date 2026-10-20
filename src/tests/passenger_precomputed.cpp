@@ -845,7 +845,10 @@ TEST_CASE("Hyperpath local replanning admits a previously rejected service and p
 {
 	std::vector<PassengerPeriodicService> services{Service(0, {A, D}, 100)};
 	bool alternative = true;
-	SECTION("Previously unattractive alternative") { services.push_back(Service(1, {A, D}, 220)); }
+	SECTION("Previously unattractive alternative") {
+		services.push_back(Service(1, {A, D}, 220));
+		services.back().timetable.period = 260; // A short return keeps the total below twice the original policy.
+	}
 	SECTION("No alternative restores the failed service") { alternative = false; }
 	std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
 	PassengerPrecomputedTable table; table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
@@ -867,6 +870,100 @@ TEST_CASE("Hyperpath local replanning admits a previously rejected service and p
 	CHECK(displayed.front().service == chosen); CHECK(displayed.front().order == 0);
 	CHECK(table.GetDiagnostic().local_replans == before.local_replans);
 	CHECK(table.GetDiagnostic().bytes == before.bytes);
+}
+
+TEST_CASE("Hyperpath capacity cost comparison handles the exact boundary and wide costs", "[passenger][hyperpath][capacity-cost]")
+{
+	auto accept = PassengerPrecomputedTestAccess::AcceptLocalPolicyCost;
+	CHECK(accept(100, 150)); CHECK_FALSE(accept(100, 200)); CHECK_FALSE(accept(100, 250));
+	CHECK(accept(1, 1)); CHECK_FALSE(accept(1, 2)); CHECK_FALSE(accept(0, 0));
+	CHECK_FALSE(accept(-1, 1)); CHECK_FALSE(accept(1, -1));
+	CHECK_FALSE(accept(1, INT64_MAX)); CHECK_FALSE(accept(INT64_MAX, INT64_MAX));
+	CHECK(accept(INT64_MAX, 1)); // An unreachable original never excludes a finite alternative.
+	CHECK_FALSE(accept(INT64_MAX / 2, INT64_MAX - 1)); // Exactly twice, without signed overflow.
+	CHECK(accept(INT64_MAX / 2 + 1, INT64_MAX - 1));
+	CHECK(accept(INT64_MAX - 1, INT64_MAX - 1));
+}
+
+TEST_CASE("Hyperpath capacity cost decisions reuse stored candidates across cache and display reads", "[passenger][hyperpath][capacity-cost][determinism]")
+{
+	for (bool flat : {false, true}) for (bool arriving : {false, true}) for (unsigned ratio : {15U, 20U, 25U, 0U}) {
+		CAPTURE(flat, arriving, ratio);
+		std::vector<PassengerPeriodicService> services{Service(0, {A, D}, 100)};
+		if (ratio == 15) { services.push_back(Service(1, {A, D}, 198)); services.back().timetable.period = 220; }
+		if (ratio == 20) { services.push_back(Service(1, {A, D}, 205)); services.back().timetable.period = 432; }
+		if (ratio == 25) services.push_back(Service(1, {A, D}, 258));
+		// This much cheaper arriving carrier must be excluded from both compared policies.
+		if (arriving) services.push_back(Service(2, {A, D}, 1));
+		std::vector<const PassengerPeriodicService *> records; for (const auto &s : services) records.push_back(&s);
+		PassengerPrecomputedTable table;
+		table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true, true, true, flat);
+		while (!table.Finished()) table.Step(7);
+		const auto previous = arriving ? OrderListID{2} : OrderListID::Invalid();
+		const auto original = table.Plan(A, D, StateTicks{42}, previous); REQUIRE(original.ride);
+		const auto base = table.Candidates(A, D, previous); REQUIRE_FALSE(base.empty());
+		if (ratio == 15) CHECK(original.cost == 208);
+		else CHECK(original.cost == 214);
+		if (ratio == 20) REQUIRE(base.size() == 2); // Preserve the failed carrier AND the other attractive line.
+		const auto published = PassengerPrecomputedTestAccess::Published(table);
+		for (unsigned epoch = 0; epoch < 2; ++epoch) {
+			CAPTURE(epoch);
+			PassengerPrecomputedTestAccess::EvictLocalPolicies(table);
+			const auto replans = table.GetDiagnostic().local_replans;
+			const auto occurrence = table.BoardingOccurrence(A, OrderListID{0}, 0);
+			CHECK_FALSE(table.ContainsCached(A, D, occurrence, previous, OrderListID{0}).has_value());
+			std::vector<PassengerPrecomputedTable::DisplayCandidate> displayed; size_t work = 4096;
+			CHECK_FALSE(table.DisplayCandidates(A, D, previous, OrderListID{0}, displayed, work));
+			CHECK(table.GetDiagnostic().local_replans == replans); // GUI cannot warm a simulation cache.
+			work = 4096;
+			const auto inspection = table.InspectRoutes(A, D, previous, OrderListID{0}, work);
+			CHECK(table.GetDiagnostic().local_replans == replans);
+			const auto selected = table.Candidates(A, D, previous, OrderListID{0});
+			if (ratio == 15) {
+				REQUIRE(selected.size() == 1);
+				CHECK_FALSE(table.Board(A, D, StateTicks{}, OrderListID{0}, 0, previous, OrderListID{0}).ride);
+			} else {
+				CHECK(selected.data() == base.data()); CHECK(selected.size() == base.size());
+			}
+			for (unsigned hit = 0; hit < 3; ++hit) {
+				const auto plan = table.Plan(A, D, StateTicks{42}, previous, 0, OrderListID{0}); REQUIRE(plan.ride);
+				if (ratio == 15) CHECK(plan.cost == 312); // Exactly 1.5 * 208.
+				else { CHECK(plan.ride == original.ride); CHECK(plan.cost == original.cost); CHECK(plan.waiting == original.waiting); }
+				work = 4096; REQUIRE(table.DisplayCandidates(A, D, previous, OrderListID{0}, displayed, work));
+				REQUIRE(displayed.size() == selected.size()); CHECK(inspection.candidates.size() == selected.size());
+				for (const auto &candidate : displayed) {
+					CHECK(candidate.service != previous);
+					const auto id = table.BoardingOccurrence(A, candidate.service, candidate.order);
+					CHECK(table.ContainsCached(A, D, id, previous, OrderListID{0}) == true);
+					REQUIRE(table.Board(A, D, StateTicks{}, candidate.service, candidate.order, previous, OrderListID{0}).ride);
+					CHECK(std::any_of(inspection.candidates.begin(), inspection.candidates.end(), [&](const auto &r) { return r.ride.service == candidate.service; }));
+				}
+				CHECK(table.ContainsCached(A, D, occurrence, previous, OrderListID{0}) == (ratio != 15));
+				CHECK(table.GetDiagnostic().local_replans == replans + 1);
+			}
+		}
+		CHECK(PassengerPrecomputedTestAccess::Published(table) == published);
+		// Rebuilding the frozen table clears every local decision and produces the same choice.
+		table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true, true, true, flat);
+		while (!table.Finished()) table.Step(3);
+		CHECK(table.GetDiagnostic().local_replans == 0);
+		const auto plan = table.Plan(A, D, StateTicks{42}, previous, 0, OrderListID{0}); REQUIRE(plan.ride);
+		CHECK(plan.cost == (ratio == 15 ? 312 : original.cost));
+	}
+}
+
+TEST_CASE("Hyperpath stored-policy aliases retain unreachable destinations", "[passenger][hyperpath][capacity-cost]")
+{
+	std::array services{Service(0, {A, D}), Service(1, {B, C})};
+	std::array records{&services[0], &services[1]};
+	PassengerPrecomputedTable table;
+	table.Begin(records, PAX, 0, PassengerPrecomputedTable::MAX_BYTES, true, false, {}, true, true, true, true);
+	while (!table.Finished()) table.Step(7);
+	CHECK(table.Candidates(A, C, OrderListID::Invalid(), OrderListID{0}).empty());
+	CHECK(table.Plan(A, C, StateTicks{}, OrderListID::Invalid(), 0, OrderListID{0}).state == PassengerPrecomputedPlan::State::NoRoute);
+	CHECK(table.ContainsCached(A, C, table.BoardingOccurrence(A, OrderListID{0}, 0), OrderListID::Invalid(), OrderListID{0}) == false);
+	std::vector<PassengerPrecomputedTable::DisplayCandidate> displayed; size_t work = 4096;
+	CHECK(table.DisplayCandidates(A, C, OrderListID::Invalid(), OrderListID{0}, displayed, work)); CHECK(displayed.empty());
 }
 
 TEST_CASE("Precomputed trees preserve through rides and physical occurrences", "[passenger][precomputed]")

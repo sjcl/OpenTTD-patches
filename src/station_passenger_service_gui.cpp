@@ -81,7 +81,7 @@ void Merge(Evidence &a, const Evidence &b)
 struct Progress {
 	State state = State::Pending;
 	Evidence evidence;
-	uint64_t serial = 0, due = 0, source_revision = 0;
+	uint64_t serial = 0, due = 0, source_revision = 0, boarding_revision = 0;
 	bool queued = false;
 };
 
@@ -109,8 +109,10 @@ struct Job { JobKey key; uint64_t serial; };
 /** Compact published results are independent of evictable search workspaces. */
 struct Result : Progress {
 	StationPassengerService display{GroupID::Invalid(), false, StationID::Invalid(), DisplayLabel::Checking};
-	bool settled = false, refreshing = false;
+	bool settled = false, refreshing = false, complete_evidence = false;
 	uint64_t seen = 0, used = 0, epoch = 0, destination_revision = 0, route_generation = 0, service_generation = 0;
+	// A refresh can outlive the published evidence; keep its original dependencies too.
+	uint64_t evidence_source_revision = 0, evidence_boarding_revision = 0;
 	StateTicks checked_tick{};
 	size_t pins = 0;
 	VehicleID first = VehicleID::Invalid();
@@ -148,7 +150,7 @@ struct StationPassengerServiceCache::Impl {
 	std::map<StationID, uint64_t> destination_revisions;
 	StationPassengerServiceDiagnostics diagnostic;
 	std::array<size_t, 4> states{};
-	uint64_t now = 0, serial = 0, lookup_epoch = 0, changes = 0, policy_epoch = 1, version = 0;
+	uint64_t now = 0, serial = 0, reset_epoch = 0, changes = 0, policy_epoch = 1, version = 0;
 	size_t credit = MAX_WORK;
 	uint64_t fractional_credit = 0;
 
@@ -208,7 +210,19 @@ struct StationPassengerServiceCache::Impl {
 	{
 		if (result.evidence.group != GroupID::Invalid()) ++this->diagnostic.representative_lost;
 		result.evidence = {};
+		result.complete_evidence = false;
 		this->Display(result, {GroupID::Invalid(), false, StationID::Invalid(), DisplayLabel::Updating});
+	}
+
+	/** Only call after checking that the aggregate's policy and source dependencies still match. */
+	bool RefreshEvidence(Evidence &evidence, const PassengerJourneyExecution &intent) const
+	{
+		if (!evidence.check_database) return false;
+		auto generation = GetPassengerServiceDatabase().HyperpathDisplayServiceGeneration(evidence.cargo, intent, evidence.service, evidence.signature);
+		if (!generation || *generation == evidence.generation) return false;
+		auto refreshed = evidence; refreshed.generation = *generation;
+		if (!ValidRepresentative(refreshed)) return false;
+		evidence = refreshed; return true;
 	}
 
 	template <typename Key> void Publish(const Key &key, const Progress &progress, const Evidence &evidence)
@@ -221,7 +235,7 @@ struct StationPassengerServiceCache::Impl {
 			// A retry is internal work, not a new initial search. Keep settled failure labels.
 			if (!settled && result.settled && display.group == GroupID::Invalid()) display = result.display;
 			if (display.group != GroupID::Invalid() && result.display.group == GroupID::Invalid()) ++this->diagnostic.resolved;
-			if (!settled && display.group != GroupID::Invalid()) result.evidence = evidence;
+			if (!settled && display.group != GroupID::Invalid()) { result.evidence = evidence; result.complete_evidence = false; }
 			this->Display(result, display);
 		}
 		if (!settled) {
@@ -230,6 +244,9 @@ struct StationPassengerServiceCache::Impl {
 		}
 		--this->states[static_cast<size_t>(result.state)]; ++this->states[static_cast<size_t>(progress.state)];
 		result.evidence = evidence; result.state = progress.state; result.settled = true; result.refreshing = false;
+		result.source_revision = progress.source_revision; result.boarding_revision = progress.boarding_revision;
+		result.complete_evidence = progress.state == State::Complete;
+		result.evidence_source_revision = progress.source_revision; result.evidence_boarding_revision = progress.boarding_revision;
 		result.checked_tick = _state_ticks;
 		result.due = this->now + (progress.state == State::Unavailable ? 2000 : 30000) + progress.serial % 10000;
 		if constexpr (std::is_same_v<Key, FleetKey>) {
@@ -240,6 +257,9 @@ struct StationPassengerServiceCache::Impl {
 			result.first_group = first == nullptr ? GroupID::Invalid() : first->group_id;
 			result.first = first == nullptr ? VehicleID::Invalid() : first->index;
 			if (list != nullptr) { result.vehicle_count = list->GetNumVehicles(); result.route_generation = list->GetCargoDistRouteGeneration(); }
+		} else {
+			const auto &policy = this->policies.at(key);
+			result.epoch = policy.epoch; result.destination_revision = policy.destination_revision;
 		}
 	}
 
@@ -276,15 +296,17 @@ struct StationPassengerServiceCache::Impl {
 	void Synchronize()
 	{
 		const auto &db = GetPassengerServiceDatabase();
-		const uint64_t epoch = db.HyperpathLookupEpoch(), latest = db.HyperpathDestinationChanges();
-		if (epoch == this->lookup_epoch && latest == this->changes) return;
-		if (latest - this->changes > PassengerServiceDatabase::HYPERPATH_DESTINATION_LOG) {
+		const uint64_t epoch = db.HyperpathDisplayResetEpoch(), latest = db.HyperpathDestinationChanges();
+		if (epoch == this->reset_epoch && latest == this->changes) return;
+		// A table moving to retained preserves its policy generation and contents. Only
+		// lost content/history invalidates every result; row retirement is checked per intent.
+		if (epoch != this->reset_epoch || latest - this->changes > PassengerServiceDatabase::HYPERPATH_DESTINATION_LOG) {
 			++this->policy_epoch; this->destination_revisions.clear();
 		} else {
 			for (uint64_t n = this->changes; n < latest; ++n) this->destination_revisions[db.HyperpathChangedDestination(n)] = n + 1;
 			if (this->destination_revisions.size() > MAX_ENTRIES * 2) { ++this->policy_epoch; this->destination_revisions.clear(); }
 		}
-		this->lookup_epoch = epoch; this->changes = latest;
+		this->reset_epoch = epoch; this->changes = latest;
 	}
 
 	void Restart(Fleet &entry)
@@ -308,6 +330,7 @@ struct StationPassengerServiceCache::Impl {
 		entry.evidence = {}; entry.state = State::Pending; entry.cursor = {}; this->ReleaseWaiting(entry);
 		entry.saw_candidate = entry.uncertain = false;
 		entry.epoch = this->policy_epoch; entry.destination_revision = this->Revision(entry.intent.alighting);
+		entry.source_revision = this->input_revision; entry.boarding_revision = GetPassengerServiceDatabase().HyperpathDisplaySourceRevision();
 		++this->diagnostic.refreshes;
 	}
 
@@ -353,6 +376,9 @@ struct StationPassengerServiceCache::Impl {
 	void Process(const FleetKey &key, Fleet &entry, size_t &work)
 	{
 		if (work == 0) return;
+		const auto revision = GetPassengerServiceDatabase().HyperpathDisplaySourceRevision();
+		if (entry.source_revision != this->SourceRevision(key) || (key.policy && entry.boarding_revision != revision)) this->Restart(entry);
+		entry.source_revision = this->SourceRevision(key); entry.boarding_revision = revision;
 		const OrderList *orders = OrderList::GetIfValid(key.service);
 		if (orders == nullptr || (key.kind != PassengerRideKind::VehicleSnapshot && orders->GetCargoDistRouteGeneration() != key.signature)) {
 			--work; ++this->diagnostic.stale_service; this->Settle(entry, State::Unavailable); return;
@@ -437,7 +463,8 @@ struct StationPassengerServiceCache::Impl {
 		bool changed = result->settled && !stale && (result->route_generation != list->GetCargoDistRouteGeneration() || result->vehicle_count != list->GetNumVehicles() ||
 				result->first != (first == nullptr ? VehicleID::Invalid() : first->index) || result->first_group != (first == nullptr ? GroupID::Invalid() : first->group_id));
 		bool invalid = !ValidRepresentative(result->evidence);
-		bool source = result->source_revision != this->SourceRevision(key);
+		const auto revision = GetPassengerServiceDatabase().HyperpathDisplaySourceRevision();
+		bool source = result->source_revision != this->SourceRevision(key) || (key.policy && result->boarding_revision != revision);
 		if (!stale && result->evidence.usable) {
 			const Order *board = key.board < list->GetNumOrders() ? list->GetOrderAt(key.board) : nullptr;
 			const Order *alight = key.alight < list->GetNumOrders() ? list->GetOrderAt(key.alight) : nullptr;
@@ -458,8 +485,10 @@ struct StationPassengerServiceCache::Impl {
 			it = this->fleets.try_emplace(key).first; it->second.serial = ++this->serial;
 		} else if (it->second.state == State::Complete || it->second.state == State::Unavailable || source || invalid) this->Restart(it->second);
 		if (!result->refreshing && periodic) ++this->diagnostic.periodic_revalidations;
-		result->source_revision = this->SourceRevision(key); result->refreshing = true;
+		result->source_revision = this->SourceRevision(key); result->boarding_revision = revision; result->refreshing = true;
+		it->second.source_revision = result->source_revision; it->second.boarding_revision = revision;
 		it->second.ride = ride;
+		it->second.evidence.generation = ride.generation;
 		if (new_search && immediate && !result->settled && this->credit != 0) {
 			size_t allowance = std::min(this->credit, SLICE), left = allowance;
 			this->Process(key, it->second, left); this->credit -= allowance - left; this->diagnostic.work += allowance - left;
@@ -473,13 +502,21 @@ struct StationPassengerServiceCache::Impl {
 
 	void Process(const PolicyKey &key, Policy &entry, size_t &work)
 	{
-		if (entry.epoch != this->policy_epoch || entry.destination_revision != this->Revision(entry.intent.alighting)) this->Restart(entry);
+		if (entry.epoch != this->policy_epoch || entry.destination_revision != this->Revision(entry.intent.alighting) ||
+				entry.source_revision != this->input_revision || entry.boarding_revision != GetPassengerServiceDatabase().HyperpathDisplaySourceRevision()) this->Restart(entry);
 		auto &db = GetPassengerServiceDatabase();
 		const auto [cargo, generation, station, destination, previous, failed] = key;
+		this->RefreshEvidence(entry.evidence, entry.intent);
 		while (work > 0) {
 			if (!db.IsCurrent(entry.intent)) { --work; ++this->diagnostic.stale_policy; entry.evidence = {}; this->ReleaseWaiting(entry); this->Settle(entry, State::Unavailable); return; }
 			if (entry.waiting) {
 				--work;
+				// A slice may have read this candidate before a timing-only publication.
+				// Resolve its binding from the same policy before consulting the fleet cache.
+				if (!db.IsCurrent(entry.current)) {
+					auto refreshed = db.HyperpathDisplayServiceGeneration(cargo, entry.intent, entry.current.service, entry.current.signature);
+					if (refreshed) entry.current.generation = *refreshed;
+				}
 				if (!db.IsCurrent(entry.current)) { ++this->diagnostic.stale_service; entry.uncertain = true; }
 				else {
 					Progress *fleet = this->GetFleet(*entry.waiting, entry.current, false);
@@ -525,9 +562,16 @@ struct StationPassengerServiceCache::Impl {
 	Result *GetPolicy(const PolicyKey &key, const PassengerJourneyExecution &intent, bool touch = true)
 	{
 		Result *result = this->UseResult(key, touch); if (result == nullptr) return nullptr;
-		const bool current = GetPassengerServiceDatabase().IsCurrent(intent);
+		const auto &db = GetPassengerServiceDatabase();
+		const bool current = db.IsCurrent(intent);
 		const bool policy = result->epoch != this->policy_epoch || result->destination_revision != this->Revision(intent.alighting);
-		const bool source = result->source_revision != this->input_revision;
+		const bool source = result->source_revision != this->input_revision || result->boarding_revision != db.HyperpathDisplaySourceRevision();
+		// A timing publication can refresh a table's live binding without changing its frozen
+		// policy or any fleet. Update only this GUI copy, after checking aggregate dependencies.
+		if (current && !policy && !source && result->complete_evidence && result->evidence.check_database &&
+				result->evidence_source_revision == this->input_revision && result->evidence_boarding_revision == db.HyperpathDisplaySourceRevision()) {
+			if (this->RefreshEvidence(result->evidence, intent)) ++this->diagnostic.generation_reuses;
+		}
 		const bool invalid = !ValidRepresentative(result->evidence);
 		const bool periodic = result->settled && this->now >= result->due && _state_ticks != result->checked_tick;
 		const bool retry = result->settled && result->state == State::Unavailable && this->now >= result->due;
@@ -535,6 +579,7 @@ struct StationPassengerServiceCache::Impl {
 			if (invalid) this->LoseRepresentative(*result);
 			else if (!current || policy) {
 				result->evidence = {};
+				result->complete_evidence = false;
 				this->Display(*result, {GroupID::Invalid(), false, StationID::Invalid(), DisplayLabel::Updating});
 			}
 		}
@@ -552,7 +597,7 @@ struct StationPassengerServiceCache::Impl {
 			else if (periodic) ++this->diagnostic.periodic_revalidations;
 		}
 		result->epoch = this->policy_epoch; result->destination_revision = this->Revision(intent.alighting);
-		result->source_revision = this->input_revision; result->refreshing = true;
+		result->source_revision = this->input_revision; result->boarding_revision = db.HyperpathDisplaySourceRevision(); result->refreshing = true;
 		this->Enqueue(key, it->second); return result;
 	}
 
@@ -590,7 +635,11 @@ struct StationPassengerServiceCache::Impl {
 		if (it->second.seen + 1 < this->frame) return false;
 		std::visit([&](const auto &query) {
 			using Key = std::decay_t<decltype(query)>;
-			if constexpr (std::is_same_v<Key, FleetKey>) this->GetFleet(query, this->FleetRide(query, it->second), false, false);
+			if constexpr (std::is_same_v<Key, FleetKey>) {
+				// Policy dependencies are validated through their parent, using that table's
+				// refreshed binding. Probing their saved generation would spuriously expire it.
+				if (!query.policy) this->GetFleet(query, this->FleetRide(query, it->second), false, false);
+			}
 			else {
 				const auto [cargo, generation, station, destination, previous, failed] = query;
 				PassengerJourneyExecution intent; intent.kind = PassengerRideKind::HyperpathIntent; intent.signature = uint64_t(cargo) + 1;

@@ -1166,7 +1166,7 @@ bool PassengerPrecomputedTable::PrepareParallelBatch(uint workers)
 		if (!this->parallel) {
 			const size_t cpus = std::max(1U, std::thread::hardware_concurrency());
 			const uint64_t bytes = uint64_t(this->graph->states) * 256 + uint64_t(this->graph->integrated ? this->graph->logical_edges : this->graph->edge_count) * 32 + 65536;
-			workers = static_cast<uint>(std::min<size_t>({workers, 8, cpus, DestinationWorkerPool::SCRATCH_LIMIT / bytes / 4, this->graph->stations.size() - this->destination}));
+			workers = static_cast<uint>(std::min<uint64_t>({workers, 8, cpus, DestinationWorkerPool::SCRATCH_LIMIT / bytes / 4, this->graph->stations.size() - this->destination}));
 			size_t permitted = 0; while (permitted < workers && (!this->parallel_start_hook || this->parallel_start_hook(static_cast<uint>(permitted)))) ++permitted;
 			if (permitted == 0) { if (workers != 0) { this->parallel_unavailable = true; ++this->parallel_diagnostic.fallbacks; } return false; }
 			auto &pool = WorkerPool();
@@ -1891,6 +1891,7 @@ std::optional<bool> PassengerPrecomputedTable::ContainsCached(StationID origin, 
 		 * Its deterministic construction belongs to the selected FIFO cohort.
 		 * Enumerating an unrelated cohort must never run EvaluateRide. */
 		if (found == this->local_policies.end()) return {};
+		if (found->second.UsesStoredPolicy()) return this->ContainsStored(*row, state, occurrence);
 		candidates = found->second.candidates;
 	} else {
 		return this->ContainsStored(*row, state, occurrence);
@@ -1994,8 +1995,18 @@ std::span<const uint32_t> PassengerPrecomputedTable::Candidates(StationID origin
 {
 	const auto *row = this->FindRow(destination); uint32_t state = this->PolicyState(origin, previous);
 	if (row == nullptr || state == INVALID) return {};
-	if (failed != OrderListID::Invalid()) return this->LocalPolicy(*row, destination, state, failed).candidates;
+	if (failed != OrderListID::Invalid()) {
+		const auto &policy = this->LocalPolicy(*row, destination, state, failed);
+		if (!policy.UsesStoredPolicy()) return policy.candidates;
+	}
 	return this->RowCandidates(*row, destination, state);
+}
+
+std::optional<uint64_t> PassengerPrecomputedTable::DisplayServiceGeneration(OrderListID service, uint64_t incarnation) const
+{
+	const auto *member = this->FindMember(service);
+	if (!this->graph->hyperpath || member == nullptr || member->incarnation != incarnation) return std::nullopt;
+	return member->generation;
 }
 
 PassengerPrecomputedTable::DisplayRead PassengerPrecomputedTable::NextDisplayCandidate(StationID origin, StationID destination,
@@ -2010,10 +2021,14 @@ PassengerPrecomputedTable::DisplayRead PassengerPrecomputedTable::NextDisplayCan
 	std::array<std::span<const uint32_t>, 2> spans{};
 	uint32_t excluded = INVALID;
 	size_t phases = 1;
+	const Policy *local = nullptr;
 	if (failed != OrderListID::Invalid()) {
 		auto found = this->local_policies.find({destination, state, failed});
 		if (found == this->local_policies.end()) return DisplayRead::Unavailable;
-		spans[0] = found->second.candidates;
+		local = &found->second;
+	}
+	if (local != nullptr && !local->UsesStoredPolicy()) {
+		spans[0] = local->candidates;
 	} else {
 		const uint32_t index = row->indices[state];
 		if (!this->graph->flat_storage) spans[0] = row->policies[index].candidates;
@@ -2084,6 +2099,14 @@ const std::vector<std::pair<int64_t, uint32_t>> &PassengerPrecomputedTable::Stat
 	return this->station_choices.emplace(key, std::move(choices)).first->second;
 }
 
+bool PassengerPrecomputedTable::AcceptLocalPolicyCost(int64_t original, int64_t alternative)
+{
+	/* INT64_MAX is unreachable, never a cost to compare. Doubling a valid signed
+	 * cost fits in uint64_t, including when it would overflow int64_t. */
+	return original >= 0 && alternative >= 0 && alternative != INT64_MAX &&
+			(original == INT64_MAX || uint64_t(alternative) < 2 * uint64_t(original));
+}
+
 const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(const Row &row, StationID destination, uint32_t state, OrderListID failed) const
 {
 	auto key = std::tuple(destination, state, failed);
@@ -2095,19 +2118,21 @@ const PassengerPrecomputedTable::Policy &PassengerPrecomputedTable::LocalPolicy(
 	const uint32_t station = this->graph->waiting_station[state];
 	const auto &choices = this->StationChoices(row, destination, station);
 	Policy policy;
-	auto compute = [&](bool exclude) {
-		PassengerStrategy sum; policy.candidates.clear();
-		for (auto [cost, board] : choices) {
-			const auto &o = this->graph->occurrences[board];
-			if (state != station && this->StateFor(station, o.pattern) == state) continue;
-			const auto &p = this->graph->patterns[o.pattern];
-			if (exclude && p.members.front().id == failed) continue;
-			if (sum.Add(cost, PassengerStrategy::Frequency(p.wait))) policy.candidates.push_back(board);
-		}
-		policy.cost = sum.Cost(); policy.wait = sum.Wait();
-	};
-	compute(true);
-	if (policy.candidates.empty()) compute(false); // Preserve reachability when there is no alternative.
+	PassengerStrategy sum;
+	for (auto [cost, board] : choices) {
+		const auto &o = this->graph->occurrences[board];
+		if (state != station && this->StateFor(station, o.pattern) == state) continue;
+		const auto &p = this->graph->patterns[o.pattern];
+		if (p.members.front().id == failed) continue;
+		if (sum.Add(cost, PassengerStrategy::Frequency(p.wait))) policy.candidates.push_back(board);
+	}
+	policy.cost = sum.Cost(); policy.wait = sum.Wait();
+	const auto [original_cost, original_wait] = this->PolicyValues(row, state);
+	if (!AcceptLocalPolicyCost(original_cost, policy.cost)) {
+		/* Cache the decision without copying/reconstructing the original candidate set.
+		 * Release the rejected payload; all readers resolve this alias to row storage. */
+		policy = {original_cost, original_wait, {}};
+	}
 	std::sort(policy.candidates.begin(), policy.candidates.end());
 	if (this->local_policies.size() >= 4096) {
 		/* Evict the next key rather than always the lowest destinations. An evicted policy is only
@@ -2236,16 +2261,20 @@ PassengerPrecomputedTable::RouteInspection PassengerPrecomputedTable::InspectRou
 	}
 
 	std::vector<uint32_t> candidates;
-	if (failed == OrderListID::Invalid()) {
+	auto stored = [&]() {
 		/* Expand into caller-owned storage, without RowCandidates' mutable cache.
 		 * Bound both the base payload and the incoming-service additions before copying. */
 		const uint32_t index = row.indices[state];
 		size_t count = this->graph->flat_storage ? this->FlatPayload(row, index).size() : row.policies[index].candidates.size();
 		if (this->graph->flat_storage && !(row.flat_policies[index].count & FlatPolicy::FULL)) count += this->FlatPayload(row, row.indices[from]).size();
-		if (count >= work) { work = 0; return {}; }
+		if (count >= work) { work = 0; return false; }
 		work -= count;
 		if (this->graph->flat_storage) this->ExpandPolicy(row, state, candidates);
 		else candidates = row.policies[index].candidates;
+		return true;
+	};
+	if (failed == OrderListID::Invalid()) {
+		if (!stored()) return {};
 	} else {
 		/* Same local preference as LocalPolicy, computed only in display-owned memory.
 		 * A failed service can expose alternatives absent from the stored base policy. */
@@ -2263,16 +2292,13 @@ PassengerPrecomputedTable::RouteInspection PassengerPrecomputedTable::InspectRou
 		}
 		if (work == 0) return {};
 		std::sort(choices.begin(), choices.end());
-		auto compute = [&](bool exclude) {
-			PassengerStrategy sum; candidates.clear();
-			for (auto [cost, board] : choices) {
-				const auto &p = this->graph->patterns[this->graph->occurrences[board].pattern];
-				if (exclude && p.members.front().id == failed) continue;
-				if (sum.Add(cost, PassengerStrategy::Frequency(p.wait))) candidates.push_back(board);
-			}
-		};
-		compute(true);
-		if (candidates.empty()) compute(false);
+		PassengerStrategy sum;
+		for (auto [cost, board] : choices) {
+			const auto &p = this->graph->patterns[this->graph->occurrences[board].pattern];
+			if (p.members.front().id == failed) continue;
+			if (sum.Add(cost, PassengerStrategy::Frequency(p.wait))) candidates.push_back(board);
+		}
+		if (!AcceptLocalPolicyCost(this->PolicyValues(row, state).first, sum.Cost()) && !stored()) return {};
 	}
 
 	double frequency = 0;
@@ -2331,8 +2357,11 @@ PassengerPrecomputedPlan PassengerPrecomputedTable::Plan(StationID origin, Stati
 		if (this->graph->hyperpath) {
 			auto [policy_cost, policy_wait] = this->PolicyValues(row, state);
 			if (failed != OrderListID::Invalid()) {
-				const auto &policy = this->LocalPolicy(row, destination, state, failed); policy_cost = policy.cost; policy_wait = policy.wait;
-				if (!policy.candidates.empty()) { label = this->EvaluateRide(row, policy.candidates.front(), destination); label.cost = policy_cost; label.first_wait = policy_wait; }
+				const auto &policy = this->LocalPolicy(row, destination, state, failed);
+				if (!policy.UsesStoredPolicy()) {
+					policy_cost = policy.cost; policy_wait = policy.wait;
+					label = this->EvaluateRide(row, policy.candidates.front(), destination); label.cost = policy_cost; label.first_wait = policy_wait;
+				}
 			}
 			auto result = this->Select(label, ready, excluded, sample); result.hyperpath = true;
 			if (result.ride) {
