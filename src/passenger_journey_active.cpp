@@ -1499,7 +1499,7 @@ bool PassengerJourneyLoadingContext::MayUseHyperpathPolicy(const CargoPacket &re
 	const auto &intent = representative.GetPassengerJourney();
 	if (intent.kind != PassengerRideKind::HyperpathIntent) return false;
 	const auto &failure = representative.GetPassengerBoardingFailure();
-	const auto *failed_list = OrderList::GetIfValid(failure.service);
+	const auto *failed_list = _settings_game.linkgraph.passenger_capacity_rerouting ? OrderList::GetIfValid(failure.service) : nullptr;
 	if (failed_list == nullptr || failed_list->GetCargoDistRouteGeneration() != failure.incarnation) { base = true; adjusted = false; }
 	auto &db = GetPassengerServiceDatabase(); auto current_occurrences = occurrences;
 	this->RefreshBoardingRevision();
@@ -1548,7 +1548,7 @@ bool PassengerJourneyLoadingContext::CanUseHyperpathPolicy(const CargoPacket &re
 	auto intent = representative.GetPassengerJourney();
 	if (intent.kind != PassengerRideKind::HyperpathIntent) return false;
 	const auto &failure = representative.GetPassengerBoardingFailure();
-	const auto *failed_list = OrderList::GetIfValid(failure.service);
+	const auto *failed_list = _settings_game.linkgraph.passenger_capacity_rerouting ? OrderList::GetIfValid(failure.service) : nullptr;
 	if (failed_list == nullptr || failed_list->GetCargoDistRouteGeneration() != failure.incarnation) { base = true; adjusted = false; }
 	auto &db = GetPassengerServiceDatabase();
 	if (!db.IsCurrent(intent)) {
@@ -2097,6 +2097,20 @@ void PassengerAircraftCostSettingsChanged(int32_t)
 	ClearPassengerOdFallbackCache();
 }
 
+void PassengerCapacityReroutingSettingsChanged(int32_t)
+{
+	/* Invalidate arrival-local decisions without rebuilding shared destination tables. */
+	GetPassengerServiceDatabase().InvalidateBoardingDecisions();
+	if (_settings_game.linkgraph.passenger_capacity_rerouting) return;
+	for (CargoPacket *packet : CargoPacket::Iterate()) {
+		if (!packet->GetPassengerBoardingFailure().Present()) continue;
+		packet->SetPassengerBoardingFailure({});
+		/* Replace the old failure-expiry deadline through the ordinary event path.
+		 * This also updates the boarding index of each affected waiting packet. */
+		PassengerWaitingRoutingChanged(*packet);
+	}
+}
+
 void PassengerJourneySettingsChanged(int32_t)
 {
 	PassengerAircraftCostSettingsChanged(0);
@@ -2144,6 +2158,7 @@ void AfterLoadPassengerJourneys()
 	/* Saveload writes packet fields directly; reconstruct the derived index before
 	 * validation changes modes or vehicles can be deleted/reuse their pool IDs. */
 	RebuildPassengerJourneyVehicleIndex();
+	if (!_settings_game.linkgraph.passenger_capacity_rerouting) PassengerCapacityReroutingSettingsChanged(0);
 	for (Station *station : Station::Iterate()) for (CargoType cargo : EnumRange(NUM_CARGO)) {
 		if (station->goods[cargo].data != nullptr) {
 			/* Upstream legacy loaders can move a spare GoodsEntryData directly. */

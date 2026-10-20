@@ -2429,7 +2429,8 @@ static void LoadUnloadVehicle(Vehicle *front, PassengerJourneyLoadingContext &lo
 	/* A capacity miss is one completed real loading opportunity, not each
 	 * gradual-loading tick or a read-only HasCargoFor/reservation predicate.
 	 * LoadingFinished is persistent vehicle state and resets on the next stop. */
-	if (_settings_game.linkgraph.passenger_journey_precomputed && !already_finished && front->vehicle_flags.Test(VehicleFlag::LoadingFinished)) {
+	if (_settings_game.linkgraph.passenger_capacity_rerouting && _settings_game.linkgraph.passenger_journey_precomputed &&
+			!already_finished && front->vehicle_flags.Test(VehicleFlag::LoadingFinished)) {
 		for (CargoType cargo : (cargo_full & ~cargo_not_full)) {
 			if (IsCargoInClass(cargo, CargoClass::Passengers) && front->current_order.GetCargoLoadType(cargo) != OrderLoadType::NoLoad &&
 					st->goods[cargo].data != nullptr && MayLoadUnderExclusiveRights(st, front)) {

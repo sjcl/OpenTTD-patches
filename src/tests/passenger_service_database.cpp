@@ -13,6 +13,8 @@
 #include "../vehicle_base.h"
 #include "../station_base.h"
 #include "../settings_type.h"
+#include "../settings_internal.h"
+#include "../settings_func.h"
 #include "../date_func.h"
 #include "../order_func.h"
 #include "../order_cmd.h"
@@ -3017,6 +3019,65 @@ TEST_CASE("Hyperpath capacity failures change the local policy and copy through 
 	CHECK(CargoPacket::Get(id)->GetPassengerJourney().kind == PassengerRideKind::HyperpathIntent);
 }
 
+TEST_CASE("Disabling passenger capacity rerouting skips scans and restores the base boarding policy", "[passenger][hyperpath][replan][settings]")
+{
+	Fixture f; _settings_game.linkgraph.passenger_journey_precomputed = _settings_game.linkgraph.passenger_journey_hyperpath = true;
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	const auto *setting = GetSettingFromName("linkgraph.passenger_capacity_rerouting"); REQUIRE(setting != nullptr);
+	auto *fast = f.Train({Stop(A), Stop(D)}), *slow = f.Train({Stop(A, 20), Stop(D, 220)});
+	auto &db = f.Build(); while (!db.PreparePrecomputed()) {}
+	fast->cargo.Append(f.Packet(100));
+	auto *packet = f.Packet(20);
+	REQUIRE(PassengerJourneyActiveContext(nullptr, A).PlanWaiting(*packet, PAX, D));
+	StationCargoList waiting; waiting.passenger_index_cargo = PAX; waiting.Append(packet, D);
+	PassengerJourneyLoadingContext loading;
+	REQUIRE_FALSE(waiting.HasCargoFor(std::array{D}, slow, &loading, PAX));
+
+	SECTION("Disabled before the first full vehicle") {}
+	SECTION("Disable an active exclusion with a warm boarding cache") {
+		for (int i = 0; i < 3; ++i) waiting.RecordCapacityMiss(std::array{D}, fast, PAX, loading);
+		REQUIRE(packet->GetPassengerFailedService(_state_ticks) == fast->orders->index);
+		REQUIRE(waiting.HasCargoFor(std::array{D}, slow, &loading, PAX));
+		REQUIRE_FALSE(waiting.HasCargoFor(std::array{D}, fast, &loading, PAX));
+	}
+
+	const auto intent = packet->GetPassengerJourney(); const auto publication = db.GetPublishedRevision();
+	const auto saved = db.Save();
+	setting->AsIntSetting()->ChangeValue(&_settings_game, false, STCF_NONE);
+	CHECK_FALSE(packet->GetPassengerBoardingFailure().Present());
+	CHECK(packet->GetPassengerJourney() == intent);
+	CHECK(db.GetPublishedRevision() == publication); CHECK(db.Save() == saved);
+	CHECK_FALSE(waiting.HasCargoFor(std::array{D}, slow, &loading, PAX));
+	CHECK(waiting.HasCargoFor(std::array{D}, fast, &loading, PAX));
+	const auto before = GetPassengerWaitingEventDiagnostic();
+	const auto queries = db.GetPrecomputedDiagnostic(PAX);
+	const auto candidates = waiting.BoardingCandidatesInspected(), updates = waiting.boarding_index_updates;
+	const auto event = packet->GetPassengerRoutingEvent();
+	for (int i = 0; i < 5; ++i) {
+		waiting.RecordCapacityMiss(std::array{D}, fast, PAX, loading);
+		packet->RecordPassengerCapacityFailure(fast->orders->index, _state_ticks, 4096);
+	}
+	CHECK_FALSE(packet->GetPassengerBoardingFailure().Present());
+	CHECK(packet->GetPassengerRoutingEvent() == event);
+	CHECK(waiting.BoardingCandidatesInspected() == candidates); CHECK(waiting.boarding_index_updates == updates);
+	CHECK(GetPassengerWaitingEventDiagnostic().capacity_missed_packets == before.capacity_missed_packets);
+	CHECK(GetPassengerWaitingEventDiagnostic().capacity_record_nanoseconds == before.capacity_record_nanoseconds);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).queries == queries.queries);
+	CHECK(db.GetPrecomputedDiagnostic(PAX).local_replans == queries.local_replans);
+
+	setting->AsIntSetting()->ChangeValue(&_settings_game, true, STCF_NONE);
+	CHECK_FALSE(waiting.HasCargoFor(std::array{D}, slow, &loading, PAX));
+	for (int i = 0; i < 3; ++i) waiting.RecordCapacityMiss(std::array{D}, fast, PAX, loading);
+	CHECK(waiting.HasCargoFor(std::array{D}, slow, &loading, PAX));
+	setting->AsIntSetting()->ChangeValue(&_settings_game, false, STCF_NONE);
+	fast->cargo.Truncate();
+	CHECK(waiting.Load(20, &fast->cargo, std::array{D}, TileIndex{0}, fast, &loading) == 20);
+	CHECK(waiting.AvailableCount() == 0);
+}
+
 TEST_CASE("Hyperpath rejected detours retain boarding failures and every original carrier", "[passenger][hyperpath][capacity-cost][boarding][determinism]")
 {
 	using Mode = PassengerServiceDatabase::HyperpathFilterMode;
@@ -4653,8 +4714,12 @@ TEST_CASE("Asymmetric passenger workers preserve initial saves joins and replace
 			REQUIRE(slice < 5000);
 			_settings_client.gui.passenger_precomputed_workers = 0; serial->PreparePrecomputed();
 			_settings_client.gui.passenger_precomputed_workers = 8; parallel->PreparePrecomputed();
-			CHECK(_state_ticks == NOW); same(*serial, *parallel);
+			CHECK(_state_ticks == NOW);
 		}
+		/* Local worker readiness and adaptive graph slices can advance different
+		 * Work per call. Compare at the shared preparation barrier; table prefix
+		 * equivalence is tested separately at matching consumed Work. */
+		same(*serial, *parallel);
 		const auto ready = serial->Save();
 		struct Peers { uint8_t host, client; uint host_schedule, client_schedule; };
 		for (const auto peers : {Peers{8, 0, 0, 0}, Peers{0, 8, 0, 0}, Peers{4, 1, 0, 1}, Peers{4, 4, 0, 2}, Peers{4, 4, 1, 0}}) {

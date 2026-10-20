@@ -278,6 +278,7 @@ public:
 				(this->retained_precomputed_revision != UINT64_MAX && !this->retained_precomputed_hyperpath);
 	}
 	auto BoardingRevision() const { return std::tuple(this->published_revision, this->boarding_revision, this->precomputed_operations); }
+	void InvalidateBoardingDecisions() { ++this->boarding_revision; }
 	PassengerPrecomputedTable::DestinationSpans PrecomputedReachableDestinations(CargoType cargo, StationID origin, bool retained = false) const
 	{ return cargo < NUM_CARGO ? (retained ? this->retained_precomputed[cargo] : this->precomputed[cargo]).ReachableDestinations(origin) : PassengerPrecomputedTable::DestinationSpans{}; }
 	std::optional<int64_t> PrecomputedRouteCost(CargoType cargo, StationID origin, StationID destination) const

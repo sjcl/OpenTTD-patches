@@ -10,6 +10,16 @@ Known-OD fallback uses the untimed, destination-aware policy below. See
 compatibility, uncertainty and validation results.
 The console-only shadow diagnostics remain independent and read-only.
 
+`linkgraph.passenger_capacity_rerouting` controls rerouting after passengers
+cannot board full vehicles in precomputed Hyperpath mode. It is a synchronized,
+saved game setting, enabled by default (including older saves). The toggle is
+in Settings > Environment > Cargo distribution. Disabling it clears recorded
+capacity failures, restores the base boarding policy and skips capacity-miss
+queue scans, expected-wait queries and failed-service local replanning. Shared
+destination tables are retained. Normal boarding capacity checks and routing
+for expired or invalid journeys remain active. Re-enabling starts with fresh
+capacity-failure counts.
+
 ## Timetable prediction policy
 
 Active scoped graphs, their nominal service patterns, boarding/continuation

@@ -327,6 +327,7 @@ void CargoPacket::SetPassengerJourney(PassengerJourneyExecution journey, Station
 
 void CargoPacket::RecordPassengerCapacityFailure(OrderListID service, StateTicks now, int64_t expected_wait)
 {
+	if (!_settings_game.linkgraph.passenger_capacity_rerouting) return;
 	if (service == OrderListID::Invalid()) return;
 	const auto *list = OrderList::GetIfValid(service); if (list == nullptr) return;
 	const auto incarnation = list->GetCargoDistRouteGeneration();
@@ -350,6 +351,7 @@ void CargoPacket::RecordPassengerCapacityFailure(OrderListID service, StateTicks
 
 OrderListID CargoPacket::GetPassengerFailedService(StateTicks now) const
 {
+	if (!_settings_game.linkgraph.passenger_capacity_rerouting) return OrderListID::Invalid();
 	const auto failed = this->passenger_boarding_failure.Excluded(now, this->passenger_journey.waiting_limit);
 	const auto *list = OrderList::GetIfValid(failed);
 	return list != nullptr && list->GetCargoDistRouteGeneration() == this->passenger_boarding_failure.incarnation ? failed : OrderListID::Invalid();
@@ -2473,6 +2475,8 @@ uint StationCargoList::ShiftJourneyCargo(Taction action, std::span<const Station
 
 void StationCargoList::RecordCapacityMiss(std::span<const StationID> next, const Vehicle *vehicle, CargoType cargo, PassengerJourneyLoadingContext &loading)
 {
+	/* Skip index construction, consist/queue scans and expected-wait/local-policy queries. */
+	if (!_settings_game.linkgraph.passenger_capacity_rerouting) return;
 	if (vehicle == nullptr || vehicle->First()->orders == nullptr || !IsPassengerJourneyRoutingEnabled(cargo)) return;
 	if (this->passenger_index_cargo != cargo) { this->ClearWaitingIndex(); this->passenger_index_cargo = cargo; }
 	this->EnsureWaitingIndex();

@@ -2056,6 +2056,8 @@ STR_CONFIG_SETTING_DEMAND_SIZE                                  :対称分配で
 STR_CONFIG_SETTING_DEMAND_SIZE_HELPTEXT                         :この値を100%未満に設定すると、対称分配の挙動が非対称分配に近くなります。値が小さいほど受け入れ量に対する送り返し量が小さくなります。0%に設定した場合、対称分配と非対称分配の挙動に違いはなくなります
 
 STR_CONFIG_SETTING_SHORT_PATH_SATURATION                        :高収容力経路より速達経路を優先飽和: {STRING}
+STR_CONFIG_SETTING_PASSENGER_CAPACITY_REROUTING                 :満員で乗車できなかった旅客の経路を再探索: {STRING2}
+STR_CONFIG_SETTING_PASSENGER_CAPACITY_REROUTING_HELPTEXT        :満員で繰り返し乗車できない場合や、次便までの予想待ち時間が長い場合に経路を再検討します。旅客の事前計算・Hyperpath経路探索が必要です。無効にすると乗車失敗の記録を消去し、満員時の待機旅客の走査と経路の再計算を省略して負荷を軽減します。旅客は予定していた路線を待ち続けます
 STR_CONFIG_SETTING_SHORT_PATH_SATURATION_HELPTEXT               :二つの停留施設間を結ぶ経路が複数存在することは往々にしてあります。そのような場合、貨物分配アルゴリズムは最初に最短となる経路を飽和するまで使用し、次いで2番目の最短経路を使用するというように埋めていきます。飽和したかどうかは、推定収容力、輸送計画によって判断されます。すべての経路を飽和してもまだ需要を満たせない場合、高容量な経路を優先しつつ、すべての経路に負荷を掛けます。しかしほとんどの場合、アルゴリズムは経路の輸送力を正確に見積もることができません。この設定では、高収容力の路線を使用し始める前にどの程度最短経路を飽和するかを設定します。収容力より需要が上回ると推定される時には、停留施設が混み合うのを避けるために100%未満に設定して下さい。
 
 STR_CONFIG_SETTING_LOCALISATION_UNITS_VELOCITY                  :速度単位(陸地): {STRING}

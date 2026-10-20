@@ -15,6 +15,7 @@
 #include "../station_base.h"
 #include "../economy_base.h"
 #include "../settings_type.h"
+#include "../settings_internal.h"
 #include "../date_func.h"
 #include "../core/backup_type.hpp"
 #include "../core/random_func.hpp"
@@ -28,12 +29,40 @@ static constexpr CargoType PAX{0};
 static constexpr StateTicks NOW{10000};
 
 extern NamedSaveLoadTable GetLinkGraphJobDesc();
+extern SaveLoadVersion _sl_version;
+extern std::vector<uint8_t> SlTestSaveLoadTable(void *, void *, const NamedSaveLoadTable &, const NamedSaveLoadTable &);
+
+TEST_CASE("Passenger capacity rerouting is synchronized and persists with an enabled legacy default", "[passenger][settings][save]")
+{
+	AutoRestoreBackup version{_sl_version, SAVEGAME_VERSION};
+	AutoRestoreBackup features{_sl_xv_feature_versions, AutoRestoreBackupNoNewValueTag{}};
+	AutoRestoreBackup static_features{_sl_xv_feature_static_versions, AutoRestoreBackupNoNewValueTag{}};
+	SlXvSetStaticCurrentVersions(); _sl_xv_feature_versions = _sl_xv_feature_static_versions;
+	const auto *setting = GetSettingFromName("linkgraph.passenger_capacity_rerouting"); REQUIRE(setting != nullptr);
+	REQUIRE(setting->AsIntSetting() != nullptr);
+	CHECK(setting->AsIntSetting()->IsBoolSetting());
+	CHECK_FALSE(setting->flags.Test(SettingFlag::NoNetworkSync));
+	CHECK_FALSE(setting->flags.Test(SettingFlag::NotInSave));
+	const std::array fields{NSL(setting->name, setting->save)};
+	GameSettings source{}, loaded{};
+	for (bool enabled : {false, true}) {
+		source.linkgraph.passenger_capacity_rerouting = enabled;
+		loaded.linkgraph.passenger_capacity_rerouting = !enabled;
+		SlTestSaveLoadTable(&source, &loaded, fields, fields);
+		CHECK(loaded.linkgraph.passenger_capacity_rerouting == enabled);
+	}
+	loaded.linkgraph.passenger_capacity_rerouting = false;
+	setting->ResetToDefault(&loaded);
+	SlTestSaveLoadTable(&source, &loaded, NamedSaveLoadTable{}, fields);
+	CHECK(loaded.linkgraph.passenger_capacity_rerouting);
+}
 
 TEST_CASE("Passenger settings do not alter the legacy LinkGraphJob save schema", "[passenger]")
 {
 	for (const NamedSaveLoad &entry : GetLinkGraphJobDesc()) {
 		CHECK(std::string_view(entry.name) != "linkgraph.passenger_transfer_timetables");
 		CHECK(std::string_view(entry.name) != "linkgraph.passenger_transfer_penalty");
+		CHECK(std::string_view(entry.name) != "linkgraph.passenger_capacity_rerouting");
 	}
 }
 
